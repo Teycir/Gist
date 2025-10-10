@@ -17,15 +17,20 @@ function getElements() {
 }
 
 async function loadModels(apiKey) {
+  if (!apiKey || typeof apiKey !== 'string') return [];
   if (cachedModels && cachedApiKey === apiKey) {
     return cachedModels;
   }
   
   const { modelSelect: select } = getElements();
+  if (!select) return [];
+  
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-    );
+    const url = new URL('https://generativelanguage.googleapis.com/v1beta/models');
+    url.searchParams.set('key', apiKey);
+    
+    const response = await fetch(url.toString());
+    if (!response.ok) throw new Error('API request failed');
     const data = await response.json();
     
     const models = data.models?.filter(m => {
@@ -65,18 +70,21 @@ async function loadModels(apiKey) {
     cachedModels = models;
     cachedApiKey = apiKey;
     return models;
-  } catch {
-    select.innerHTML = '<option value="">Enter API key first</option>';
+  } catch (error) {
+    console.error('Failed to load models:', error.message);
+    if (select) select.innerHTML = '<option value="">Enter API key first</option>';
     return [];
   }
 }
 
 document.getElementById('saveKey')?.addEventListener('click', () => {
   const { apiKey, modelSelect, languageSelect, formatSelect, statusMsg } = getElements();
+  if (!apiKey || !statusMsg) return;
+  
   const key = apiKey.value.trim();
   
-  if (!key) {
-    statusMsg.textContent = '⚠️ Please enter an API key';
+  if (!key || key.length < 20) {
+    statusMsg.textContent = '⚠️ Please enter a valid API key';
     statusMsg.className = 'status-msg error';
     apiKey.style.borderColor = '#c5221f';
     setTimeout(() => {
@@ -114,26 +122,24 @@ document.getElementById('apiKey')?.addEventListener('input', (e) => {
 
 document.getElementById('apiKey')?.addEventListener('blur', (e) => {
   const key = e.target.value.trim();
-  if (key && key !== cachedApiKey) loadModels(key);
+  if (key && key.length > 20 && key !== cachedApiKey) loadModels(key);
 });
 
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get(['flashApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat'], async ({ flashApiKey, selectedModel, selectedLanguage, summaryFormat }) => {
       const { apiKey, modelSelect, languageSelect, formatSelect } = getElements();
-      const updates = [];
       
-      if (flashApiKey) {
+      if (flashApiKey && apiKey) {
         apiKey.value = flashApiKey;
-        updates.push(loadModels(flashApiKey).then(() => {
+        if (modelSelect) {
+          await loadModels(flashApiKey);
           if (selectedModel) modelSelect.value = selectedModel;
-        }));
+        }
       }
       
-      if (selectedLanguage) languageSelect.value = selectedLanguage;
-      if (summaryFormat) formatSelect.value = summaryFormat;
-      
-      await Promise.all(updates);
+      if (selectedLanguage && languageSelect) languageSelect.value = selectedLanguage;
+      if (summaryFormat && formatSelect) formatSelect.value = summaryFormat;
     });
   });
 }
