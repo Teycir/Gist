@@ -19,7 +19,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       credentials: 'omit',
       body: JSON.stringify(request.body)
     })
-      .then(response => response.json())
+      .then(async response => {
+        if (!response.ok) {
+          const text = await response.text();
+          let errorMsg = `API error: ${response.status}`;
+          try {
+            const errorData = JSON.parse(text);
+            errorMsg = errorData.error?.message || errorMsg;
+          } catch (e) {
+            errorMsg = text || errorMsg;
+          }
+          throw new Error(errorMsg);
+        }
+        return response.json();
+      })
       .then(data => sendResponse({ success: true, data }))
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
