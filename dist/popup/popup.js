@@ -165,9 +165,8 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
     apiKey.setAttribute('aria-invalid', 'false');
     
     setTimeout(() => {
-      statusMsg.textContent = '';
-      statusMsg.className = 'status-msg';
-    }, 3000);
+      window.close();
+    }, 1000);
   } catch (error) {
     console.error('Save error:', error);
     statusMsg.textContent = '⚠️ Failed to save settings';
@@ -195,21 +194,22 @@ document.getElementById('apiKey')?.addEventListener('blur', async (e) => {
 });
 
 if (typeof document !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', () => {
-    chrome.storage.local.get(['flashApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat'], async ({ flashApiKey, selectedModel, selectedLanguage, summaryFormat }) => {
-      const { apiKey, modelSelect, languageSelect, formatSelect } = getElements();
-      
-      if (flashApiKey && apiKey) {
-        apiKey.value = flashApiKey;
-        if (modelSelect) {
-          await loadModels(flashApiKey);
-          if (selectedModel) modelSelect.value = selectedModel;
-        }
+  document.addEventListener('DOMContentLoaded', async () => {
+    const data = await chrome.storage.local.get(['flashApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat']);
+    const { flashApiKey, selectedModel, selectedLanguage, summaryFormat } = data;
+    const { apiKey, modelSelect, languageSelect, formatSelect } = getElements();
+    
+    if (flashApiKey && apiKey) {
+      apiKey.value = flashApiKey;
+      apiKey.classList.add('valid');
+      if (modelSelect) {
+        await loadModels(flashApiKey);
+        if (selectedModel) modelSelect.value = selectedModel;
       }
-      
-      if (selectedLanguage && languageSelect) languageSelect.value = selectedLanguage;
-      if (summaryFormat && formatSelect) formatSelect.value = summaryFormat;
-    });
+    }
+    
+    if (selectedLanguage && languageSelect) languageSelect.value = selectedLanguage;
+    if (summaryFormat && formatSelect) formatSelect.value = summaryFormat;
   });
 }
 
