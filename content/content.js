@@ -405,7 +405,7 @@ if (typeof document !== 'undefined') {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', addSummarizeButton, { once: true });
   } else {
-    requestIdleCallback ? requestIdleCallback(addSummarizeButton) : addSummarizeButton();
+    typeof requestIdleCallback !== 'undefined' ? requestIdleCallback(addSummarizeButton) : addSummarizeButton();
   }
   
   setInterval(cleanupCaches, 5 * 60 * 1000);
@@ -417,7 +417,7 @@ if (typeof document !== 'undefined') {
   
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      requestIdleCallback ? requestIdleCallback(cleanupCaches) : setTimeout(cleanupCaches, 1000);
+      typeof requestIdleCallback !== 'undefined' ? requestIdleCallback(cleanupCaches) : setTimeout(cleanupCaches, 1000);
     });
   }
 }

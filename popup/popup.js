@@ -214,5 +214,12 @@ if (typeof document !== 'undefined') {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { loadModels };
+  module.exports = { 
+    loadModels,
+    _resetCache: () => {
+      elements = null;
+      cachedModels = null;
+      cachedApiKey = null;
+    }
+  };
 }

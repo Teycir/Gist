@@ -4,12 +4,14 @@
 
 describe('Summarize Results', () => {
   beforeEach(() => {
+    jest.resetModules();
     document.body.innerHTML = '<button class="summarize-btn">Summarize</button>';
     chrome.storage.local.get.mockClear();
+    chrome.storage.local.set.mockClear();
     fetch.mockClear();
     global.alert = jest.fn();
     global.confirm = jest.fn();
-    global.window = { open: jest.fn(), location: { search: '?q=test' } };
+    global.window.open = jest.fn();
   });
 
   test('should alert when no API key', async () => {
@@ -43,20 +45,28 @@ describe('Summarize Results', () => {
   });
 
   test('should use default settings', async () => {
-    chrome.storage.local.get.mockResolvedValue({ flashApiKey: 'test-key' });
-    document.body.innerHTML = '<button class="summarize-btn">Summarize</button><div id="search"><a href="http://test.com">Test</a></div>';
-    global.window.location.search = '?q=test';
+    chrome.storage.local.get.mockImplementation((keys, callback) => {
+      const data = { flashApiKey: 'AIzaSyDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' };
+      if (callback) callback(data);
+      return Promise.resolve(data);
+    });
+    chrome.storage.local.set.mockImplementation((data, callback) => {
+      if (callback) callback();
+      return Promise.resolve();
+    });
     
-    fetch.mockImplementation((url) => {
+    document.body.innerHTML = '<button class="summarize-btn">Summarize</button><div id="search"><a href="https://test.com">Test</a></div>';
+    
+    global.fetch = jest.fn((url) => {
       if (typeof url === 'string' && url.includes('generativelanguage.googleapis.com')) {
-        return Promise.resolve({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: 'Summary' }] } }] }) });
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ candidates: [{ content: { parts: [{ text: 'Summary' }] } }] }) });
       }
-      return Promise.resolve({ ok: true, text: async () => '<html><body><main>Content</main></body></html>' });
+      return Promise.resolve({ ok: true, text: () => Promise.resolve('<html><body><main>Content here with enough text</main></body></html>') });
     });
 
     const { summarizeResults } = require('../content/content.js');
     await summarizeResults();
 
-    expect(fetch).toHaveBeenCalled();
+    expect(global.fetch).toHaveBeenCalled();
   });
 });

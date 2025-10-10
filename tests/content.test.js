@@ -171,7 +171,7 @@ describe('DOM Manipulation', () => {
     addSummarizeButton();
     const button = document.querySelector('.summarize-btn');
     expect(button).toBeTruthy();
-    expect(button.innerText).toContain('Summarize');
+    expect(button.textContent).toContain('Summarize');
   });
 
   test('should not duplicate button', () => {
