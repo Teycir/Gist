@@ -35,6 +35,10 @@ describe('Real-world Performance Integration Tests', () => {
       return Promise.resolve();
     });
     
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+      callback({ success: true, html: '<html><body><main><p>Test content with meaningful information for performance testing.</p></main></body></html>' });
+    });
+    
     global.fetch.mockImplementation((url) => {
       if (typeof url === 'string' && url.includes('generativelanguage.googleapis.com')) {
         return Promise.resolve({
@@ -56,7 +60,7 @@ describe('Real-world Performance Integration Tests', () => {
     const duration = performance.now() - start;
     
     expect(duration).toBeLessThan(8000);
-    expect(global.fetch).toHaveBeenCalled();
+    expect(chrome.runtime.sendMessage).toHaveBeenCalled();
     console.log(`✓ Cold start completed in ${duration.toFixed(2)}ms`);
   });
 
@@ -119,6 +123,11 @@ describe('Real-world Performance Integration Tests', () => {
     });
     
     let networkCalls = 0;
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+      networkCalls++;
+      callback({ success: true, html: '<html><body><main>Content</main></body></html>' });
+    });
+    
     fetch.mockImplementation((url) => {
       if (typeof url === 'string' && url.includes('generativelanguage.googleapis.com')) {
         return Promise.resolve({
@@ -198,6 +207,10 @@ describe('Real-world Performance Integration Tests', () => {
     
     chrome.storage.local.set.mockResolvedValue();
     
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+      callback({ success: true, html: '<html><body><main>Content</main></body></html>' });
+    });
+    
     fetch.mockImplementation((url) => {
       if (typeof url === 'string' && url.includes('generativelanguage.googleapis.com')) {
         return Promise.resolve({
@@ -238,6 +251,10 @@ describe('Real-world Performance Integration Tests', () => {
     });
     
     chrome.storage.local.set.mockResolvedValue();
+    
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+      callback({ success: true, html: '<html><body><main><p>End-to-end test content with comprehensive information.</p></main></body></html>' });
+    });
     
     fetch.mockImplementation((url) => {
       if (typeof url === 'string' && url.includes('generativelanguage.googleapis.com')) {

@@ -54,6 +54,9 @@ describe('Summarize Results', () => {
       if (callback) callback();
       return Promise.resolve();
     });
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+      callback({ success: true, html: '<html><body><main>Content here with enough text</main></body></html>' });
+    });
     
     document.body.innerHTML = '<button class="summarize-btn">Summarize</button><div id="search"><a href="https://test.com">Test</a></div>';
     
@@ -67,6 +70,6 @@ describe('Summarize Results', () => {
     const { summarizeResults } = require('../content/content.js');
     await summarizeResults();
 
-    expect(global.fetch).toHaveBeenCalled();
+    expect(chrome.runtime.sendMessage).toHaveBeenCalled();
   });
 });

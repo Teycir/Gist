@@ -3,6 +3,7 @@ module.exports = {
   collectCoverageFrom: [
     'content/**/*.js',
     'popup/**/*.js',
+    'background.js',
     '!**/node_modules/**',
     '!**/tests/**',
     '!**/lib/**'

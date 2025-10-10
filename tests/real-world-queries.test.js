@@ -65,6 +65,11 @@ describe('Real-World Query Performance Tests', () => {
         return Promise.resolve();
       });
       
+      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        const mockContent = `<html><body><main><article><h1>${query}</h1><p>Detailed content about ${query} with comprehensive information and best practices.</p></article></main></body></html>`;
+        callback({ success: true, html: mockContent });
+      });
+      
       fetch.mockImplementation((url) => {
         if (typeof url === 'string' && url.includes('generativelanguage.googleapis.com')) {
           return Promise.resolve({
@@ -121,6 +126,11 @@ describe('Real-World Query Performance Tests', () => {
       chrome.storage.local.set.mockImplementation((data, callback) => {
         if (callback) callback();
         return Promise.resolve();
+      });
+      
+      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+        const mockContent = `<html><body><main><article><h1>${query}</h1><p>Content about ${query}</p></article></main></body></html>`;
+        callback({ success: true, html: mockContent });
       });
       
       fetch.mockImplementation((url) => {

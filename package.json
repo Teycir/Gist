@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "./build.sh",
-    "watch": "nodemon --watch content --watch popup --watch icons --watch lib --watch manifest.json --exec npm run build",
+    "watch": "nodemon --watch content --watch popup --watch icons --watch lib --watch background.js --watch manifest.json --exec npm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --coverageReporters=html lcov text",

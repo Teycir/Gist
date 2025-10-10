@@ -4,6 +4,19 @@
 
 const { scrapeGoogleUrls, cleanHtmlToText } = require('../content/content.js');
 
+global.chrome = {
+  runtime: {
+    sendMessage: jest.fn(),
+    lastError: null
+  },
+  storage: {
+    local: {
+      get: jest.fn(),
+      set: jest.fn()
+    }
+  }
+};
+
 describe('Content Processing', () => {
   test('should clean HTML and extract text', () => {
     const html = '<html><body><div>Hello World</div></body></html>';
@@ -164,6 +177,76 @@ describe('Display Summary', () => {
   });
 });
 
+describe('Message Passing', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    chrome.runtime.lastError = null;
+  });
+
+  test('should send message to background worker', async () => {
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+      callback({ success: true, html: '<html>Test</html>' });
+    });
+
+    const promise = new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        { action: 'fetchPage', url: 'https://example.com' },
+        response => resolve(response)
+      );
+    });
+
+    const response = await promise;
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      { action: 'fetchPage', url: 'https://example.com' },
+      expect.any(Function)
+    );
+    expect(response.success).toBe(true);
+  });
+
+  test('should handle runtime errors', async () => {
+    chrome.runtime.lastError = { message: 'Connection error' };
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+      callback(null);
+    });
+
+    const promise = new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { action: 'fetchPage', url: 'https://example.com' },
+        response => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve(response);
+          }
+        }
+      );
+    });
+
+    await expect(promise).rejects.toThrow('Connection error');
+  });
+
+  test('should handle fetch failure response', async () => {
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+      callback({ success: false, error: 'Network error' });
+    });
+
+    const promise = new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { action: 'fetchPage', url: 'https://fail.com' },
+        response => {
+          if (response?.success) {
+            resolve(response.html);
+          } else {
+            reject(new Error(response?.error || 'Fetch failed'));
+          }
+        }
+      );
+    });
+
+    await expect(promise).rejects.toThrow('Network error');
+  });
+});
+
 describe('DOM Manipulation', () => {
   test('should add summarize button', () => {
     document.body.innerHTML = '';
@@ -171,7 +254,7 @@ describe('DOM Manipulation', () => {
     addSummarizeButton();
     const button = document.querySelector('.summarize-btn');
     expect(button).toBeTruthy();
-    expect(button.textContent).toContain('Summarize');
+    expect(button.innerHTML).toContain('svg');
   });
 
   test('should not duplicate button', () => {

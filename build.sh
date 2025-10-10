@@ -1,2 +1,2 @@
 #!/bin/bash
-cp -r content popup icons lib manifest.json dist/
+cp -r content popup icons lib background.js manifest.json dist/

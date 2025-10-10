@@ -50,12 +50,27 @@ function addSummarizeButton() {
   if (document.querySelector('.summarize-btn')) return;
   
   const btn = document.createElement('button');
-  btn.textContent = '✨ Summarize with AI';
+  btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="24" height="24"><rect x="28" y="20" width="72" height="88" rx="8" fill="#fff"/><rect x="40" y="40" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="52" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="64" width="32" height="4" rx="2" fill="#667eea" opacity="0.9"/><path d="M88 76 L92 80 L88 84 M84 80 L92 80" stroke="#ffd700" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="78" cy="72" r="2" fill="#ffd700"/><circle cx="94" cy="72" r="1.5" fill="#ffd700"/><circle cx="94" cy="88" r="1.5" fill="#ffd700"/></svg>';
   btn.className = 'summarize-btn';
   btn.setAttribute('aria-label', 'Summarize search results with AI');
   btn.onclick = summarizeResults;
   document.body.appendChild(btn);
   summarizeBtn = btn;
+  
+  chrome.storage.local.get('selectedLanguage', ({ selectedLanguage }) => {
+    const translations = {
+      English: 'Summarize',
+      Spanish: 'Resumir',
+      French: 'Résumer',
+      German: 'Zusammenfassen',
+      Chinese: '总结',
+      Japanese: '要約',
+      Arabic: 'تلخيص'
+    };
+    const tooltipText = translations[selectedLanguage] || 'Summarize';
+    btn.title = tooltipText;
+    btn.setAttribute('aria-label', tooltipText);
+  });
 }
 
 function scrapeGoogleUrls() {
@@ -219,13 +234,20 @@ async function fetchWithTimeout(url, timeout = 3000) {
   if (cached) return cached;
   
   const content = await Promise.race([
-    fetch(url, {
-      method: 'GET',
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-      cache: 'default',
-      credentials: 'omit',
-      mode: 'cors'
-    }).then(r => r.text()),
+    new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { action: 'fetchPage', url },
+        response => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else if (response?.success) {
+            resolve(response.html);
+          } else {
+            reject(new Error(response?.error || 'Fetch failed'));
+          }
+        }
+      );
+    }),
     new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeout))
   ]).catch(() => '');
   
