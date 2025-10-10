@@ -6,6 +6,10 @@
 
 **Gist** transforms your Google search experience by providing instant AI-powered summaries of search results. Simply search on Google, click "Summarize with AI", and get a concise overview of the top results.
 
+### ✅ Implementation Status
+
+**COMPLETE** - All core features implemented and ready to use!
+
 ### ✨ Key Features
 
 - 🔑 **Bring Your Own Key (BYOK)** - Use your own Google AI API key
@@ -191,18 +195,22 @@ addSummarizeButton();
 ### Quick Start (3 Steps)
 
 1. **Install Extension**
-   - Load the unpacked extension in Chrome
-   - Click the extension icon in your browser
+   - Open Chrome and navigate to `chrome://extensions/`
+   - Enable "Developer mode" (toggle in top-right)
+   - Click "Load unpacked" and select the `Gist` folder
+   - The extension icon should appear in your toolbar
 
 2. **Configure API Key**
-   - Enter your Google AI Flash 2.5 API key
+   - Click the Gist extension icon in your browser toolbar
+   - Enter your Google AI API key (get one from [Google AI Studio](https://aistudio.google.com/app/apikey))
    - Click "Save Key"
    - Key is stored securely in browser storage
 
 3. **Start Summarizing**
-   - Search on Google as usual
-   - Click "Summarize with AI" button
-   - View instant AI-generated summary
+   - Go to [Google](https://www.google.com) and search for anything
+   - Look for the "✨ Summarize with AI" button in the top-right corner
+   - Click it to get an instant AI-generated summary of the top 5 results
+   - Close the summary overlay by clicking the X or clicking outside
 
 ### Example Usage
 
@@ -210,8 +218,9 @@ addSummarizeButton();
 # After installation and setup:
 1. Go to https://www.google.com
 2. Search for "artificial intelligence trends 2024"
-3. Click "Summarize with AI"
-4. Read concise summary of top results
+3. Click "✨ Summarize with AI" button (top-right)
+4. Read the beautifully formatted AI summary
+5. Click X or outside to close
 ```
 
 ## 🔧 Dependencies & Libraries
@@ -243,14 +252,25 @@ addSummarizeButton();
 | `content/content.css` | Styling | Summary overlay design |
 | `lib/showdown.min.js` | Markdown rendering | Text formatting |
 
+## 🎨 Features Implemented
+
+- ✅ Clean, modern UI with gradient button
+- ✅ Beautiful modal overlay for summaries
+- ✅ Markdown rendering with Showdown.js
+- ✅ Loading states and error handling
+- ✅ Scrapes top 5 non-YouTube results
+- ✅ Extracts clean text (removes scripts, styles, nav)
+- ✅ Secure API key storage
+- ✅ Smooth animations and transitions
+
 ## 🤝 Contributing
 
 This is a simple, focused implementation. For improvements:
 
 1. Consider rate limiting for API calls
 2. Add caching for frequently accessed content
-3. Implement error handling for API failures
-4. Add customization options for summary style
+3. Add customization options for summary style
+4. Support for other search engines
 
 ## 📄 License
 
