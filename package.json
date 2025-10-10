@@ -8,6 +8,8 @@
     "test": "tests"
   },
   "scripts": {
+    "build": "./build.sh",
+    "watch": "nodemon --watch content --watch popup --watch icons --watch lib --watch manifest.json --exec npm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --coverageReporters=html lcov text",
@@ -31,6 +33,7 @@
     "husky": "^9.1.7",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
+    "nodemon": "^3.1.9",
     "puppeteer": "^24.24.0"
   }
 }
