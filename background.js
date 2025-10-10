@@ -11,4 +11,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
   }
+  
+  if (request.action === 'callAPI') {
+    fetch(request.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'omit',
+      body: JSON.stringify(request.body)
+    })
+      .then(response => response.json())
+      .then(data => sendResponse({ success: true, data }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
 });

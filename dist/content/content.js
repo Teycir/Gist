@@ -353,27 +353,29 @@ Keep summary under ${wordLimit} words. Focus on key facts and insights.`;
     const apiUrl = new URL(`https://generativelanguage.googleapis.com/v1beta/${encodeURIComponent(model)}:generateContent`);
     apiUrl.searchParams.set('key', flashApiKey);
     
-    const response = await fetch(apiUrl.toString(), {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json'
-      },
-      credentials: 'omit',
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          maxOutputTokens: maxTokens,
-          temperature: 0.3
+    const apiResponse = await new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({
+        action: 'callAPI',
+        url: apiUrl.toString(),
+        body: {
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            maxOutputTokens: maxTokens,
+            temperature: 0.3
+          }
         }
-      })
+      }, response => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else if (response?.success) {
+          resolve(response.data);
+        } else {
+          reject(new Error(response?.error || 'API request failed'));
+        }
+      });
     });
     
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'API request failed');
-    }
-    
-    const data = await response.json();
+    const data = apiResponse;
     let markdown = data.candidates?.[0]?.content?.parts?.[0]?.text;
     
     if (!markdown) {
