@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       width: 350px;
@@ -59,12 +60,20 @@
       transition: all 0.3s ease;
       box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
     }
-    button:hover {
+    button:hover:not(:disabled) {
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
-    button:active {
+    button:active:not(:disabled) {
       transform: translateY(0);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    button:focus, input:focus, select:focus {
+      outline: 2px solid #667eea;
+      outline-offset: 2px;
     }
     .status-msg {
       margin-top: 12px;
@@ -105,17 +114,17 @@
   <h2>🚀 Gist Settings</h2>
   <div class="form-group">
     <label for="apiKey">🔑 API Key</label>
-    <input type="password" id="apiKey" placeholder="Enter your Google AI API Key"/>
+    <input type="password" id="apiKey" placeholder="Enter your Google AI API Key" aria-required="true" aria-describedby="apiKeyHelp"/>
   </div>
   <div class="form-group">
     <label for="modelSelect">🤖 AI Model</label>
-    <select id="modelSelect">
+    <select id="modelSelect" aria-label="Select AI model">
       <option value="">Loading models...</option>
     </select>
   </div>
   <div class="form-group">
     <label for="languageSelect">🌐 Language</label>
-    <select id="languageSelect">
+    <select id="languageSelect" aria-label="Select summary language">
       <option value="English">English</option>
       <option value="Spanish">Español</option>
       <option value="French">Français</option>
@@ -127,15 +136,15 @@
   </div>
   <div class="form-group">
     <label for="formatSelect">📝 Summary Format</label>
-    <select id="formatSelect">
+    <select id="formatSelect" aria-label="Select summary format">
       <option value="detailed">📄 Detailed Summary</option>
       <option value="brief">⚡ Brief Summary</option>
       <option value="keypoints">🎯 Key Points Only</option>
     </select>
   </div>
-  <button id="saveKey">💾 Save Settings</button>
-  <div id="statusMsg" class="status-msg"></div>
-  <div class="info">Get your API key from <a href="https://aistudio.google.com/api-keys" target="_blank">Google AI Studio</a></div>
+  <button id="saveKey" aria-label="Save settings">💾 Save Settings</button>
+  <div id="statusMsg" class="status-msg" role="status" aria-live="polite"></div>
+  <div class="info" id="apiKeyHelp">Get your API key from <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer">Google AI Studio</a></div>
   <script src="popup.js"></script>
 </body>
 </html>
