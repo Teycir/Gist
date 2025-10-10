@@ -41,7 +41,7 @@ graph TD
 ### Extension Structure
 
 ```
-searchsynth-flash-2.5/
+Gist/
 ├── manifest.json              # Extension configuration
 ├── popup/
 │   ├── popup.html            # API key settings UI
@@ -58,7 +58,7 @@ searchsynth-flash-2.5/
 ```json
 {
   "manifest_version": 3,
-  "name": "SearchSynth Flash 2.5 (Simple)",
+  "name": "Gist",
   "version": "1.0",
   "description": "Summarizes Google search results using your Google Flash 2.5 API key.",
   "permissions": ["storage"],
@@ -101,7 +101,7 @@ searchsynth-flash-2.5/
    ```json
    {
      "manifest_version": 3,
-     "name": "SearchSynth Flash 2.5 (Simple)",
+     "name": "Gist",
      "version": "1.0",
      "description": "Summarizes Google search results using your Google Flash 2.5 API key.",
      "permissions": ["storage"],
@@ -258,4 +258,4 @@ Open source - feel free to modify and distribute.
 
 ---
 
-**Ready to revolutionize your search experience?** Install SearchSynth Flash 2.5 and turn complex search results into clear, actionable insights with the power of AI.
+**Ready to revolutionize your search experience?** Install Gist and turn complex search results into clear, actionable insights with the power of AI.
