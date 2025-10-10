@@ -18,6 +18,28 @@
   justify-content: center;
 }
 
+.summarize-btn::before {
+  content: attr(title);
+  position: absolute;
+  right: 100%;
+  margin-right: 8px;
+  padding: 8px 12px;
+  background: white;
+  color: #202124;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.summarize-btn:hover::before {
+  opacity: 1;
+}
+
 .summarize-btn:hover {
   transform: translateY(-3px) scale(1.02);
   box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
