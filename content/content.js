@@ -278,7 +278,7 @@ async function summarizeResults() {
       return;
     }
     
-    const model = selectedModel || 'models/gemini-1.5-flash';
+    const model = selectedModel || 'models/gemini-1.5-flash-latest';
     const language = selectedLanguage || 'English';
     const format = summaryFormat || 'detailed';
     

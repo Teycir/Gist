@@ -195,21 +195,27 @@ document.getElementById('apiKey')?.addEventListener('blur', async (e) => {
 
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', async () => {
-    const data = await chrome.storage.local.get(['flashApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat']);
-    const { flashApiKey, selectedModel, selectedLanguage, summaryFormat } = data;
-    const { apiKey, modelSelect, languageSelect, formatSelect } = getElements();
-    
-    if (flashApiKey && apiKey) {
-      apiKey.value = flashApiKey;
-      apiKey.classList.add('valid');
-      if (modelSelect) {
-        await loadModels(flashApiKey);
-        if (selectedModel) modelSelect.value = selectedModel;
+    try {
+      const data = await chrome.storage.local.get(['flashApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat']);
+      const { flashApiKey, selectedModel, selectedLanguage, summaryFormat } = data;
+      const { apiKey, modelSelect, languageSelect, formatSelect } = getElements();
+      
+      if (languageSelect && selectedLanguage) languageSelect.value = selectedLanguage;
+      if (formatSelect && summaryFormat) formatSelect.value = summaryFormat;
+      
+      if (flashApiKey && apiKey) {
+        apiKey.value = flashApiKey;
+        apiKey.classList.add('valid');
+        if (modelSelect) {
+          const models = await loadModels(flashApiKey);
+          if (models.length && selectedModel) {
+            modelSelect.value = selectedModel;
+          }
+        }
       }
+    } catch (error) {
+      console.error('DOMContentLoaded error:', error);
     }
-    
-    if (selectedLanguage && languageSelect) languageSelect.value = selectedLanguage;
-    if (summaryFormat && formatSelect) formatSelect.value = summaryFormat;
   });
 }
 
