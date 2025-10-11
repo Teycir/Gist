@@ -492,37 +492,17 @@ function displaySummary(markdown, urls, format, language) {
       <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        .overlay-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 999999; }
+        .overlay-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; }
         .summary-content { background: white; border-radius: 16px; padding: 36px; max-width: 850px; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.35); }
-        .summary-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #e8eaed; }
-        .summary-title { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0; flex: 1; }
-        .summary-sources { font-size: 13px; color: #5f6368; font-weight: 500; margin-top: 8px; display: block; }
-        .summary-actions { display: flex; gap: 10px; flex-shrink: 0; }
-        .close-btn { background: #f8f9fa; border: none; font-size: 20px; color: #5f6368; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; transition: all 0.2s; }
-        .close-btn:hover { background: #e8eaed; transform: scale(1.1); }
-        .close-btn[data-tooltip]:hover::after { content: attr(data-tooltip); position: absolute; bottom: -32px; left: 50%; transform: translateX(-50%); background: #202124; color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; z-index: 1000; }
-        .share-btn { position: relative; }
-        .share-menu { position: absolute; top: 45px; right: 0; background: white; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); padding: 8px; min-width: 180px; z-index: 1001; }
-        .share-option { display: block; width: 100%; padding: 10px 14px; border: none; background: none; text-align: left; cursor: pointer; border-radius: 6px; font-size: 14px; color: #202124; transition: background 0.2s; }
-        .share-option:hover { background: #f8f9fa; }
-        .summary-body { font-size: 16px; line-height: 1.7; color: #3c4043; margin-bottom: 24px; }
-        .summary-body h1, .summary-body h2 { margin-top: 20px; color: #202124; font-weight: 700; }
-        .summary-body h1 { font-size: 24px; }
-        .summary-body h2 { font-size: 20px; }
-        .summary-body ul { padding-left: 20px; margin: 12px 0; }
-        .summary-body li { margin: 8px 0; }
-        .summary-link { color: #1a73e8; text-decoration: none; }
-        .summary-link:hover { text-decoration: underline; }
-        .followup-section { margin-top: 24px; padding-top: 20px; border-top: 2px solid #e8eaed; }
-        .conversation-history { max-height: 200px; overflow-y: auto; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
-        .chat-bubble { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 14px; line-height: 1.5; animation: bubbleIn 0.3s ease; }
-        @keyframes bubbleIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .chat-bubble.user { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-        .chat-bubble.ai { background: #f1f3f4; color: #3c4043; align-self: flex-start; border-bottom-left-radius: 4px; }
-        .chat-bubble.error { background: #fce8e6; color: #c5221f; align-self: flex-start; border-bottom-left-radius: 4px; }
-        .followup-input { width: 100%; padding: 14px 20px; border: 3px solid #667eea; border-radius: 12px; font-size: 14px; outline: none; transition: all 0.2s ease; font-family: inherit; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15); }
-        .followup-input:focus { border-color: #764ba2; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
-        .followup-input:disabled { background: #f8f9fa; cursor: not-allowed; opacity: 0.6; }
+        .summary-header { display: flex; justify-content: space-between; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #e8eaed; }
+        .summary-title { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+        .summary-actions { display: flex; gap: 10px; }
+        .close-btn { background: #f8f9fa; border: none; font-size: 24px; color: #5f6368; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; }
+        .close-btn:hover { background: #e8eaed; }
+        .summary-body { font-size: 16px; line-height: 1.7; color: #3c4043; }
+        .summary-body h1, .summary-body h2 { margin-top: 20px; color: #202124; }
+        .summary-body ul { padding-left: 20px; }
+        .summary-link { color: #1a73e8; }
       </style>
     </head>
     <body></body>

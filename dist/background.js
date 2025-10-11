@@ -3,8 +3,30 @@ chrome.action.onClicked.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'getTabId') {
+    sendResponse({ tabId: sender.tab?.id });
+    return;
+  }
+  
   if (request.action === 'openPopup') {
     chrome.tabs.create({ url: chrome.runtime.getURL('popup/popup.html') });
+    return;
+  }
+  
+  if (request.action === 'multiSearch') {
+    const query = encodeURIComponent(request.query);
+    const urls = [
+      `https://www.google.com/search?q=${query}`,
+      `https://www.bing.com/search?q=${query}`,
+      `https://duckduckgo.com/?q=${query}`
+    ];
+    
+    urls.forEach((url, index) => {
+      chrome.tabs.create({ url, active: index === 0 }, (tab) => {
+        chrome.storage.local.set({ [`autoSummarize_${tab.id}`]: true });
+      });
+    });
+    
     return;
   }
   

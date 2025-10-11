@@ -11,6 +11,7 @@
 - ⚡ **Lightning Fast** - Cached results in <100ms, cold start in 3-5s
 - 🎨 **Clean Interface** - Seamless integration with Google Search
 - 🔍 **Multi-Engine Support** - Works on Google, Bing, and DuckDuckGo
+- 🔄 **Multi-Search Mode** - Search across Google, Bing, and DuckDuckGo simultaneously
 - 🌍 **Multilingual** - Search in one language, summarize in another
 - 📝 **3 Summary Formats** - Brief, Detailed, or Key Points
 - 🔗 **Source References** - Every summary includes clickable citations
@@ -60,6 +61,7 @@
   - 🎯 **Brief** (3-5 bullet points, ~500 words, fastest)
   - 📄 **Detailed** (comprehensive analysis, ~2000 words, slowest)
   - ⚡ **Key Points** (essential takeaways only, ~250 words, ultra-fast)
+- **Enable Multi-Search**: Check the Multi-Search option to search across Google, Bing, and DuckDuckGo simultaneously
 - **Save Summaries**: Click the save button (💾) to download as markdown file
 - **Share Results**: Use the share button to post on X (Twitter), LinkedIn, or email
 - **Copy to Clipboard**: One-click copy for pasting into documents
@@ -103,6 +105,31 @@ Gist's unique multilingual capability lets you:
 - Research foreign topics but read summaries in your native language
 - Learn a new language by comparing search results with translated summaries
 - Share information with international colleagues in their preferred language
+
+### Multi-Search Mode
+
+**Search Across Multiple Engines Simultaneously**
+
+Gist's Multi-Search feature allows you to:
+- Search Google, Bing, and DuckDuckGo at the same time
+- Compare results from different search engines
+- Get comprehensive coverage of your search query
+
+**How It Works:**
+1. Enable Multi-Search in the extension settings
+2. Perform a search on any supported search engine
+3. Click the summarize button or press `Ctrl+Shift+S`
+4. Three new tabs open automatically:
+   - Google search results with summary
+   - Bing search results with summary
+   - DuckDuckGo search results with summary
+5. Each tab independently summarizes its search results
+
+**Benefits:**
+- **Comprehensive Results**: Get perspectives from multiple search engines
+- **Time Saving**: No need to manually search on each engine
+- **Parallel Processing**: All three searches happen simultaneously
+- **Independent Summaries**: Each engine's results are summarized separately
 
 ## 🎯 Quick Start (3 Steps)
 
@@ -361,11 +388,11 @@ cp -r content popup icons lib manifest.json dist/
 
 ## 🐛 Known Limitations
 
-- Only works on Google Search (not Bing, DuckDuckGo, etc.)
 - Requires valid Google AI API key
-- Rate limited by Google AI API quotas
+- Rate limited by Google AI API quotas (Multi-Search uses 3x the quota)
 - Some websites may block content scraping
 - Cache limited to browser storage quota (~10MB)
+- Multi-Search opens 3 tabs simultaneously
 
 ## 🤝 Contributing
 

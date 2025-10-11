@@ -13,6 +13,7 @@ const translations = {
     brief: '🎯 Brief Summary, Fast',
     detailed: '📄 Detailed Summary, Slowest',
     keypoints: '⚡ Key Points, Fastest',
+    multiSearch: '🔍 Multi-Search (Google + Bing + DuckDuckGo)',
     save: 'Save Settings',
     apiHelp: 'Get API key:',
     howToUse: 'How to use:',
@@ -28,6 +29,7 @@ const translations = {
     brief: '🎯 Resumen Breve, Rápido',
     detailed: '📄 Resumen Detallado, Más Lento',
     keypoints: '⚡ Puntos Clave, Más Rápido',
+    multiSearch: '🔍 Búsqueda Múltiple (Google + Bing + DuckDuckGo)',
     save: 'Guardar Configuración',
     apiHelp: 'Obtener clave API:',
     howToUse: 'Cómo usar:',
@@ -43,6 +45,7 @@ const translations = {
     brief: '🎯 Résumé Bref, Rapide',
     detailed: '📄 Résumé Détaillé, Plus Lent',
     keypoints: '⚡ Points Clés, Plus Rapide',
+    multiSearch: '🔍 Recherche Multiple (Google + Bing + DuckDuckGo)',
     save: 'Enregistrer les Paramètres',
     apiHelp: 'Obtenir clé API :',
     howToUse: 'Comment utiliser :',
@@ -58,6 +61,7 @@ const translations = {
     brief: '🎯 Kurze Zusammenfassung, Schnell',
     detailed: '📄 Detaillierte Zusammenfassung, Langsam',
     keypoints: '⚡ Kernpunkte, Am Schnellsten',
+    multiSearch: '🔍 Multi-Suche (Google + Bing + DuckDuckGo)',
     save: 'Einstellungen Speichern',
     apiHelp: 'API-Schlüssel erhalten:',
     howToUse: 'So verwenden:',
@@ -76,6 +80,7 @@ function updateUILanguage(lang) {
   document.getElementById('briefOption').textContent = t.brief;
   document.getElementById('detailedOption').textContent = t.detailed;
   document.getElementById('keypointsOption').textContent = t.keypoints;
+  document.getElementById('multiSearchLabel').textContent = t.multiSearch;
   document.getElementById('saveButtonText').textContent = t.save;
   document.getElementById('apiKeyHelpText').textContent = t.apiHelp;
   document.getElementById('howToUseText').textContent = t.howToUse;
@@ -91,6 +96,7 @@ function getElements() {
       modelSelect: document.getElementById('modelSelect'),
       languageSelect: document.getElementById('languageSelect'),
       formatSelect: document.getElementById('formatSelect'),
+      multiSearch: document.getElementById('multiSearch'),
       statusMsg: document.getElementById('statusMsg')
     };
   }
@@ -216,13 +222,14 @@ document.getElementById('languageSelect')?.addEventListener('change', (e) => {
 });
 
 document.getElementById('saveKey')?.addEventListener('click', async () => {
-  const { apiKey, modelSelect, languageSelect, formatSelect, statusMsg } = getElements();
+  const { apiKey, modelSelect, languageSelect, formatSelect, multiSearch, statusMsg } = getElements();
   if (!apiKey || !statusMsg) return;
   
   const key = apiKey.value.trim();
   const model = modelSelect.value.trim();
   const language = languageSelect.value.trim();
   const format = formatSelect.value.trim();
+  const isMultiSearch = multiSearch.checked;
   const saveBtn = document.getElementById('saveKey');
   
   if (!key || key.length < 39 || !/^AIza[0-9A-Za-z_-]{35}$/.test(key)) {
@@ -279,7 +286,8 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
       flashApiKey: key, 
       selectedModel: modelSelect.value, 
       selectedLanguage: languageSelect.value, 
-      summaryFormat: formatSelect.value 
+      summaryFormat: formatSelect.value,
+      multiSearchEnabled: isMultiSearch
     });
     
     statusMsg.textContent = '✓ Settings saved successfully!';
@@ -321,15 +329,16 @@ document.getElementById('apiKey')?.addEventListener('blur', async (e) => {
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', async () => {
     try {
-      const data = await chrome.storage.local.get(['flashApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat']);
-      const { flashApiKey, selectedModel, selectedLanguage, summaryFormat } = data;
-      const { apiKey, modelSelect, languageSelect, formatSelect } = getElements();
+      const data = await chrome.storage.local.get(['flashApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled']);
+      const { flashApiKey, selectedModel, selectedLanguage, summaryFormat, multiSearchEnabled } = data;
+      const { apiKey, modelSelect, languageSelect, formatSelect, multiSearch } = getElements();
       
       if (languageSelect && selectedLanguage) {
         languageSelect.value = selectedLanguage;
         updateUILanguage(selectedLanguage);
       }
       if (formatSelect && summaryFormat) formatSelect.value = summaryFormat;
+      if (multiSearch) multiSearch.checked = multiSearchEnabled || false;
       
       if (flashApiKey && apiKey) {
         apiKey.value = flashApiKey;
