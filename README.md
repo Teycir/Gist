@@ -20,9 +20,9 @@
 - **Choose Your Summary Style**: Brief for quick scans, Detailed for deep research, or Key Points for instant answers
   - *Google's AI*: One-size-fits-all summaries, no customization
   - *Gist*: 3 formats tailored to your needs
-- **Multilingual Flexibility**: Search in English, summarize in Spanish - break language barriers
-  - *Google's AI*: Summaries only in search language
-  - *Gist*: 4 languages with cross-language translation
+- **Multilingual Flexibility**: Access foreign language sources in your language - for example, German articles summarized in English
+  - *Google's AI*: Can't read foreign sources, summaries only in search language
+  - *Gist*: Read any language source, get summaries in your preferred language
 - **Your Own API Key**: 1500 free requests/day, no hidden limits
   - *Google's AI*: Unknown rate limits, can disappear without notice
   - *Gist*: You control your quota and costs
