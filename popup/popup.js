@@ -16,6 +16,7 @@ const translations = {
     multiSearch: '🔍 Multi-Search',
     multiSearchTooltip: 'Google + Bing + DuckDuckGo',
     autoSummarize: '⚡ Auto-Summarize',
+    darkMode: '🌙 Dark Mode',
     save: 'Save Settings',
     apiHelp: 'Get API key:',
     howToUse: 'How to use:',
@@ -34,6 +35,7 @@ const translations = {
     multiSearch: '🔍 Búsqueda Múltiple',
     multiSearchTooltip: 'Google + Bing + DuckDuckGo',
     autoSummarize: '⚡ Auto-Resumir',
+    darkMode: '🌙 Modo Oscuro',
     save: 'Guardar Configuración',
     apiHelp: 'Obtener clave API:',
     howToUse: 'Cómo usar:',
@@ -52,6 +54,7 @@ const translations = {
     multiSearch: '🔍 Recherche Multiple',
     multiSearchTooltip: 'Google + Bing + DuckDuckGo',
     autoSummarize: '⚡ Résumé Auto',
+    darkMode: '🌙 Mode Sombre',
     save: 'Enregistrer les Paramètres',
     apiHelp: 'Obtenir clé API :',
     howToUse: 'Comment utiliser :',
@@ -70,6 +73,7 @@ const translations = {
     multiSearch: '🔍 Multi-Suche',
     multiSearchTooltip: 'Google + Bing + DuckDuckGo',
     autoSummarize: '⚡ Auto-Zusammenfassung',
+    darkMode: '🌙 Dunkelmodus',
     save: 'Einstellungen Speichern',
     apiHelp: 'API-Schlüssel erhalten:',
     howToUse: 'So verwenden:',
@@ -92,6 +96,7 @@ function updateUILanguage(lang) {
   multiSearchLabel.textContent = t.multiSearch;
   multiSearchLabel.setAttribute('data-tooltip', t.multiSearchTooltip);
   document.getElementById('autoSummarizeLabel').textContent = t.autoSummarize;
+  document.getElementById('darkModeLabel').textContent = t.darkMode;
   document.getElementById('saveButtonText').textContent = t.save;
   document.getElementById('apiKeyHelpText').textContent = t.apiHelp;
   document.getElementById('howToUseText').textContent = t.howToUse;
@@ -233,6 +238,11 @@ document.getElementById('languageSelect')?.addEventListener('change', (e) => {
   updateUILanguage(e.target.value);
 });
 
+document.getElementById('darkMode')?.addEventListener('change', (e) => {
+  document.body.classList.toggle('dark', e.target.checked);
+  chrome.storage.local.set({ darkMode: e.target.checked });
+});
+
 document.getElementById('saveKey')?.addEventListener('click', async () => {
   const { apiKey, modelSelect, languageSelect, formatSelect, multiSearch, autoSummarize, statusMsg } = getElements();
   if (!apiKey || !statusMsg) return;
@@ -243,6 +253,7 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
   const format = formatSelect.value.trim();
   const isMultiSearch = multiSearch.checked;
   const isAutoSummarize = autoSummarize.checked;
+  const isDarkMode = document.getElementById('darkMode').checked;
   const saveBtn = document.getElementById('saveKey');
   
   if (!key || key.length < 39 || !/^AIza[0-9A-Za-z_-]{35}$/.test(key)) {
@@ -301,7 +312,8 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
       selectedLanguage: languageSelect.value, 
       summaryFormat: formatSelect.value,
       multiSearchEnabled: isMultiSearch,
-      autoSummarizeEnabled: isAutoSummarize
+      autoSummarizeEnabled: isAutoSummarize,
+      darkMode: isDarkMode
     });
     
     statusMsg.textContent = '✓ Settings saved successfully!';
@@ -343,8 +355,8 @@ document.getElementById('apiKey')?.addEventListener('blur', async (e) => {
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', async () => {
     try {
-      const data = await chrome.storage.local.get(['flashApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled', 'autoSummarizeEnabled']);
-      const { flashApiKey, selectedModel, selectedLanguage, summaryFormat, multiSearchEnabled, autoSummarizeEnabled } = data;
+      const data = await chrome.storage.local.get(['flashApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled', 'autoSummarizeEnabled', 'darkMode']);
+      const { flashApiKey, selectedModel, selectedLanguage, summaryFormat, multiSearchEnabled, autoSummarizeEnabled, darkMode } = data;
       const { apiKey, modelSelect, languageSelect, formatSelect, multiSearch, autoSummarize } = getElements();
       
       if (languageSelect && selectedLanguage) {
@@ -354,6 +366,12 @@ if (typeof document !== 'undefined') {
       if (formatSelect && summaryFormat) formatSelect.value = summaryFormat;
       if (multiSearch) multiSearch.checked = multiSearchEnabled || false;
       if (autoSummarize) autoSummarize.checked = autoSummarizeEnabled || false;
+      
+      const darkModeCheckbox = document.getElementById('darkMode');
+      if (darkModeCheckbox) {
+        darkModeCheckbox.checked = darkMode || false;
+        if (darkMode) document.body.classList.add('dark');
+      }
       
       if (flashApiKey && apiKey) {
         apiKey.value = flashApiKey;

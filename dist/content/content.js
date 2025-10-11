@@ -202,6 +202,10 @@ function displaySummary(markdown, urls, format, language) {
   const overlay = document.createElement('div');
   overlay.className = 'summary-overlay';
   
+  chrome.storage.local.get(['darkMode'], (data) => {
+    if (data.darkMode) document.body.classList.add('dark');
+  });
+  
   const content = document.createElement('div');
   content.className = 'summary-content';
   
@@ -588,6 +592,10 @@ function displaySummary(markdown, urls, format, language) {
   
   const iframeDoc = iframe.contentDocument;
   iframeDoc.open();
+  chrome.storage.local.get(['darkMode'], (data) => {
+    if (data.darkMode) iframeDoc.body.classList.add('dark');
+  });
+  
   iframeDoc.write(`
     <!DOCTYPE html>
     <html>
@@ -595,6 +603,25 @@ function displaySummary(markdown, urls, format, language) {
       <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body.dark { background: #1a1a2e; color: #e0e0e0; }
+        body.dark .overlay-bg { background: rgba(0,0,0,0.9); }
+        body.dark .summary-content { background: #1e1e2e; color: #e0e0e0; }
+        body.dark .summary-title { -webkit-text-fill-color: transparent; }
+        body.dark .summary-sources { color: #b0b0b0; }
+        body.dark .summary-body { color: #d0d0d0; }
+        body.dark .summary-body h1, body.dark .summary-body h2 { color: #e0e0e0; }
+        body.dark .close-btn { background: #2a2a3e; color: #e0e0e0; }
+        body.dark .close-btn:hover { background: #3a3a4e; }
+        body.dark .share-menu { background: #2a2a3e; border: 1px solid #3a3a4e; }
+        body.dark .share-option { color: #e0e0e0; }
+        body.dark .share-option:hover { background: #3a3a4e; }
+        body.dark .followup-input { background: #2a2a3e; color: #e0e0e0; border-color: #667eea; }
+        body.dark .chat-bubble.ai { background: #2a2a3e; color: #d0d0d0; }
+        body.dark .history-item { background: #2a2a3e; border-color: #3a3a4e; }
+        body.dark .history-item:hover { background: #3a3a4e; border-color: #667eea; }
+        body.dark .history-item-title { color: #e0e0e0; }
+        body.dark .history-item-query { color: #8899ff; }
+        body.dark .history-item-date { color: #b0b0b0; }
         .overlay-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 999999; }
         .summary-content { background: white; border-radius: 16px; padding: 36px; width: 90vw; max-width: 950px; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.35); }
         @media (max-width: 768px) { .summary-content { width: 95vw; padding: 24px; } }

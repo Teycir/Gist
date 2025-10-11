@@ -91,6 +91,59 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+body.dark .summary-content {
+  background: #1e1e2e;
+  color: #e0e0e0;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark .summary-title {
+  -webkit-text-fill-color: transparent;
+}
+
+body.dark .summary-body {
+  color: #d0d0d0;
+}
+
+body.dark .summary-body h1,
+body.dark .summary-body h2,
+body.dark .summary-body h3 {
+  color: #e0e0e0;
+}
+
+body.dark .close-btn {
+  background: #2a2a3e;
+  color: #e0e0e0;
+}
+
+body.dark .close-btn:hover {
+  background: #3a3a4e;
+}
+
+body.dark .followup-input {
+  background: #2a2a3e;
+  color: #e0e0e0;
+  border-color: #667eea;
+}
+
+body.dark .chat-bubble.ai {
+  background: #2a2a3e;
+  color: #d0d0d0;
+}
+
+body.dark .share-menu {
+  background: #2a2a3e;
+  border: 1px solid #3a3a4e;
+}
+
+body.dark .share-option {
+  color: #e0e0e0;
+}
+
+body.dark .share-option:hover {
+  background: #3a3a4e;
+}
+
 @keyframes slideUp {
   from {
     opacity: 0;
