@@ -35,17 +35,16 @@ describe('Real-World Query Performance Tests', () => {
     document.body.innerHTML = '<button class="summarize-btn">Summarize</button><div id="search"></div>';
     chrome.storage.local.get.mockClear();
     chrome.storage.local.set.mockClear();
+    chrome.runtime.sendMessage.mockClear();
     fetch.mockClear();
     global.alert = jest.fn();
     global.confirm = jest.fn();
-    global.window = { open: jest.fn(), location: { search: '' } };
   });
 
   realWorldQueries.forEach(({ query, urls, expectedSummary }, index) => {
     test(`Query ${index + 1}: "${query}" - should complete within 8 seconds`, async () => {
       const searchDiv = document.getElementById('search');
       searchDiv.innerHTML = urls.map(url => `<a href="${url}">${url}</a>`).join('');
-      global.window.location.search = `?q=${encodeURIComponent(query)}`;
       
       const start = performance.now();
       
@@ -67,7 +66,7 @@ describe('Real-World Query Performance Tests', () => {
       
       chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
         const mockContent = `<html><body><main><article><h1>${query}</h1><p>Detailed content about ${query} with comprehensive information and best practices.</p></article></main></body></html>`;
-        callback({ success: true, html: mockContent });
+        setTimeout(() => callback({ success: true, html: mockContent }), 0);
       });
       
       fetch.mockImplementation((url) => {
@@ -93,7 +92,7 @@ describe('Real-World Query Performance Tests', () => {
       const duration = performance.now() - start;
       
       expect(duration).toBeLessThan(8000);
-      expect(fetch).toHaveBeenCalled();
+      expect(chrome.runtime.sendMessage).toHaveBeenCalled();
       
       console.log(`\n📊 Query ${index + 1}: "${query}"`);
       console.log(`   ⏱️  Time: ${duration.toFixed(2)}ms`);
@@ -110,7 +109,6 @@ describe('Real-World Query Performance Tests', () => {
       
       const searchDiv = document.getElementById('search');
       searchDiv.innerHTML = urls.map(url => `<a href="${url}">${url}</a>`).join('');
-      global.window.location.search = `?q=${encodeURIComponent(query)}`;
       
       chrome.storage.local.get.mockImplementation((keys, callback) => {
         const data = { flashApiKey: 'test-key', selectedLanguage: 'English', summaryFormat: 'detailed' };
@@ -130,7 +128,7 @@ describe('Real-World Query Performance Tests', () => {
       
       chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
         const mockContent = `<html><body><main><article><h1>${query}</h1><p>Content about ${query}</p></article></main></body></html>`;
-        callback({ success: true, html: mockContent });
+        setTimeout(() => callback({ success: true, html: mockContent }), 0);
       });
       
       fetch.mockImplementation((url) => {

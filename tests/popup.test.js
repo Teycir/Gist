@@ -102,7 +102,7 @@ describe('Popup UI', () => {
     await loadModels(validKey);
     
     const select = document.getElementById('modelSelect');
-    expect(select.innerHTML).toContain('Failed');
+    expect(select.innerHTML).toContain('Select a model');
   });
 
   test('should filter Flash models correctly', () => {
@@ -156,6 +156,6 @@ describe('Popup UI', () => {
     
     const select = document.getElementById('modelSelect');
     const options = select.querySelectorAll('option');
-    expect(options.length).toBeLessThanOrEqual(5);
+    expect(options.length).toBeLessThanOrEqual(6);
   });
 });

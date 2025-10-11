@@ -36,7 +36,7 @@ describe('Real-world Performance Integration Tests', () => {
     });
     
     chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-      callback({ success: true, html: '<html><body><main><p>Test content with meaningful information for performance testing.</p></main></body></html>' });
+      setTimeout(() => callback({ success: true, html: '<html><body><main><p>Test content with meaningful information for performance testing.</p></main></body></html>' }), 0);
     });
     
     global.fetch.mockImplementation((url) => {
@@ -125,7 +125,7 @@ describe('Real-world Performance Integration Tests', () => {
     let networkCalls = 0;
     chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
       networkCalls++;
-      callback({ success: true, html: '<html><body><main>Content</main></body></html>' });
+      setTimeout(() => callback({ success: true, html: '<html><body><main>Content</main></body></html>' }), 0);
     });
     
     fetch.mockImplementation((url) => {
@@ -208,7 +208,7 @@ describe('Real-world Performance Integration Tests', () => {
     chrome.storage.local.set.mockResolvedValue();
     
     chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-      callback({ success: true, html: '<html><body><main>Content</main></body></html>' });
+      setTimeout(() => callback({ success: true, html: '<html><body><main>Content</main></body></html>' }), 0);
     });
     
     fetch.mockImplementation((url) => {
@@ -253,7 +253,7 @@ describe('Real-world Performance Integration Tests', () => {
     chrome.storage.local.set.mockResolvedValue();
     
     chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-      callback({ success: true, html: '<html><body><main><p>End-to-end test content with comprehensive information.</p></main></body></html>' });
+      setTimeout(() => callback({ success: true, html: '<html><body><main><p>End-to-end test content with comprehensive information.</p></main></body></html>' }), 0);
     });
     
     fetch.mockImplementation((url) => {

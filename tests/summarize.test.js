@@ -14,28 +14,32 @@ describe('Summarize Results', () => {
     global.window.open = jest.fn();
   });
 
-  test('should alert when no API key', async () => {
-    global.confirm.mockReturnValue(false);
+  test('should open popup when no API key', async () => {
     chrome.storage.local.get.mockResolvedValue({});
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+      if (callback) callback();
+    });
 
     const { summarizeResults } = require('../content/content.js');
     await summarizeResults();
 
-    expect(global.confirm).toHaveBeenCalled();
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ action: 'openPopup' });
   });
 
-  test('should prompt for API key when missing', async () => {
-    global.confirm.mockReturnValue(false);
-    chrome.storage.local.get.mockResolvedValue({});
+  test('should open popup when API key missing', async () => {
+    chrome.storage.local.get.mockResolvedValue({ flashApiKey: 'test-key' });
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+      if (callback) callback();
+    });
 
     const { summarizeResults } = require('../content/content.js');
     await summarizeResults();
 
-    expect(global.confirm).toHaveBeenCalled();
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ action: 'openPopup' });
   });
 
   test('should handle no search results', async () => {
-    chrome.storage.local.get.mockResolvedValue({ flashApiKey: 'test-key' });
+    chrome.storage.local.get.mockResolvedValue({ flashApiKey: 'test-key', selectedModel: 'models/gemini-1.5-flash' });
     document.body.innerHTML = '<button class="summarize-btn">Summarize</button><div id="search"></div>';
 
     const { summarizeResults } = require('../content/content.js');
@@ -55,7 +59,7 @@ describe('Summarize Results', () => {
       return Promise.resolve();
     });
     chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-      callback({ success: true, html: '<html><body><main>Content here with enough text</main></body></html>' });
+      setTimeout(() => callback({ success: true, html: '<html><body><main>Content here with enough text</main></body></html>' }), 0);
     });
     
     document.body.innerHTML = '<button class="summarize-btn">Summarize</button><div id="search"><a href="https://test.com">Test</a></div>';

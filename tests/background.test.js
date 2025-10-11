@@ -12,7 +12,16 @@ describe('Background Service Worker', () => {
     mockFetch = jest.fn();
     global.fetch = mockFetch;
     global.chrome = {
+      action: {
+        onClicked: {
+          addListener: jest.fn()
+        }
+      },
+      tabs: {
+        create: jest.fn()
+      },
       runtime: {
+        getURL: jest.fn((path) => `chrome-extension://test/${path}`),
         onMessage: {
           addListener: jest.fn((listener) => {
             messageListener = listener;
