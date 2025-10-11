@@ -208,11 +208,19 @@ function displaySummary(markdown, urls, format, language) {
   const header = document.createElement('div');
   header.className = 'summary-header';
   
+  const engine = detectSearchEngine();
+  const engineNames = {
+    google: 'Google',
+    bing: 'Bing',
+    duckduckgo: 'DuckDuckGo'
+  };
+  const engineName = engineNames[engine] || 'AI';
+  
   const translations = {
     English: {
-      brief: '🚀 AI Brief Summary',
-      detailed: '🚀 AI Detailed Summary',
-      keypoints: '🚀 AI Key Points Summary',
+      brief: `🚀 ${engineName} Brief Summary`,
+      detailed: `🚀 ${engineName} Detailed Summary`,
+      keypoints: `🚀 ${engineName} Key Points Summary`,
       top: 'Top',
       analyzed: 'search results',
       copy: 'Copy',
@@ -224,9 +232,9 @@ function displaySummary(markdown, urls, format, language) {
       shareEmail: 'Share via Email'
     },
     Spanish: {
-      brief: '🚀 Resumen Breve de IA',
-      detailed: '🚀 Resumen Detallado de IA',
-      keypoints: '🚀 Puntos Clave de IA',
+      brief: `🚀 Resumen Breve de ${engineName}`,
+      detailed: `🚀 Resumen Detallado de ${engineName}`,
+      keypoints: `🚀 Puntos Clave de ${engineName}`,
       top: 'Top',
       analyzed: 'resultados de búsqueda',
       copy: 'Copiar',
@@ -238,9 +246,9 @@ function displaySummary(markdown, urls, format, language) {
       shareEmail: 'Compartir por correo'
     },
     French: {
-      brief: '🚀 Résumé Bref IA',
-      detailed: '🚀 Résumé Détaillé IA',
-      keypoints: '🚀 Points Clés IA',
+      brief: `🚀 Résumé Bref ${engineName}`,
+      detailed: `🚀 Résumé Détaillé ${engineName}`,
+      keypoints: `🚀 Points Clés ${engineName}`,
       top: 'Top',
       analyzed: 'résultats de recherche',
       copy: 'Copier',
@@ -252,9 +260,9 @@ function displaySummary(markdown, urls, format, language) {
       shareEmail: 'Partager par e-mail'
     },
     German: {
-      brief: '🚀 KI-Kurzzusammenfassung',
-      detailed: '🚀 KI-Detaillierte Zusammenfassung',
-      keypoints: '🚀 KI-Kernpunkte',
+      brief: `🚀 ${engineName}-Kurzzusammenfassung`,
+      detailed: `🚀 ${engineName}-Detaillierte Zusammenfassung`,
+      keypoints: `🚀 ${engineName}-Kernpunkte`,
       top: 'Top',
       analyzed: 'Suchergebnisse',
       copy: 'Kopieren',
@@ -300,7 +308,7 @@ function displaySummary(markdown, urls, format, language) {
   saveBtn.onclick = () => {
     const query = extractSearchQuery().replace(/[^a-z0-9]/gi, '_').slice(0, 50);
     const timestamp = new Date().toISOString().split('T')[0];
-    const filename = `gist_${query}_${timestamp}.md`;
+    const filename = `gist_${engineName.toLowerCase()}_${query}_${timestamp}.md`;
     const blob = new Blob([markdown], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -500,7 +508,7 @@ function displaySummary(markdown, urls, format, language) {
         .summary-actions { display: flex; gap: 10px; flex-shrink: 0; }
         .close-btn { background: #f8f9fa; border: none; font-size: 20px; color: #5f6368; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; transition: all 0.2s; }
         .close-btn:hover { background: #e8eaed; transform: scale(1.1); }
-        .close-btn[data-tooltip]:hover::after { content: attr(data-tooltip); position: absolute; bottom: -32px; left: 50%; transform: translateX(-50%); background: #202124; color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; z-index: 1000; }
+        .close-btn[data-tooltip]:hover::after { content: attr(data-tooltip); position: absolute; bottom: -32px; left: 50%; transform: translateX(-50%); background: white; color: #202124; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: 1px solid #e8eaed; }
         .share-btn { position: relative; }
         .share-menu { position: absolute; top: 45px; right: 0; background: white; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); padding: 8px; min-width: 180px; z-index: 1001; }
         .share-option { display: block; width: 100%; padding: 10px 14px; border: none; background: none; text-align: left; cursor: pointer; border-radius: 6px; font-size: 14px; color: #202124; transition: background 0.2s; }
