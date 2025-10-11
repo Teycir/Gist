@@ -16,7 +16,8 @@ const translations = {
     save: 'Save Settings',
     apiHelp: 'Get API key:',
     howToUse: 'How to use:',
-    footer: 'Google search summarizer, made by'
+    footer: 'Google search summarizer, made by',
+    github: 'View on GitHub'
   },
   Spanish: {
     title: '🚀 Configuración de Gist',
@@ -30,7 +31,8 @@ const translations = {
     save: 'Guardar Configuración',
     apiHelp: 'Obtener clave API:',
     howToUse: 'Cómo usar:',
-    footer: 'Resumidor de búsqueda de Google, hecho por'
+    footer: 'Resumidor de búsqueda de Google, hecho por',
+    github: 'Ver en GitHub'
   },
   French: {
     title: '🚀 Paramètres Gist',
@@ -44,7 +46,8 @@ const translations = {
     save: 'Enregistrer les Paramètres',
     apiHelp: 'Obtenir clé API :',
     howToUse: 'Comment utiliser :',
-    footer: 'Résumeur de recherche Google, créé par'
+    footer: 'Résumeur de recherche Google, créé par',
+    github: 'Voir sur GitHub'
   },
   German: {
     title: '🚀 Gist Einstellungen',
@@ -58,7 +61,8 @@ const translations = {
     save: 'Einstellungen Speichern',
     apiHelp: 'API-Schlüssel erhalten:',
     howToUse: 'So verwenden:',
-    footer: 'Google-Suchzusammenfasser, erstellt von'
+    footer: 'Google-Suchzusammenfasser, erstellt von',
+    github: 'Auf GitHub ansehen'
   }
 };
 
@@ -76,6 +80,8 @@ function updateUILanguage(lang) {
   document.getElementById('apiKeyHelpText').textContent = t.apiHelp;
   document.getElementById('howToUseText').textContent = t.howToUse;
   document.getElementById('footerMadeBy').textContent = t.footer;
+  const githubLink = document.querySelector('.github-link a');
+  if (githubLink) githubLink.setAttribute('aria-label', t.github);
 }
 
 function getElements() {

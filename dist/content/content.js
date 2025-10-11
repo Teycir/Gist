@@ -52,23 +52,28 @@ function addSummarizeButton() {
   const btn = document.createElement('button');
   btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="24" height="24"><rect x="28" y="20" width="72" height="88" rx="8" fill="#fff"/><rect x="40" y="40" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="52" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="64" width="32" height="4" rx="2" fill="#667eea" opacity="0.9"/><path d="M88 76 L92 80 L88 84 M84 80 L92 80" stroke="#ffd700" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="78" cy="72" r="2" fill="#ffd700"/><circle cx="94" cy="72" r="1.5" fill="#ffd700"/><circle cx="94" cy="88" r="1.5" fill="#ffd700"/></svg>';
   btn.className = 'summarize-btn';
+  btn.setAttribute('data-tooltip', 'Summarize');
   btn.setAttribute('aria-label', 'Summarize search results with AI');
   btn.onclick = summarizeResults;
   document.body.appendChild(btn);
   summarizeBtn = btn;
   
+  updateButtonLanguage();
+}
+
+function updateButtonLanguage() {
+  if (!summarizeBtn) return;
   chrome.storage.local.get('selectedLanguage', ({ selectedLanguage }) => {
     const translations = {
       English: 'Summarize',
       Spanish: 'Resumir',
       French: 'Résumer',
-      German: 'Zusammenfassen',
-      Arabic: 'تلخيص'
+      German: 'Zusammenfassen'
     };
     const tooltipText = translations[selectedLanguage] || 'Summarize';
-    btn.setAttribute('data-tooltip', tooltipText);
-    btn.title = tooltipText;
-    btn.setAttribute('aria-label', tooltipText);
+    summarizeBtn.setAttribute('data-tooltip', tooltipText);
+    summarizeBtn.removeAttribute('title');
+    summarizeBtn.setAttribute('aria-label', tooltipText);
   });
 }
 
@@ -131,50 +136,52 @@ function displaySummary(markdown, urls, format, language) {
       detailed: '🚀 AI Detailed Summary',
       keypoints: '🚀 AI Key Points Summary',
       top: 'Top',
-      analyzed: 'pages analyzed',
+      analyzed: 'Google search results',
       copy: 'Copy',
       share: 'Share',
-      close: 'Close'
+      close: 'Close',
+      shareX: 'Share on X',
+      shareLinkedIn: 'Share on LinkedIn',
+      shareEmail: 'Share via Email'
     },
     Spanish: {
       brief: '🚀 Resumen Breve de IA',
       detailed: '🚀 Resumen Detallado de IA',
       keypoints: '🚀 Puntos Clave de IA',
       top: 'Top',
-      analyzed: 'páginas analizadas',
+      analyzed: 'resultados de búsqueda de Google',
       copy: 'Copiar',
       share: 'Compartir',
-      close: 'Cerrar'
+      close: 'Cerrar',
+      shareX: 'Compartir en X',
+      shareLinkedIn: 'Compartir en LinkedIn',
+      shareEmail: 'Compartir por correo'
     },
     French: {
       brief: '🚀 Résumé Bref IA',
       detailed: '🚀 Résumé Détaillé IA',
       keypoints: '🚀 Points Clés IA',
       top: 'Top',
-      analyzed: 'pages analysées',
+      analyzed: 'résultats de recherche Google',
       copy: 'Copier',
       share: 'Partager',
-      close: 'Fermer'
+      close: 'Fermer',
+      shareX: 'Partager sur X',
+      shareLinkedIn: 'Partager sur LinkedIn',
+      shareEmail: 'Partager par e-mail'
     },
     German: {
       brief: '🚀 KI-Kurzzusammenfassung',
       detailed: '🚀 KI-Detaillierte Zusammenfassung',
       keypoints: '🚀 KI-Kernpunkte',
       top: 'Top',
-      analyzed: 'Seiten analysiert',
+      analyzed: 'Google-Suchergebnisse',
       copy: 'Kopieren',
       share: 'Teilen',
-      close: 'Schließen'
-    },
-    Arabic: {
-      brief: '🚀 ملخص موجز بالذكاء الاصطناعي',
-      detailed: '🚀 ملخص مفصل بالذكاء الاصطناعي',
-      keypoints: '🚀 النقاط الرئيسية بالذكاء الاصطناعي',
-      top: 'أفضل',
-      analyzed: 'صفحات تم تحليلها',
-      copy: 'نسخ',
-      share: 'مشاركة',
-      close: 'إغلاق'
+      close: 'Schließen',
+      shareX: 'Auf X teilen',
+      shareLinkedIn: 'Auf LinkedIn teilen',
+      shareEmail: 'Per E-Mail teilen'
     }
   };
   
@@ -215,7 +222,7 @@ function displaySummary(markdown, urls, format, language) {
     
     const xBtn = document.createElement('button');
     xBtn.className = 'share-option';
-    xBtn.innerHTML = '𝕏 Share on X';
+    xBtn.innerHTML = `𝕏 ${t.shareX}`;
     xBtn.onclick = () => {
       const text = `${markdown.split('\n')[0].replace(/^#\s*/, '')}\n\nSearch: ${extractSearchQuery()}`;
       window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
@@ -224,7 +231,7 @@ function displaySummary(markdown, urls, format, language) {
     
     const linkedinBtn = document.createElement('button');
     linkedinBtn.className = 'share-option';
-    linkedinBtn.innerHTML = 'in Share on LinkedIn';
+    linkedinBtn.innerHTML = `in ${t.shareLinkedIn}`;
     linkedinBtn.onclick = () => {
       const text = `${markdown.split('\n')[0].replace(/^#\s*/, '')}\n\nSearch: ${extractSearchQuery()}`;
       window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodeURIComponent(text)}`, '_blank');
@@ -233,7 +240,7 @@ function displaySummary(markdown, urls, format, language) {
     
     const emailBtn = document.createElement('button');
     emailBtn.className = 'share-option';
-    emailBtn.innerHTML = '✉️ Share via Email';
+    emailBtn.innerHTML = `✉️ ${t.shareEmail}`;
     emailBtn.onclick = () => {
       const subject = markdown.split('\n')[0].replace(/^#\s*/, '');
       const body = `${markdown}\n\nSearch: ${extractSearchQuery()}`;
@@ -388,6 +395,14 @@ async function summarizeResults() {
     const language = selectedLanguage || 'English';
     const format = summaryFormat || 'brief';
     
+    const loadingTranslations = {
+      English: { finding: 'Finding sources', fetching: 'Fetching content', analyzing: 'Analyzing', generating: 'Generating summary' },
+      Spanish: { finding: 'Buscando fuentes', fetching: 'Obteniendo contenido', analyzing: 'Analizando', generating: 'Generando resumen' },
+      French: { finding: 'Recherche de sources', fetching: 'Récupération du contenu', analyzing: 'Analyse', generating: 'Génération du résumé' },
+      German: { finding: 'Quellen suchen', fetching: 'Inhalt abrufen', analyzing: 'Analysieren', generating: 'Zusammenfassung erstellen' }
+    };
+    const loading = loadingTranslations[language] || loadingTranslations.English;
+    
     const searchQuery = extractSearchQuery();
     const urls = scrapeGoogleUrls();
     const cacheKey = `${searchQuery}-${urls.join(',')}-${language}-${format}`;
@@ -429,7 +444,7 @@ async function summarizeResults() {
     }
     
     btn.disabled = true;
-    btn.innerHTML = 'Finding sources<span class="loading-spinner"></span>';
+    btn.innerHTML = `${loading.finding}<span class="loading-spinner"></span>`;
     console.log('References:', urls);
     
     if (urls.length === 0) {
@@ -441,13 +456,13 @@ async function summarizeResults() {
     const pages = [];
     
     for (let i = 0; i < urls.length; i += MAX_CONCURRENT) {
-      btn.innerHTML = `Fetching content (${i}/${urls.length})<span class="loading-spinner"></span>`;
+      btn.innerHTML = `${loading.fetching} (${i}/${urls.length})<span class="loading-spinner"></span>`;
       const batch = urls.slice(i, i + MAX_CONCURRENT);
       const batchResults = await Promise.all(batch.map(url => fetchWithTimeout(url)));
       pages.push(...batchResults);
     }
     
-    btn.innerHTML = 'Analyzing<span class="loading-spinner"></span>';
+    btn.innerHTML = `${loading.analyzing}<span class="loading-spinner"></span>`;
     const extractedContent = pages
       .map(html => cleanHtmlToText(html))
       .filter(text => text.length > 100);
@@ -457,19 +472,20 @@ async function summarizeResults() {
       return;
     }
     
-    btn.innerHTML = 'Generating summary<span class="loading-spinner"></span>';
+    btn.innerHTML = `${loading.generating}<span class="loading-spinner"></span>`;
     
     const sources = extractedContent.map((text, i) => `[${i + 1}] ${text}`);
     const prompt = `Search Query: "${searchQuery}"
 
 Your task: Extract and summarize ONLY the information from these ${extractedContent.length} sources that directly answers or relates to the search query above. Ignore any content that doesn't address the query.
 
-Format: Start with "# [Answer to the Query]" then ${format === 'detailed' ? '4-6 detailed bullet points' : '3-5 bullet points'} with [1], [2] citations in ${language}. ${formatInstructions[format]}
+Format: Start with a clear title "# [Title]" then ${format === 'detailed' ? '4-6 detailed bullet points' : '3-5 bullet points'} with [1], [2] citations. ${formatInstructions[format]}
 
 Sources:
 ${sources.join('\n\n')}
 
 IMPORTANT:
+- Write the ENTIRE summary in ${language} language
 - Stay focused on answering the search query
 - Extract practical, actionable information when the query asks "how to"
 - Ignore background information or definitions unless the query specifically asks for them
@@ -530,13 +546,12 @@ IMPORTANT:
       English: 'References',
       Spanish: 'Referencias',
       French: 'Références',
-      German: 'Referenzen',
-      Arabic: 'المراجع'
+      German: 'Referenzen'
     };
     const refTitle = refTranslations[language] || 'References';
     
-    if (!markdown.toLowerCase().includes('## references') && !markdown.toLowerCase().includes('## referencias') && !markdown.toLowerCase().includes('## références') && !markdown.toLowerCase().includes('## referenzen') && !markdown.toLowerCase().includes('## المراجع')) {
-      const references = urls.map((url, i) => `**${i + 1}.** [${url}](${url})  `).join('\n');
+    if (!markdown.toLowerCase().includes('## references') && !markdown.toLowerCase().includes('## referencias') && !markdown.toLowerCase().includes('## références') && !markdown.toLowerCase().includes('## referenzen')) {
+      const references = urls.map((url, i) => `**${i + 1}.** [${url}](${url})`).join('\n\n');
       markdown += `\n\n## ${refTitle}\n\n${references}`;
     }
     
@@ -568,6 +583,12 @@ IMPORTANT:
 if (typeof document !== 'undefined') {
   let lastKeydownTime = 0;
   const DEBOUNCE_DELAY = 300;
+  
+  chrome.storage.onChanged.addListener((changes) => {
+    if (changes.selectedLanguage) {
+      updateButtonLanguage();
+    }
+  });
   
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey && e.key === 'S') {

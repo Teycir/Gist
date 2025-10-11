@@ -4,6 +4,19 @@
 
 **Gist** is a Chrome extension that transforms how you consume Google search results by providing instant AI-powered summaries. Instead of clicking through multiple websites and reading lengthy articles, get a comprehensive summary of the top search results in seconds.
 
+### ✨ Key Features
+
+- 🔑 **Use Your Own AI Key** - Free tier: 1500 requests/day from Google AI
+- 🔒 **100% Private** - No servers, no tracking, no data collection
+- ⚡ **Lightning Fast** - Cached results in <100ms, cold start in 3-5s
+- 🎨 **Clean Interface** - Seamless integration with Google Search
+- 🌍 **Multilingual** - Search in one language, summarize in another
+- 📝 **3 Summary Formats** - Brief, Detailed, or Key Points
+- 🔗 **Source References** - Every summary includes clickable citations
+- 📋 **Easy Sharing** - Share to X, LinkedIn, or email with one click
+- ⌨️ **Keyboard Shortcuts** - `Ctrl+Shift+S` to summarize instantly
+- ♿ **Fully Accessible** - Screen reader support and keyboard navigation
+
 ### Why Choose Gist Over Google's Native AI Summaries?
 
 **🎯 More Control & Customization**
@@ -87,19 +100,6 @@ Gist's unique multilingual capability lets you:
 - Research foreign topics but read summaries in your native language
 - Learn a new language by comparing search results with translated summaries
 - Share information with international colleagues in their preferred language
-
-### ✨ Key Features
-
-- 🔑 **Use Your Own AI Key** - Free tier: 1500 requests/day from Google AI
-- 🔒 **100% Private** - No servers, no tracking, no data collection
-- ⚡ **Lightning Fast** - Cached results in <100ms, cold start in 3-5s
-- 🎨 **Clean Interface** - Seamless integration with Google Search
-- 🌍 **Multilingual** - Search in one language, summarize in another
-- 📝 **3 Summary Formats** - Brief, Detailed, or Key Points
-- 🔗 **Source References** - Every summary includes clickable citations
-- 📋 **Easy Sharing** - Share to X, LinkedIn, or email with one click
-- ⌨️ **Keyboard Shortcuts** - `Ctrl+Shift+S` to summarize instantly
-- ♿ **Fully Accessible** - Screen reader support and keyboard navigation
 
 ## 🎯 Quick Start (3 Steps)
 
