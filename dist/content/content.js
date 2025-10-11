@@ -466,14 +466,17 @@ function displaySummary(markdown, urls, format, language) {
           });
           historyPanel.style.display = 'none';
           body.style.display = 'block';
+          followUpSection.style.display = 'block';
           historyVisible = false;
         };
         historyPanel.appendChild(item);
       });
       body.style.display = 'none';
+      followUpSection.style.display = 'none';
       historyPanel.style.display = 'block';
     } else {
       body.style.display = 'block';
+      followUpSection.style.display = 'block';
       historyPanel.style.display = 'none';
     }
   };
