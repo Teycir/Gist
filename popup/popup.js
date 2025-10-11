@@ -203,11 +203,8 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
     apiKey.setAttribute('aria-invalid', 'false');
     
     setTimeout(() => {
-      if (window.opener) {
-        window.close();
-      } else {
-        statusMsg.textContent = '✓ Settings saved! You can close this tab.';
-      }
+      statusMsg.textContent = '✓ Settings saved! Closing...';
+      setTimeout(() => window.close(), 1000);
     }, 1000);
   } catch (error) {
     console.error('Save error:', error);
