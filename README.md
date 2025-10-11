@@ -4,25 +4,50 @@
 
 **Gist** is a Chrome extension that transforms how you consume Google search results by providing instant AI-powered summaries. Instead of clicking through multiple websites and reading lengthy articles, get a comprehensive summary of the top search results in seconds.
 
+**Real-World Benefits:**
+- **Save 10+ minutes per search** - No more tab overload from opening 5-10 articles
+- **Research faster** - Students and professionals get comprehensive answers instantly
+- **Break language barriers** - Search in any language, get summaries in another (e.g., German articles → English summary)
+- **Share instantly** - One-click sharing to X, LinkedIn, or email with formatted content
+- **Copy with formatting** - Preserve markdown formatting for social media posts and documents
+- **Stay informed** - Quickly catch up on news, tech updates, or trending topics
+- **Learn efficiently** - Understand complex topics without reading multiple long-form articles
+- **Make better decisions** - Compare multiple sources in one consolidated summary
+
 ### Why Choose Gist Over Google's Native AI Summaries?
 
 **🎯 More Control & Customization**
-- **Choose Your Summary Style**: Select between Brief (fast scan), Detailed (comprehensive), or Key Points (fastest) formats
-- **Multilingual Flexibility**: Search in one language, get summaries in another (e.g., search in English, summarize in French)
-- **Model Selection**: Pick from the latest Google Gemini Flash models for optimal performance
-- **Your Own API Key**: Use Google's free tier (1500 requests/day) without restrictions
+- **Choose Your Summary Style**: Brief for quick scans, Detailed for deep research, or Key Points for instant answers
+  - *Google's AI*: One-size-fits-all summaries, no customization
+  - *Gist*: 3 formats tailored to your needs
+- **Multilingual Flexibility**: Search in English, summarize in Spanish - break language barriers
+  - *Google's AI*: Summaries only in search language
+  - *Gist*: 4 languages with cross-language translation
+- **Your Own API Key**: 1500 free requests/day, no hidden limits
+  - *Google's AI*: Unknown rate limits, can disappear without notice
+  - *Gist*: You control your quota and costs
 
 **🔒 Privacy & Transparency**
-- **100% Open Source**: Full code transparency - see exactly what the extension does
-- **No Data Collection**: Zero telemetry, analytics, or tracking
-- **Local Processing**: Your API key never leaves your browser
-- **No Middleman**: Direct connection to Google AI API
+- **100% Open Source**: Inspect every line of code - no hidden tracking
+  - *Google's AI*: Closed source, unknown data collection
+  - *Gist*: Fully transparent on GitHub
+- **Zero Data Collection**: Your searches stay private, never logged or analyzed
+  - *Google's AI*: Likely used for training and profiling
+  - *Gist*: No servers, no tracking, no telemetry
+- **Local Processing**: API key stored only in your browser
+  - *Google's AI*: All data passes through Google's servers
+  - *Gist*: Direct API connection, no middleman
 
 **⚡ Performance & Reliability**
-- **Smart Caching**: Instant results (<100ms) for repeated searches
-- **Offline-Ready**: Cached summaries work without internet
-- **No Rate Limits**: Unlike Google's native summaries, you control your quota
-- **Always Available**: Works on every Google search, not just select queries
+- **Smart Caching**: Repeated searches load in <100ms - instant results
+  - *Google's AI*: Regenerates every time, slower
+  - *Gist*: Intelligent caching saves time and API calls
+- **Offline-Ready**: Access cached summaries without internet
+  - *Google's AI*: Requires internet connection always
+  - *Gist*: Works offline for previously searched topics
+- **Always Available**: Works on every Google search, every time
+  - *Google's AI*: Only appears for select queries
+  - *Gist*: You decide when to summarize, not Google
 
 ### How to Use Gist
 
@@ -54,28 +79,28 @@
 - Perfect for quick research and fact-checking
 - 3-5 concise bullet points with citations
 - ~500 words, generates in 3-5 seconds
-- Best for: News, quick facts, simple questions
+- **Use when:** Reading morning news, checking product reviews, answering quick questions
+- **Example:** "What are the side effects of medication X?" → Get clear bullet points with sources
 
 **📄 Detailed Summary**
 - Comprehensive analysis with context and examples
 - 4-6 detailed sections with in-depth explanations
 - ~2000 words, generates in 8-12 seconds
-- Best for: Research, learning, complex topics
+- **Use when:** Writing reports, learning new concepts, deep research
+- **Example:** "How does blockchain technology work?" → Get full explanation with technical details
 
 **⚡ Key Points**
 - Ultra-fast extraction of essential information
 - Short bullet points, no fluff
 - ~250 words, generates in 2-3 seconds
-- Best for: Scanning multiple topics, time-sensitive searches
+- **Use when:** Scanning headlines, quick fact-checking, time-sensitive decisions
+- **Example:** "Is restaurant X open today?" → Get instant answer without reading full articles
 
 ### Multilingual Translation Feature
 
 **Search in Any Language, Summarize in Another**
 
-Gist's unique multilingual capability lets you:
-- Search Google in English → Get summary in French
-- Search in Spanish → Get summary in German
-- Search in any language → Get summary in your preferred language
+Gist breaks language barriers by letting you search in one language and get summaries in another. This unique capability opens up the entire internet, regardless of language.
 
 **Supported Languages:**
 - 🇺🇸 English
@@ -83,10 +108,31 @@ Gist's unique multilingual capability lets you:
 - 🇫🇷 French (Français)
 - 🇩🇪 German (Deutsch)
 
-**Example Use Cases:**
-- Research foreign topics but read summaries in your native language
-- Learn a new language by comparing search results with translated summaries
-- Share information with international colleagues in their preferred language
+**Real-World Use Cases:**
+
+📚 **Academic Research**
+- Search for "quantum computing breakthroughs" in English → Get summary in Spanish for your thesis
+- Access cutting-edge research from any country, read it in your language
+
+🌍 **International Business**
+- Research German market trends → Get summary in English for your team presentation
+- Analyze competitor strategies across different markets without language barriers
+
+✈️ **Travel Planning**
+- Search "best restaurants in Paris" in English → Get summary in French to show locals
+- Research local customs and tips, then translate for easy reference while traveling
+
+💼 **Professional Development**
+- Follow tech trends from Spanish-speaking countries → Read summaries in English
+- Stay updated on global industry news without language limitations
+
+🎓 **Language Learning**
+- Search in your target language → Get summary in your native language to verify understanding
+- Build vocabulary by comparing original search results with translated summaries
+
+👨‍👩‍👧‍👦 **Helping Family & Friends**
+- Research medical information in English → Translate to Spanish for elderly parents
+- Find technical solutions and explain them in your family's preferred language
 
 ### ✨ Key Features
 
@@ -149,7 +195,7 @@ Gist's unique multilingual capability lets you:
 
 ```mermaid
 flowchart TD
-    A[🔍 User performs Google search] --> B[📌 Extension injects '✨ Summarize with AI' button]
+    A[🔍 User performs Google search] --> B[📌 Extension injects vertical summarize button]
     B --> C[👆 User clicks summarize button]
     C --> D[🔗 Scrape URLs from search results]
     D --> E[📄 Parallel fetch page content]
