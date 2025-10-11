@@ -1014,17 +1014,26 @@ if (typeof document !== 'undefined') {
   chrome.runtime.sendMessage({ action: 'getTabId' }, (response) => {
     if (chrome.runtime.lastError || !response?.tabId) return;
     const tabKey = `autoSummarize_${response.tabId}`;
-    chrome.storage.local.get([tabKey], (result) => {
-      if (result[tabKey]) {
-        chrome.storage.local.remove([tabKey]);
-        chrome.storage.local.set({ [`wasAuto_${response.tabId}`]: true });
-        const autoSummarize = () => {
-          if (!isProcessing) summarizeResults();
+    chrome.storage.local.get([tabKey, 'autoSummarizeEnabled', 'multiSearchEnabled'], (result) => {
+      const shouldAutoSummarize = result[tabKey] || result.autoSummarizeEnabled;
+      if (shouldAutoSummarize) {
+        if (result[tabKey]) chrome.storage.local.remove([tabKey]);
+        
+        const autoTrigger = () => {
+          if (isProcessing) return;
+          if (result.multiSearchEnabled && !result[tabKey]) {
+            const query = extractSearchQuery();
+            if (query) chrome.runtime.sendMessage({ action: 'multiSearch', query });
+          } else {
+            chrome.storage.local.set({ [`wasAuto_${response.tabId}`]: true });
+            summarizeResults();
+          }
         };
+        
         if (document.readyState === 'complete') {
-          setTimeout(autoSummarize, 2000);
+          setTimeout(autoTrigger, 2500);
         } else {
-          window.addEventListener('load', () => setTimeout(autoSummarize, 2000), { once: true });
+          window.addEventListener('load', () => setTimeout(autoTrigger, 2500), { once: true });
         }
       }
     });

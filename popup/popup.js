@@ -13,7 +13,9 @@ const translations = {
     brief: '🎯 Brief Summary, Fast',
     detailed: '📄 Detailed Summary, Slowest',
     keypoints: '⚡ Key Points, Fastest',
-    multiSearch: '🔍 Multi-Search (Google + Bing + DuckDuckGo)',
+    multiSearch: '🔍 Multi-Search',
+    multiSearchTooltip: 'Google + Bing + DuckDuckGo',
+    autoSummarize: '⚡ Auto-Summarize',
     save: 'Save Settings',
     apiHelp: 'Get API key:',
     howToUse: 'How to use:',
@@ -29,7 +31,9 @@ const translations = {
     brief: '🎯 Resumen Breve, Rápido',
     detailed: '📄 Resumen Detallado, Más Lento',
     keypoints: '⚡ Puntos Clave, Más Rápido',
-    multiSearch: '🔍 Búsqueda Múltiple (Google + Bing + DuckDuckGo)',
+    multiSearch: '🔍 Búsqueda Múltiple',
+    multiSearchTooltip: 'Google + Bing + DuckDuckGo',
+    autoSummarize: '⚡ Auto-Resumir',
     save: 'Guardar Configuración',
     apiHelp: 'Obtener clave API:',
     howToUse: 'Cómo usar:',
@@ -45,7 +49,9 @@ const translations = {
     brief: '🎯 Résumé Bref, Rapide',
     detailed: '📄 Résumé Détaillé, Plus Lent',
     keypoints: '⚡ Points Clés, Plus Rapide',
-    multiSearch: '🔍 Recherche Multiple (Google + Bing + DuckDuckGo)',
+    multiSearch: '🔍 Recherche Multiple',
+    multiSearchTooltip: 'Google + Bing + DuckDuckGo',
+    autoSummarize: '⚡ Résumé Auto',
     save: 'Enregistrer les Paramètres',
     apiHelp: 'Obtenir clé API :',
     howToUse: 'Comment utiliser :',
@@ -61,7 +67,9 @@ const translations = {
     brief: '🎯 Kurze Zusammenfassung, Schnell',
     detailed: '📄 Detaillierte Zusammenfassung, Langsam',
     keypoints: '⚡ Kernpunkte, Am Schnellsten',
-    multiSearch: '🔍 Multi-Suche (Google + Bing + DuckDuckGo)',
+    multiSearch: '🔍 Multi-Suche',
+    multiSearchTooltip: 'Google + Bing + DuckDuckGo',
+    autoSummarize: '⚡ Auto-Zusammenfassung',
     save: 'Einstellungen Speichern',
     apiHelp: 'API-Schlüssel erhalten:',
     howToUse: 'So verwenden:',
@@ -80,7 +88,10 @@ function updateUILanguage(lang) {
   document.getElementById('briefOption').textContent = t.brief;
   document.getElementById('detailedOption').textContent = t.detailed;
   document.getElementById('keypointsOption').textContent = t.keypoints;
-  document.getElementById('multiSearchLabel').textContent = t.multiSearch;
+  const multiSearchLabel = document.getElementById('multiSearchLabel');
+  multiSearchLabel.textContent = t.multiSearch;
+  multiSearchLabel.setAttribute('data-tooltip', t.multiSearchTooltip);
+  document.getElementById('autoSummarizeLabel').textContent = t.autoSummarize;
   document.getElementById('saveButtonText').textContent = t.save;
   document.getElementById('apiKeyHelpText').textContent = t.apiHelp;
   document.getElementById('howToUseText').textContent = t.howToUse;
@@ -97,6 +108,7 @@ function getElements() {
       languageSelect: document.getElementById('languageSelect'),
       formatSelect: document.getElementById('formatSelect'),
       multiSearch: document.getElementById('multiSearch'),
+      autoSummarize: document.getElementById('autoSummarize'),
       statusMsg: document.getElementById('statusMsg')
     };
   }
@@ -222,7 +234,7 @@ document.getElementById('languageSelect')?.addEventListener('change', (e) => {
 });
 
 document.getElementById('saveKey')?.addEventListener('click', async () => {
-  const { apiKey, modelSelect, languageSelect, formatSelect, multiSearch, statusMsg } = getElements();
+  const { apiKey, modelSelect, languageSelect, formatSelect, multiSearch, autoSummarize, statusMsg } = getElements();
   if (!apiKey || !statusMsg) return;
   
   const key = apiKey.value.trim();
@@ -230,6 +242,7 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
   const language = languageSelect.value.trim();
   const format = formatSelect.value.trim();
   const isMultiSearch = multiSearch.checked;
+  const isAutoSummarize = autoSummarize.checked;
   const saveBtn = document.getElementById('saveKey');
   
   if (!key || key.length < 39 || !/^AIza[0-9A-Za-z_-]{35}$/.test(key)) {
@@ -287,7 +300,8 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
       selectedModel: modelSelect.value, 
       selectedLanguage: languageSelect.value, 
       summaryFormat: formatSelect.value,
-      multiSearchEnabled: isMultiSearch
+      multiSearchEnabled: isMultiSearch,
+      autoSummarizeEnabled: isAutoSummarize
     });
     
     statusMsg.textContent = '✓ Settings saved successfully!';
@@ -329,9 +343,9 @@ document.getElementById('apiKey')?.addEventListener('blur', async (e) => {
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', async () => {
     try {
-      const data = await chrome.storage.local.get(['flashApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled']);
-      const { flashApiKey, selectedModel, selectedLanguage, summaryFormat, multiSearchEnabled } = data;
-      const { apiKey, modelSelect, languageSelect, formatSelect, multiSearch } = getElements();
+      const data = await chrome.storage.local.get(['flashApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled', 'autoSummarizeEnabled']);
+      const { flashApiKey, selectedModel, selectedLanguage, summaryFormat, multiSearchEnabled, autoSummarizeEnabled } = data;
+      const { apiKey, modelSelect, languageSelect, formatSelect, multiSearch, autoSummarize } = getElements();
       
       if (languageSelect && selectedLanguage) {
         languageSelect.value = selectedLanguage;
@@ -339,6 +353,7 @@ if (typeof document !== 'undefined') {
       }
       if (formatSelect && summaryFormat) formatSelect.value = summaryFormat;
       if (multiSearch) multiSearch.checked = multiSearchEnabled || false;
+      if (autoSummarize) autoSummarize.checked = autoSummarizeEnabled || false;
       
       if (flashApiKey && apiKey) {
         apiKey.value = flashApiKey;
