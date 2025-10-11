@@ -229,7 +229,10 @@ function displaySummary(markdown, urls, format, language) {
       close: 'Close',
       shareX: 'Share on X',
       shareLinkedIn: 'Share on LinkedIn',
-      shareEmail: 'Share via Email'
+      shareEmail: 'Share via Email',
+      history: 'History',
+      favorites: 'Favorites',
+      favorite: 'Favorite'
     },
     Spanish: {
       brief: `🚀 Resumen Breve de ${engineName}`,
@@ -243,7 +246,10 @@ function displaySummary(markdown, urls, format, language) {
       close: 'Cerrar',
       shareX: 'Compartir en X',
       shareLinkedIn: 'Compartir en LinkedIn',
-      shareEmail: 'Compartir por correo'
+      shareEmail: 'Compartir por correo',
+      history: 'Historial',
+      favorites: 'Favoritos',
+      favorite: 'Favorito'
     },
     French: {
       brief: `🚀 Résumé Bref ${engineName}`,
@@ -257,7 +263,10 @@ function displaySummary(markdown, urls, format, language) {
       close: 'Fermer',
       shareX: 'Partager sur X',
       shareLinkedIn: 'Partager sur LinkedIn',
-      shareEmail: 'Partager par e-mail'
+      shareEmail: 'Partager par e-mail',
+      history: 'Historique',
+      favorites: 'Favoris',
+      favorite: 'Favori'
     },
     German: {
       brief: `🚀 ${engineName}-Kurzzusammenfassung`,
@@ -271,7 +280,10 @@ function displaySummary(markdown, urls, format, language) {
       close: 'Schließen',
       shareX: 'Auf X teilen',
       shareLinkedIn: 'Auf LinkedIn teilen',
-      shareEmail: 'Per E-Mail teilen'
+      shareEmail: 'Per E-Mail teilen',
+      history: 'Verlauf',
+      favorites: 'Favoriten',
+      favorite: 'Favorit'
     }
   };
   
@@ -294,8 +306,26 @@ function displaySummary(markdown, urls, format, language) {
   const historyBtn = document.createElement('button');
   historyBtn.className = 'close-btn';
   historyBtn.innerHTML = '📚';
-  historyBtn.setAttribute('data-tooltip', 'History');
+  historyBtn.setAttribute('data-tooltip', t.history);
   let historyVisible = false;
+  
+  const starBtn = document.createElement('button');
+  starBtn.className = 'close-btn';
+  const favKey = `fav_${simpleHash(markdown)}`;
+  chrome.storage.local.get(favKey, (result) => {
+    starBtn.innerHTML = result[favKey] ? '⭐' : '☆';
+  });
+  starBtn.setAttribute('data-tooltip', t.favorite);
+  starBtn.onclick = async () => {
+    const result = await chrome.storage.local.get(favKey);
+    if (result[favKey]) {
+      await chrome.storage.local.remove(favKey);
+      starBtn.innerHTML = '☆';
+    } else {
+      await chrome.storage.local.set({ [favKey]: { markdown, urls, timestamp: Date.now(), query: extractSearchQuery() } });
+      starBtn.innerHTML = '⭐';
+    }
+  };
   
   const copyBtn = document.createElement('button');
   copyBtn.className = 'close-btn';
@@ -384,6 +414,7 @@ function displaySummary(markdown, urls, format, language) {
   closeBtn.onclick = () => overlay.remove();
   
   actions.appendChild(historyBtn);
+  actions.appendChild(starBtn);
   actions.appendChild(copyBtn);
   actions.appendChild(saveBtn);
   actions.appendChild(shareBtn);
@@ -402,19 +433,28 @@ function displaySummary(markdown, urls, format, language) {
     historyVisible = !historyVisible;
     if (historyVisible) {
       const items = await chrome.storage.local.get(null);
-      const summaries = Object.entries(items)
+      const allSummaries = Object.entries(items)
         .filter(([k]) => k.startsWith('summary_'))
-        .map(([k, v]) => ({ key: k, ...v }))
+        .map(([k, v]) => ({ key: k, ...v, isFav: false }))
         .sort((a, b) => b.timestamp - a.timestamp)
         .slice(0, 20);
       
+      const favorites = Object.entries(items)
+        .filter(([k]) => k.startsWith('fav_'))
+        .map(([k, v]) => ({ key: k, ...v, isFav: true }))
+        .sort((a, b) => b.timestamp - a.timestamp);
+      
+      const summaries = [...favorites, ...allSummaries];
       historyPanel.innerHTML = '';
-      summaries.forEach(({ markdown: md, urls: u, timestamp }) => {
+      
+      summaries.forEach(({ markdown: md, urls: u, timestamp, query, isFav }) => {
         const item = document.createElement('div');
         item.className = 'history-item';
         const titleText = md.split('\n')[0].replace(/^#\s*/, '').slice(0, 60);
         const date = new Date(timestamp).toLocaleDateString();
-        item.innerHTML = `<div class="history-item-title">${sanitizeText(titleText)}</div><div class="history-item-date">${date}</div>`;
+        const favIcon = isFav ? '⭐ ' : '';
+        const queryText = query ? `<div class="history-item-query">🔍 ${sanitizeText(query)}</div>` : '';
+        item.innerHTML = `<div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}<div class="history-item-date">${date}</div>`;
         item.onclick = () => {
           body.innerHTML = showdownConverter ? showdownConverter.makeHtml(md) : md;
           body.querySelectorAll('a').forEach(link => {
@@ -553,7 +593,8 @@ function displaySummary(markdown, urls, format, language) {
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         .overlay-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 999999; }
-        .summary-content { background: white; border-radius: 16px; padding: 36px; max-width: 950px; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.35); }
+        .summary-content { background: white; border-radius: 16px; padding: 36px; width: 90vw; max-width: 950px; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.35); }
+        @media (max-width: 768px) { .summary-content { width: 95vw; padding: 24px; } }
         .summary-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #e8eaed; }
         .summary-title { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0; flex: 1; }
         .summary-sources { font-size: 13px; color: #5f6368; font-weight: 500; margin-top: 8px; display: block; }
@@ -584,9 +625,10 @@ function displaySummary(markdown, urls, format, language) {
         .followup-input:focus { border-color: #764ba2; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
         .followup-input:disabled { background: #f8f9fa; cursor: not-allowed; opacity: 0.6; }
         .history-panel-inline { display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; margin-bottom: 20px; }
-        .history-item { padding: 12px 16px; background: #f8f9fa; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
-        .history-item:hover { background: #e8eaed; border-color: #667eea; transform: translateX(-4px); }
+        .history-item { padding: 14px 18px; background: #f8f9fa; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 2px solid #e8eaed; margin-bottom: 8px; }
+        .history-item:hover { background: #e8eaed; border-color: #667eea; }
         .history-item-title { font-size: 14px; font-weight: 600; color: #202124; margin-bottom: 4px; }
+        .history-item-query { font-size: 12px; color: #667eea; margin-bottom: 3px; }
         .history-item-date { font-size: 11px; color: #5f6368; }
       </style>
     </head>

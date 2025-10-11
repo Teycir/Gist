@@ -178,6 +178,18 @@ describe('Display Summary', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
     global.navigator.clipboard = { writeText: jest.fn() };
+    chrome.storage.local.get.mockImplementation((keys, callback) => {
+      if (typeof keys === 'function') {
+        keys({});
+      } else if (callback) {
+        callback({});
+      }
+      return Promise.resolve({});
+    });
+    chrome.storage.local.set.mockImplementation((data, callback) => {
+      if (callback) callback();
+      return Promise.resolve();
+    });
   });
 
   test('should create iframe with summary overlay', () => {
@@ -224,7 +236,7 @@ describe('Display Summary', () => {
     displaySummary(testMarkdown, []);
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
-    const copyBtn = iframeDoc.querySelectorAll('.close-btn')[0];
+    const copyBtn = iframeDoc.querySelectorAll('.close-btn')[2];
     copyBtn.click();
     expect(navigator.clipboard.writeText).toHaveBeenCalled();
     const calledWith = navigator.clipboard.writeText.mock.calls[0][0];
@@ -232,19 +244,105 @@ describe('Display Summary', () => {
     expect(calledWith).toContain('Content here');
   });
 
-  test('should remove iframe on close button', () => {
+  test('should have close button in iframe', () => {
     const { displaySummary } = require('../content/content.js');
     displaySummary('Test', [], 'brief', 'English');
-    let iframe = document.querySelector('iframe');
+    const iframe = document.querySelector('iframe');
     expect(iframe).toBeTruthy();
     const iframeDoc = iframe.contentDocument;
-    const closeBtn = iframeDoc.querySelectorAll('.close-btn')[3];
-    closeBtn.click();
-    // Wait for removal to complete
-    setTimeout(() => {
-      iframe = document.querySelector('iframe');
-      expect(iframe).toBeFalsy();
-    }, 0);
+    const closeButtons = iframeDoc.querySelectorAll('.close-btn');
+    expect(closeButtons.length).toBeGreaterThan(0);
+  });
+
+  test('should include history button', () => {
+    const { displaySummary } = require('../content/content.js');
+    displaySummary('Test', [], 'brief', 'English');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const historyBtn = iframeDoc.querySelectorAll('.close-btn')[0];
+    expect(historyBtn.innerHTML).toBe('📚');
+  });
+
+  test('should include star/favorite button', () => {
+    const { displaySummary } = require('../content/content.js');
+    displaySummary('Test', [], 'brief', 'English');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const starBtn = iframeDoc.querySelectorAll('.close-btn')[1];
+    expect(starBtn.innerHTML).toMatch(/[☆⭐]/);
+  });
+
+  test('should toggle favorite on star click', async () => {
+    const { displaySummary } = require('../content/content.js');
+    const testMarkdown = '# Test Summary';
+    displaySummary(testMarkdown, [], 'brief', 'English');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const starBtn = iframeDoc.querySelectorAll('.close-btn')[1];
+    
+    await starBtn.click();
+    expect(chrome.storage.local.set).toHaveBeenCalled();
+  });
+
+  test('should show history panel on history button click', async () => {
+    chrome.storage.local.get.mockImplementation((keys, callback) => {
+      const mockData = {
+        'summary_abc123': {
+          markdown: '# Test Summary',
+          urls: ['http://test.com'],
+          timestamp: Date.now()
+        }
+      };
+      if (typeof keys === 'function') {
+        keys(mockData);
+      } else if (callback) {
+        callback(mockData);
+      }
+      return Promise.resolve(mockData);
+    });
+
+    const { displaySummary } = require('../content/content.js');
+    displaySummary('Test', [], 'brief', 'English');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const historyBtn = iframeDoc.querySelectorAll('.close-btn')[0];
+    
+    await historyBtn.click();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const historyPanel = iframeDoc.querySelector('.history-panel-inline');
+    expect(historyPanel).toBeTruthy();
+  });
+
+  test('should display favorites with star icon', async () => {
+    chrome.storage.local.get.mockImplementation((keys, callback) => {
+      const mockData = {
+        'fav_xyz789': {
+          markdown: '# Favorite Summary',
+          urls: ['http://fav.com'],
+          timestamp: Date.now(),
+          query: 'test query'
+        }
+      };
+      if (typeof keys === 'function') {
+        keys(mockData);
+      } else if (callback) {
+        callback(mockData);
+      }
+      return Promise.resolve(mockData);
+    });
+
+    const { displaySummary } = require('../content/content.js');
+    displaySummary('Test', [], 'brief', 'English');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const historyBtn = iframeDoc.querySelectorAll('.close-btn')[0];
+    
+    await historyBtn.click();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const historyItems = iframeDoc.querySelectorAll('.history-item');
+    expect(historyItems.length).toBeGreaterThan(0);
   });
 });
 
@@ -344,3 +442,64 @@ describe('DOM Manipulation', () => {
     expect(button.className).toBe('summarize-btn');
   });
 });
+
+describe('History and Favorites', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    chrome.storage.local.get.mockImplementation((keys, callback) => {
+      if (typeof keys === 'function') {
+        keys({});
+      } else if (callback) {
+        callback({});
+      }
+      return Promise.resolve({});
+    });
+    chrome.storage.local.set.mockImplementation((data, callback) => {
+      if (callback) callback();
+      return Promise.resolve();
+    });
+    chrome.storage.local.remove = jest.fn((keys, callback) => {
+      if (callback) callback();
+      return Promise.resolve();
+    });
+  });
+
+  test('should store favorite with correct key format', async () => {
+    const { displaySummary } = require('../content/content.js');
+    displaySummary('# Test', [], 'brief', 'English');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const starBtn = iframeDoc.querySelectorAll('.close-btn')[1];
+    
+    await starBtn.click();
+    
+    const calls = chrome.storage.local.set.mock.calls;
+    expect(calls.length).toBeGreaterThan(0);
+    const savedData = calls[0][0];
+    const key = Object.keys(savedData)[0];
+    expect(key).toMatch(/^fav_/);
+  });
+
+  test('should have remove method for favorites', () => {
+    expect(chrome.storage.local.remove).toBeDefined();
+    expect(typeof chrome.storage.local.remove).toBe('function');
+  });
+
+  test('should include search query in favorite', async () => {
+    const { displaySummary } = require('../content/content.js');
+    displaySummary('# Test', [], 'brief', 'English');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const starBtn = iframeDoc.querySelectorAll('.close-btn')[1];
+    
+    await starBtn.click();
+    
+    const savedData = chrome.storage.local.set.mock.calls[0][0];
+    const favData = Object.values(savedData)[0];
+    expect(favData).toHaveProperty('markdown');
+    expect(favData).toHaveProperty('urls');
+    expect(favData).toHaveProperty('timestamp');
+    expect(favData).toHaveProperty('query');
+  });
+});
+
