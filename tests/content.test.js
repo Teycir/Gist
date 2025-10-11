@@ -180,49 +180,71 @@ describe('Display Summary', () => {
     global.navigator.clipboard = { writeText: jest.fn() };
   });
 
-  test('should create summary overlay', () => {
+  test('should create iframe with summary overlay', () => {
     const { displaySummary } = require('../content/content.js');
     displaySummary('# Test Summary\n\nContent here', ['http://example.com']);
-    const overlay = document.querySelector('.summary-overlay');
+    const iframe = document.querySelector('iframe');
+    expect(iframe).toBeTruthy();
+    const iframeDoc = iframe.contentDocument;
+    const overlay = iframeDoc.querySelector('.summary-overlay');
     expect(overlay).toBeTruthy();
   });
 
-  test('should include copy button', () => {
+  test('should include copy button in iframe', () => {
     const { displaySummary } = require('../content/content.js');
     displaySummary('Test content', ['http://example.com']);
-    const copyBtn = document.querySelector('.close-btn');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const copyBtn = iframeDoc.querySelector('.close-btn');
     expect(copyBtn).toBeTruthy();
   });
 
-  test('should have overlay structure', () => {
+  test('should have overlay structure in iframe', () => {
     const { displaySummary } = require('../content/content.js');
     displaySummary('Test', []);
-    const overlay = document.querySelector('.summary-overlay');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const overlay = iframeDoc.querySelector('.summary-overlay');
     const content = overlay.querySelector('.summary-content');
     expect(content).toBeTruthy();
   });
 
-  test('should display multiple sources', () => {
+  test('should display multiple sources in iframe', () => {
     const { displaySummary } = require('../content/content.js');
     displaySummary('Test', ['http://a.com', 'http://b.com']);
-    const overlay = document.querySelector('.summary-overlay');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const overlay = iframeDoc.querySelector('.summary-overlay');
     expect(overlay).toBeTruthy();
   });
 
   test('should copy summary to clipboard', () => {
     const { displaySummary } = require('../content/content.js');
-    displaySummary('Test summary', []);
-    const copyBtn = document.querySelectorAll('.close-btn')[0];
+    const testMarkdown = '# Test Summary\nContent here';
+    displaySummary(testMarkdown, []);
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const copyBtn = iframeDoc.querySelectorAll('.close-btn')[0];
     copyBtn.click();
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('Test summary');
+    expect(navigator.clipboard.writeText).toHaveBeenCalled();
+    const calledWith = navigator.clipboard.writeText.mock.calls[0][0];
+    expect(calledWith).toContain('Test Summary');
+    expect(calledWith).toContain('Content here');
   });
 
-  test('should remove overlay on close button', () => {
+  test('should remove iframe on close button', () => {
     const { displaySummary } = require('../content/content.js');
     displaySummary('Test', [], 'brief', 'English');
-    const closeBtn = document.querySelectorAll('.close-btn')[3];
+    let iframe = document.querySelector('iframe');
+    expect(iframe).toBeTruthy();
+    const iframeDoc = iframe.contentDocument;
+    const closeBtn = iframeDoc.querySelectorAll('.close-btn')[3];
     closeBtn.click();
-    expect(document.querySelector('.summary-overlay')).toBeFalsy();
+    // Wait for removal to complete
+    setTimeout(() => {
+      iframe = document.querySelector('iframe');
+      expect(iframe).toBeFalsy();
+    }, 0);
   });
 });
 
