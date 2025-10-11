@@ -116,6 +116,22 @@ Gist's unique multilingual capability lets you:
    - Search on Google → Click "✨ Summarize with AI"
    - Enjoy instant summaries!
 
+## 🔒 Privacy & Security
+
+- **No Data Collection**: We don't collect, store, or track any of your searches or summaries
+- **Your Data Stays Local**: API key and cached summaries are stored only in your browser
+- **Direct Connection**: Extension connects directly to Google AI - no third-party servers
+- **Minimal Permissions**: Only needs permission to store your settings locally
+- **Open Source**: All code is public - you can verify exactly what the extension does
+
+## ⚠️ Things to Know
+
+- **Google Search Only**: Currently works only on Google Search (not Bing, DuckDuckGo, etc.)
+- **API Key Required**: You need your own free Google AI API key to use the extension
+- **Daily Limits**: Google's free tier allows 1500 requests per day
+- **Some Sites May Block**: Certain websites may prevent content extraction
+- **Storage Limit**: Cached summaries limited to ~10MB in your browser
+
 ---
 
 # For Developers
