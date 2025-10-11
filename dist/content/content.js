@@ -122,7 +122,7 @@ function scrapeUrls() {
         if (match) {
           try {
             const url = atob(decodeURIComponent(match[1]));
-            if (url && !YOUTUBE_REGEX.test(url) && !seen.has(url)) {
+            if (url && url.startsWith('http') && !YOUTUBE_REGEX.test(url) && !seen.has(url)) {
               seen.add(url);
               urls.push(url);
             }
@@ -178,14 +178,27 @@ function sanitizeText(text) {
 function cleanHtmlToText(html) {
   const doc = domParser.parseFromString(html, 'text/html');
   
-  doc.querySelectorAll('script, style, nav, header, footer, iframe, noscript, aside, form').forEach(el => el.remove());
+  // Remove noise elements
+  const removeSelectors = [
+    'script', 'style', 'nav', 'header', 'footer', 'iframe', 'noscript', 'aside', 'form',
+    '.ad', '.advertisement', '.ads', '[class*="ad-"]', '[id*="ad-"]',
+    '[role="navigation"]', '[role="banner"]', '[role="complementary"]',
+    '.sidebar', '.menu', '.navigation', '.social-share', '.comments'
+  ];
+  removeSelectors.forEach(sel => doc.querySelectorAll(sel).forEach(el => el.remove()));
   
-  const mainContent = doc.querySelector('main, article, [role="main"], .content, .article, .post, .entry-content, .post-content, #main-content') || doc.body;
+  // Prioritize main content
+  const contentSelectors = ['article', 'main', '[role="main"]', '.content', '.article', '.post', '.entry-content', '.post-content', '#main-content'];
+  for (const sel of contentSelectors) {
+    const content = doc.querySelector(sel);
+    if (content) return content.textContent.replace(/\s+/g, ' ').slice(0, 2000).trim();
+  }
   
-  return (mainContent.textContent || '').replace(/\s+/g, ' ').slice(0, 2000).trim();
+  return (doc.body?.textContent || '').replace(/\s+/g, ' ').slice(0, 2000).trim();
 }
 
 function displaySummary(markdown, urls, format, language) {
+  console.log('displaySummary called', { markdown: markdown.substring(0, 100), urls, format, language });
   const overlay = document.createElement('div');
   overlay.className = 'summary-overlay';
   
@@ -368,7 +381,8 @@ function displaySummary(markdown, urls, format, language) {
   
   if (typeof showdown !== 'undefined') {
     if (!showdownConverter) showdownConverter = new showdown.Converter();
-    body.innerHTML = showdownConverter.makeHtml(markdown);
+    const decodedMarkdown = markdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    body.innerHTML = showdownConverter.makeHtml(decodedMarkdown);
     body.querySelectorAll('a').forEach(link => {
       if (isValidUrl(link.href)) {
         link.target = '_blank';
@@ -464,7 +478,78 @@ function displaySummary(markdown, urls, format, language) {
     if (e.target === overlay) overlay.remove();
   };
   
-  document.body.appendChild(overlay);
+  // Create iframe to isolate from Bing's DOM manipulation
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:2147483647';
+  document.documentElement.appendChild(iframe);
+  
+  const iframeDoc = iframe.contentDocument;
+  iframeDoc.open();
+  iframeDoc.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .overlay-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 999999; animation: fadeIn 0.3s ease-out; }
+        .summary-overlay { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .summary-content { background: #ffffff; border-radius: 20px; padding: 36px; max-width: 1100px; width: 95vw; max-height: 95vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 0, 0, 0.1); }
+        .summary-content::-webkit-scrollbar { width: 10px; }
+        .summary-content::-webkit-scrollbar-track { background: #f1f3f4; border-radius: 10px; }
+        .summary-content::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; }
+        .summary-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #e8eaed; }
+        .summary-title { font-size: 25px; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0; line-height: 1.3; display: block; }
+        .summary-sources { font-size: 12px; color: #5f6368; font-weight: 500; margin-top: 8px; display: block; }
+        .summary-actions { display: flex; gap: 10px; flex-shrink: 0; }
+        .close-btn { background: linear-gradient(135deg, #f8f9fa 0%, #e8eaed 100%); border: none; font-size: 20px; color: #5f6368; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+        .close-btn:hover { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; transform: scale(1.1); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+        .close-btn:active { transform: scale(0.95); }
+        .close-btn[data-tooltip]:hover::after { content: attr(data-tooltip); position: absolute; top: -35px; background: #202124; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; white-space: nowrap; z-index: 1000; }
+        .share-btn { position: relative; }
+        .share-menu { position: absolute; top: 50px; right: 0; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); padding: 8px; min-width: 200px; z-index: 1001; animation: slideUp 0.2s ease-out; }
+        .share-option { width: 100%; padding: 12px 16px; border: none; background: transparent; text-align: left; cursor: pointer; border-radius: 8px; font-size: 13px; color: #202124; transition: background 0.2s; }
+        .share-option:hover { background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); }
+        .summary-body { font-size: 14px; line-height: 1.8; color: #3c4043; }
+        .summary-body h1 { font-size: 22px; font-weight: 700; color: #202124; margin: 24px 0 16px; }
+        .summary-body h2 { font-size: 18px; font-weight: 600; color: #202124; margin: 20px 0 12px; }
+        .summary-body h3 { font-size: 16px; font-weight: 600; color: #5f6368; margin: 16px 0 10px; }
+        .summary-body p { margin: 12px 0; }
+        .summary-body ul, .summary-body ol { padding-left: 24px; margin: 12px 0; }
+        .summary-body li { margin: 8px 0; }
+        .summary-body strong { color: #202124; font-weight: 600; }
+        .summary-body code { background: #f8f9fa; padding: 2px 6px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 13px; color: #d73a49; }
+        .summary-body pre { background: #f8f9fa; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
+        .summary-body blockquote { border-left: 4px solid #667eea; padding-left: 16px; margin: 16px 0; color: #5f6368; font-style: italic; }
+        .summary-link { color: #1a73e8; text-decoration: none; font-weight: 500; transition: color 0.2s; }
+        .summary-link:hover { color: #174ea6; text-decoration: underline; }
+        .followup-section { margin-top: 32px; padding-top: 24px; border-top: 2px solid #e8eaed; }
+        .conversation-history { max-height: 200px; overflow-y: auto; margin-bottom: 16px; }
+        .chat-bubble { padding: 12px 16px; border-radius: 12px; margin: 8px 0; max-width: 85%; animation: slideUp 0.3s ease-out; }
+        .chat-bubble.user { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-left: auto; }
+        .chat-bubble.ai { background: #f8f9fa; color: #202124; }
+        .chat-bubble.error { background: #fce8e6; color: #d93025; }
+        .followup-input { width: 100%; padding: 14px 18px; border: 2px solid #e8eaed; border-radius: 12px; font-size: 14px; transition: all 0.2s; font-family: inherit; }
+        .followup-input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+        .followup-input:disabled { background: #f8f9fa; cursor: not-allowed; }
+      </style>
+    </head>
+    <body></body>
+    </html>
+  `);
+  iframeDoc.close();
+  
+  const overlayBg = iframeDoc.createElement('div');
+  overlayBg.className = 'overlay-bg';
+  overlayBg.onclick = (e) => { if (e.target === overlayBg) iframe.remove(); };
+  overlayBg.appendChild(overlay);
+  iframeDoc.body.appendChild(overlayBg);
+  
+  // Update remove function
+  const originalRemove = overlay.remove.bind(overlay);
+  overlay.remove = () => iframe.remove();
 }
 
 function extractSearchQuery() {
@@ -507,7 +592,7 @@ async function setCachedPage(url, content) {
   
   try {
     const size = await getStorageSize();
-    const MAX_STORAGE = 9 * 1024 * 1024;
+    const MAX_STORAGE = 10 * 1024 * 1024;
     
     if (size > MAX_STORAGE) {
       await clearOldCaches();
@@ -767,7 +852,7 @@ IMPORTANT:
     
     try {
       const size = await getStorageSize();
-      const MAX_STORAGE = 9 * 1024 * 1024;
+      const MAX_STORAGE = 10 * 1024 * 1024;
       
       if (size > MAX_STORAGE) {
         await clearOldCaches();

@@ -122,7 +122,7 @@ function scrapeUrls() {
         if (match) {
           try {
             const url = atob(decodeURIComponent(match[1]));
-            if (url && !YOUTUBE_REGEX.test(url) && !seen.has(url)) {
+            if (url && url.startsWith('http') && !YOUTUBE_REGEX.test(url) && !seen.has(url)) {
               seen.add(url);
               urls.push(url);
             }
@@ -198,6 +198,7 @@ function cleanHtmlToText(html) {
 }
 
 function displaySummary(markdown, urls, format, language) {
+  console.log('displaySummary called', { markdown: markdown.substring(0, 100), urls, format, language });
   const overlay = document.createElement('div');
   overlay.className = 'summary-overlay';
   
@@ -380,7 +381,8 @@ function displaySummary(markdown, urls, format, language) {
   
   if (typeof showdown !== 'undefined') {
     if (!showdownConverter) showdownConverter = new showdown.Converter();
-    body.innerHTML = showdownConverter.makeHtml(markdown);
+    const decodedMarkdown = markdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    body.innerHTML = showdownConverter.makeHtml(decodedMarkdown);
     body.querySelectorAll('a').forEach(link => {
       if (isValidUrl(link.href)) {
         link.target = '_blank';
@@ -476,7 +478,47 @@ function displaySummary(markdown, urls, format, language) {
     if (e.target === overlay) overlay.remove();
   };
   
-  document.body.appendChild(overlay);
+  // Create iframe to isolate from Bing's DOM manipulation
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:2147483647';
+  document.documentElement.appendChild(iframe);
+  
+  const iframeDoc = iframe.contentDocument;
+  iframeDoc.open();
+  iframeDoc.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .overlay-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; }
+        .summary-content { background: white; border-radius: 16px; padding: 36px; max-width: 850px; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.35); }
+        .summary-header { display: flex; justify-content: space-between; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #e8eaed; }
+        .summary-title { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+        .summary-actions { display: flex; gap: 10px; }
+        .close-btn { background: #f8f9fa; border: none; font-size: 24px; color: #5f6368; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; }
+        .close-btn:hover { background: #e8eaed; }
+        .summary-body { font-size: 16px; line-height: 1.7; color: #3c4043; }
+        .summary-body h1, .summary-body h2 { margin-top: 20px; color: #202124; }
+        .summary-body ul { padding-left: 20px; }
+        .summary-link { color: #1a73e8; }
+      </style>
+    </head>
+    <body></body>
+    </html>
+  `);
+  iframeDoc.close();
+  
+  const overlayBg = iframeDoc.createElement('div');
+  overlayBg.className = 'overlay-bg';
+  overlayBg.onclick = (e) => { if (e.target === overlayBg) iframe.remove(); };
+  overlayBg.appendChild(overlay);
+  iframeDoc.body.appendChild(overlayBg);
+  
+  // Update remove function
+  const originalRemove = overlay.remove.bind(overlay);
+  overlay.remove = () => iframe.remove();
 }
 
 function extractSearchQuery() {
@@ -519,7 +561,7 @@ async function setCachedPage(url, content) {
   
   try {
     const size = await getStorageSize();
-    const MAX_STORAGE = 9 * 1024 * 1024;
+    const MAX_STORAGE = 10 * 1024 * 1024;
     
     if (size > MAX_STORAGE) {
       await clearOldCaches();
@@ -779,7 +821,7 @@ IMPORTANT:
     
     try {
       const size = await getStorageSize();
-      const MAX_STORAGE = 9 * 1024 * 1024;
+      const MAX_STORAGE = 10 * 1024 * 1024;
       
       if (size > MAX_STORAGE) {
         await clearOldCaches();
