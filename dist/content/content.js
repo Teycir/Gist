@@ -2,14 +2,15 @@ let cachedSummary = null;
 const summaryCache = new Map();
 const pageCache = new Map();
 const CACHE_DURATION = 10 * 60 * 1000;
-const PAGE_CACHE_DURATION = 60 * 60 * 1000;
-const MAX_CACHE_SIZE = 10;
-const MAX_PAGE_CACHE_SIZE = 20;
+const PAGE_CACHE_DURATION = 30 * 60 * 1000;
+const MAX_CACHE_SIZE = 15;
+const MAX_PAGE_CACHE_SIZE = 30;
 const domParser = new DOMParser();
 let showdownConverter = null;
 let summarizeBtn = null;
 const YOUTUBE_REGEX = /youtube\.com/;
 let isProcessing = false;
+let conversationHistory = [];
 
 function simpleHash(str) {
   let hash = 0;
@@ -18,6 +19,26 @@ function simpleHash(str) {
     hash = hash & hash;
   }
   return Math.abs(hash).toString(36).slice(0, 8);
+}
+
+async function getStorageSize() {
+  try {
+    const items = await chrome.storage.local.get(null);
+    const size = JSON.stringify(items).length;
+    return size;
+  } catch (e) {
+    return 0;
+  }
+}
+
+async function clearOldCaches() {
+  try {
+    const items = await chrome.storage.local.get(null);
+    const keys = Object.keys(items).filter(k => k.startsWith('page_') || k.startsWith('summary_'));
+    const sorted = keys.map(k => ({ key: k, time: items[k]?.timestamp || 0 })).sort((a, b) => a.time - b.time);
+    const toRemove = sorted.slice(0, Math.ceil(keys.length / 2)).map(x => x.key);
+    if (toRemove.length > 0) await chrome.storage.local.remove(toRemove);
+  } catch (e) {}
 }
 
 function cleanupCaches() {
@@ -161,7 +182,7 @@ function cleanHtmlToText(html) {
   
   const mainContent = doc.querySelector('main, article, [role="main"], .content, .article, .post, .entry-content, .post-content, #main-content') || doc.body;
   
-  return (mainContent.textContent || '').replace(/\s+/g, ' ').slice(0, 3000).trim();
+  return (mainContent.textContent || '').replace(/\s+/g, ' ').slice(0, 2000).trim();
 }
 
 function displaySummary(markdown, urls, format, language) {
@@ -363,6 +384,80 @@ function displaySummary(markdown, urls, format, language) {
   
   content.appendChild(header);
   content.appendChild(body);
+  
+  // Follow-up question section
+  const followUpSection = document.createElement('div');
+  followUpSection.className = 'followup-section';
+  
+  const followUpInput = document.createElement('input');
+  followUpInput.type = 'text';
+  followUpInput.className = 'followup-input';
+  followUpInput.placeholder = language === 'Spanish' ? 'Hacer una pregunta - luego presione Enter' : language === 'French' ? 'Poser une question - puis appuyez sur Entrée' : language === 'German' ? 'Eine Frage stellen - dann Enter drücken' : 'Ask a follow-up question - then push Enter';
+  
+  const conversationDiv = document.createElement('div');
+  conversationDiv.className = 'conversation-history';
+  
+  const handleFollowUp = async () => {
+    const question = followUpInput.value.trim();
+    if (!question) return;
+    
+    followUpInput.disabled = true;
+    
+    const questionBubble = document.createElement('div');
+    questionBubble.className = 'chat-bubble user';
+    questionBubble.textContent = question;
+    conversationDiv.appendChild(questionBubble);
+    conversationDiv.scrollTop = conversationDiv.scrollHeight;
+    
+    try {
+      const { flashApiKey, selectedModel } = await chrome.storage.local.get(['flashApiKey', 'selectedModel']);
+      const prompt = `Based on this summary:\n\n${markdown}\n\nUser question: ${question}\n\nProvide a concise answer in ${language}.`;
+      
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${flashApiKey}`;
+      const response = await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({
+          action: 'callAPI',
+          url: apiUrl,
+          body: {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 2000, temperature: 0.3 }
+          }
+        }, res => chrome.runtime.lastError ? reject(new Error(chrome.runtime.lastError.message)) : res?.success ? resolve(res.data) : reject(new Error(res?.error || 'API failed')));
+      });
+      
+      const answer = response.candidates?.[0]?.content?.parts?.[0]?.text || 'No answer generated.';
+      
+      const answerBubble = document.createElement('div');
+      answerBubble.className = 'chat-bubble ai';
+      if (typeof showdown !== 'undefined') {
+        answerBubble.innerHTML = showdownConverter.makeHtml(answer);
+      } else {
+        answerBubble.textContent = answer;
+      }
+      conversationDiv.appendChild(answerBubble);
+      conversationDiv.scrollTop = conversationDiv.scrollHeight;
+      
+      conversationHistory.push({ question, answer });
+    } catch (error) {
+      const errorBubble = document.createElement('div');
+      errorBubble.className = 'chat-bubble error';
+      errorBubble.textContent = `Error: ${error.message}`;
+      conversationDiv.appendChild(errorBubble);
+    } finally {
+      followUpInput.value = '';
+      followUpInput.disabled = false;
+      followUpInput.focus();
+    }
+  };
+  
+  followUpInput.onkeypress = (e) => {
+    if (e.key === 'Enter') handleFollowUp();
+  };
+  
+  followUpSection.appendChild(conversationDiv);
+  followUpSection.appendChild(followUpInput);
+  content.appendChild(followUpSection);
+  
   overlay.appendChild(content);
   
   overlay.onclick = (e) => {
@@ -411,10 +506,23 @@ async function setCachedPage(url, content) {
   pageCache.set(url, cacheData);
   
   try {
+    const size = await getStorageSize();
+    const MAX_STORAGE = 9 * 1024 * 1024;
+    
+    if (size > MAX_STORAGE) {
+      await clearOldCaches();
+    }
+    
     const storageKey = `page_${simpleHash(url)}`;
     await chrome.storage.local.set({ [storageKey]: cacheData });
   } catch (error) {
-    console.warn('Cache write error:', error);
+    if (error.message?.includes('quota')) {
+      await clearOldCaches();
+      try {
+        const storageKey = `page_${simpleHash(url)}`;
+        await chrome.storage.local.set({ [storageKey]: cacheData });
+      } catch (e) {}
+    }
   }
 }
 
@@ -658,9 +766,21 @@ IMPORTANT:
     summaryCache.set(cacheKey, cacheData);
     
     try {
+      const size = await getStorageSize();
+      const MAX_STORAGE = 9 * 1024 * 1024;
+      
+      if (size > MAX_STORAGE) {
+        await clearOldCaches();
+      }
+      
       await chrome.storage.local.set({ [storageKey]: cacheData });
     } catch (error) {
-      console.warn('Failed to cache summary:', error);
+      if (error.message?.includes('quota')) {
+        await clearOldCaches();
+        try {
+          await chrome.storage.local.set({ [storageKey]: cacheData });
+        } catch (e) {}
+      }
     }
     
     cachedSummary = markdown;

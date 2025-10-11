@@ -3,7 +3,7 @@
   "name": "Gist",
   "version": "1.0",
   "description": "Summarizes search results from Google, Bing, and DuckDuckGo using your Google API key.",
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage", "activeTab", "unlimitedStorage"],
   "host_permissions": ["https://*/*"],
   "background": {
     "service_worker": "background.js"
