@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Gist",
   "version": "1.0",
-  "description": "Summarizes Google search results using your Google API key.",
+  "description": "Summarizes search results from Google, Bing, and DuckDuckGo using your Google API key.",
   "permissions": ["storage", "activeTab"],
   "host_permissions": ["https://*/*"],
   "background": {
@@ -23,7 +23,11 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.google.com/search*"],
+      "matches": [
+        "https://www.google.com/search*",
+        "https://www.bing.com/search*",
+        "https://duckduckgo.com/*"
+      ],
       "js": ["lib/showdown.min.js", "content/content.js"],
       "css": ["content/content.css"]
     }

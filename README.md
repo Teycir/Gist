@@ -2,7 +2,7 @@
 
 ## What is Gist?
 
-**Gist** is a Chrome extension that transforms how you consume Google search results by providing instant AI-powered summaries. Instead of clicking through multiple websites and reading lengthy articles, get a comprehensive summary of the top search results in seconds.
+**Gist** is a Chrome extension that transforms how you consume search results by providing instant AI-powered summaries. Instead of clicking through multiple websites and reading lengthy articles, get a comprehensive summary of the top search results in seconds.
 
 ### ✨ Key Features
 
@@ -10,9 +10,11 @@
 - 🔒 **100% Private** - No servers, no tracking, no data collection
 - ⚡ **Lightning Fast** - Cached results in <100ms, cold start in 3-5s
 - 🎨 **Clean Interface** - Seamless integration with Google Search
+- 🔍 **Multi-Engine Support** - Works on Google, Bing, and DuckDuckGo
 - 🌍 **Multilingual** - Search in one language, summarize in another
 - 📝 **3 Summary Formats** - Brief, Detailed, or Key Points
 - 🔗 **Source References** - Every summary includes clickable citations
+- 💾 **Save as Markdown** - Download summaries to your Downloads folder
 - 📋 **Easy Sharing** - Share to X, LinkedIn, or email with one click
 - ⌨️ **Keyboard Shortcuts** - `Ctrl+Shift+S` to summarize instantly
 - ♿ **Fully Accessible** - Screen reader support and keyboard navigation
@@ -47,7 +49,7 @@
 5. Choose your preferred language and summary format
 
 **Step 2: Summarize Any Search**
-- **Method 1**: Click the vertical button on the right side of any Google search page
+- **Method 1**: Click the vertical button on the right side of any search page
 - **Method 2**: Press `Ctrl+Shift+S` (or `Cmd+Shift+S` on Mac)
 - Wait 3-5 seconds for the AI to analyze the top 3 search results
 - View your summary in a beautiful popup with source references
@@ -58,6 +60,7 @@
   - 🎯 **Brief** (3-5 bullet points, ~500 words, fastest)
   - 📄 **Detailed** (comprehensive analysis, ~2000 words, slowest)
   - ⚡ **Key Points** (essential takeaways only, ~250 words, ultra-fast)
+- **Save Summaries**: Click the save button (💾) to download as markdown file
 - **Share Results**: Use the share button to post on X (Twitter), LinkedIn, or email
 - **Copy to Clipboard**: One-click copy for pasting into documents
 
@@ -126,7 +129,7 @@ Gist's unique multilingual capability lets you:
 
 ## ⚠️ Things to Know
 
-- **Google Search Only**: Currently works only on Google Search (not Bing, DuckDuckGo, etc.)
+- **Search Engine Support**: Works on Google, Bing, and DuckDuckGo
 - **API Key Required**: You need your own free Google AI API key to use the extension
 - **Daily Limits**: Google's free tier allows 1500 requests per day
 - **Some Sites May Block**: Certain websites may prevent content extraction

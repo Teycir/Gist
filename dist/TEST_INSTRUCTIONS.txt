@@ -1,0 +1,56 @@
+GIST - MULTI-ENGINE TEST BUILD
+==================================
+
+Build Status: READY FOR TESTING
+
+What's New:
+- Google Search support (existing)
+- Bing Search support (NEW)
+- DuckDuckGo Search support (NEW)
+
+Installation:
+1. Open Chrome -> chrome://extensions/
+2. Enable "Developer mode" (top right)
+3. Click "Load unpacked"
+4. Select this dist/ folder
+
+Testing Steps:
+
+TEST 1: Google Search
+1. Go to https://www.google.com
+2. Search for "artificial intelligence"
+3. Look for the summarize button (right side)
+4. Click it and verify summary appears
+
+TEST 2: Bing Search
+1. Go to https://www.bing.com
+2. Search for "machine learning"
+3. Look for the summarize button (right side)
+4. Click it and verify summary appears
+
+TEST 3: DuckDuckGo Search
+1. Go to https://duckduckgo.com
+2. Search for "neural networks"
+3. Look for the summarize button (right side)
+4. Click it and verify summary appears
+
+TEST 4: Keyboard Shortcut
+- On any search page, press Ctrl+Shift+S (Cmd+Shift+S on Mac)
+- Verify summary appears
+
+Expected Behavior:
+- Button appears on all 3 search engines
+- Summaries work identically across all engines
+- Caching works (repeat searches load instantly)
+- All languages and formats work
+
+Prerequisites:
+- Valid Google AI API key configured in extension popup
+- Internet connection for API calls
+
+Success Criteria:
+- Extension loads without errors
+- Button visible on all 3 engines
+- Summaries generate successfully
+- No console errors
+- Keyboard shortcut works

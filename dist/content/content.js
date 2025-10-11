@@ -182,6 +182,7 @@ function displaySummary(markdown, urls, format, language) {
       top: 'Top',
       analyzed: 'search results',
       copy: 'Copy',
+      save: 'Save',
       share: 'Share',
       close: 'Close',
       shareX: 'Share on X',
@@ -195,6 +196,7 @@ function displaySummary(markdown, urls, format, language) {
       top: 'Top',
       analyzed: 'resultados de búsqueda',
       copy: 'Copiar',
+      save: 'Guardar',
       share: 'Compartir',
       close: 'Cerrar',
       shareX: 'Compartir en X',
@@ -208,6 +210,7 @@ function displaySummary(markdown, urls, format, language) {
       top: 'Top',
       analyzed: 'résultats de recherche',
       copy: 'Copier',
+      save: 'Enregistrer',
       share: 'Partager',
       close: 'Fermer',
       shareX: 'Partager sur X',
@@ -221,6 +224,7 @@ function displaySummary(markdown, urls, format, language) {
       top: 'Top',
       analyzed: 'Suchergebnisse',
       copy: 'Kopieren',
+      save: 'Speichern',
       share: 'Teilen',
       close: 'Schließen',
       shareX: 'Auf X teilen',
@@ -253,6 +257,25 @@ function displaySummary(markdown, urls, format, language) {
     navigator.clipboard.writeText(markdown);
     copyBtn.innerHTML = '✓';
     setTimeout(() => copyBtn.innerHTML = '📋', 2000);
+  };
+  
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'close-btn';
+  saveBtn.innerHTML = '💾';
+  saveBtn.setAttribute('data-tooltip', t.save);
+  saveBtn.onclick = () => {
+    const query = extractSearchQuery().replace(/[^a-z0-9]/gi, '_').slice(0, 50);
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filename = `gist_${query}_${timestamp}.md`;
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    saveBtn.innerHTML = '✓';
+    setTimeout(() => saveBtn.innerHTML = '💾', 2000);
   };
   
   const shareBtn = document.createElement('button');
@@ -313,6 +336,7 @@ function displaySummary(markdown, urls, format, language) {
   closeBtn.onclick = () => overlay.remove();
   
   actions.appendChild(copyBtn);
+  actions.appendChild(saveBtn);
   actions.appendChild(shareBtn);
   actions.appendChild(closeBtn);
   header.appendChild(title);
