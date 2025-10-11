@@ -113,7 +113,7 @@ Gist's unique multilingual capability lets you:
    - Click the Gist icon in Chrome → Enter your key → Save
 
 3. **Start Using**
-   - Search on Google → Click "✨ Summarize with AI"
+   - Search on Google → Click the vertical button on the right side
    - Enjoy instant summaries!
 
 ## 🔒 Privacy & Security
@@ -165,7 +165,7 @@ flowchart TD
 **Flow Description:**
 1. **User Search** - User performs a Google search as normal
 2. **Button Injection** - Extension automatically adds summarize button to results
-3. **User Click** - User clicks the "✨ Summarize with AI" button
+3. **User Click** - User clicks the vertical summarize button
 4. **URL Scraping** - Extension extracts URLs from search result links
 5. **Content Fetching** - Multiple page contents fetched in parallel
 6. **HTML Cleaning** - Raw HTML converted to clean, readable text
@@ -236,7 +236,7 @@ npm run test:browser       # Playwright browser tests
 ### Key Technologies
 
 - **Chrome Extension Manifest V3**
-- **Google Gemini 1.5 Flash API**
+- **Google Gemini Flash API**
 - **Showdown.js** for Markdown rendering
 - **Jest** for testing
 - **Playwright** for E2E tests
