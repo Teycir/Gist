@@ -74,18 +74,20 @@ async function loadModels(apiKey) {
     }).slice(0, 5) || [];
     
     const fragment = document.createDocumentFragment();
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = models.length ? 'Select a model' : 'No models available';
+    fragment.appendChild(placeholder);
+    
     if (models.length) {
       models.forEach(m => {
         const option = document.createElement('option');
         option.value = m.name;
         option.textContent = m.displayName.split('(')[0].trim();
+        option.dataset.modelId = m.name;
         fragment.appendChild(option);
+        console.log('Model loaded:', m.name, '->', m.displayName);
       });
-    } else {
-      const option = document.createElement('option');
-      option.value = '';
-      option.textContent = 'No models available';
-      fragment.appendChild(option);
     }
     
     select.innerHTML = '';
@@ -108,7 +110,7 @@ async function loadModels(apiKey) {
     console.error('Failed to load models:', error);
     
     if (select) {
-      select.innerHTML = '<option value="">Failed to load models</option>';
+      select.innerHTML = '<option value="">Select a model</option>';
     }
     
     if (statusMsg) {
@@ -132,6 +134,9 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
   if (!apiKey || !statusMsg) return;
   
   const key = apiKey.value.trim();
+  const model = modelSelect.value.trim();
+  const language = languageSelect.value.trim();
+  const format = formatSelect.value.trim();
   const saveBtn = document.getElementById('saveKey');
   
   if (!key || key.length < 39 || !/^AIza[0-9A-Za-z_-]{35}$/.test(key)) {
@@ -146,11 +151,44 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
     return;
   }
   
+  if (!model) {
+    statusMsg.textContent = '⚠️ Please select a model';
+    statusMsg.className = 'status-msg error';
+    modelSelect.style.borderColor = '#c5221f';
+    setTimeout(() => {
+      statusMsg.textContent = '';
+      statusMsg.className = 'status-msg';
+      modelSelect.style.borderColor = '';
+    }, 3000);
+    return;
+  }
+  
+  if (!language) {
+    statusMsg.textContent = '⚠️ Please select a language';
+    statusMsg.className = 'status-msg error';
+    setTimeout(() => {
+      statusMsg.textContent = '';
+      statusMsg.className = 'status-msg';
+    }, 3000);
+    return;
+  }
+  
+  if (!format) {
+    statusMsg.textContent = '⚠️ Please select a format';
+    statusMsg.className = 'status-msg error';
+    setTimeout(() => {
+      statusMsg.textContent = '';
+      statusMsg.className = 'status-msg';
+    }, 3000);
+    return;
+  }
+  
   try {
     if (saveBtn) saveBtn.disabled = true;
     statusMsg.textContent = 'Saving...';
     statusMsg.className = 'status-msg';
     
+    console.log('Saving model:', modelSelect.value);
     await chrome.storage.local.set({ 
       flashApiKey: key, 
       selectedModel: modelSelect.value, 
@@ -165,7 +203,11 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
     apiKey.setAttribute('aria-invalid', 'false');
     
     setTimeout(() => {
-      window.close();
+      if (window.opener) {
+        window.close();
+      } else {
+        statusMsg.textContent = '✓ Settings saved! You can close this tab.';
+      }
     }, 1000);
   } catch (error) {
     console.error('Save error:', error);

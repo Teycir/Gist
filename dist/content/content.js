@@ -68,6 +68,7 @@ function addSummarizeButton() {
       Arabic: 'تلخيص'
     };
     const tooltipText = translations[selectedLanguage] || 'Summarize';
+    btn.setAttribute('data-tooltip', tooltipText);
     btn.title = tooltipText;
     btn.setAttribute('aria-label', tooltipText);
   });
@@ -271,14 +272,13 @@ async function summarizeResults() {
       return {};
     });
     
-    if (!flashApiKey) {
-      if (confirm('⚠️ Please enter your Google AI API Key in the extension settings first.\n\nClick OK to get your API key from Google AI Studio.')) {
-        window.open('https://aistudio.google.com/api-keys', '_blank', 'noopener,noreferrer');
-      }
+    if (!flashApiKey || !selectedModel) {
+      chrome.runtime.sendMessage({ action: 'openPopup' });
       return;
     }
     
-    const model = selectedModel || 'models/gemini-1.5-flash-latest';
+    console.log('Selected model:', selectedModel);
+    const model = selectedModel;
     const language = selectedLanguage || 'English';
     const format = summaryFormat || 'detailed';
     
@@ -350,13 +350,13 @@ ${sources.join('\n\n')}
 
 Keep summary under ${wordLimit} words. Focus on key facts and insights.`;
     
-    const apiUrl = new URL(`https://generativelanguage.googleapis.com/v1beta/${encodeURIComponent(model)}:generateContent`);
-    apiUrl.searchParams.set('key', flashApiKey);
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${flashApiKey}`;
+    console.log('API URL:', apiUrl.replace(flashApiKey, 'REDACTED'));
     
     const apiResponse = await new Promise((resolve, reject) => {
       chrome.runtime.sendMessage({
         action: 'callAPI',
-        url: apiUrl.toString(),
+        url: apiUrl,
         body: {
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
@@ -365,26 +365,34 @@ Keep summary under ${wordLimit} words. Focus on key facts and insights.`;
           }
         }
       }, response => {
+        console.log('API Response:', response);
         if (chrome.runtime.lastError) {
+          console.error('Chrome runtime error:', chrome.runtime.lastError);
           reject(new Error(chrome.runtime.lastError.message));
         } else if (response?.success) {
+          console.log('API call successful, data:', response.data);
           resolve(response.data);
         } else {
+          console.error('API call failed:', response);
           reject(new Error(response?.error || 'API request failed'));
         }
       });
     });
     
     const data = apiResponse;
+    console.log('API response data:', data);
+    console.log('Candidates:', data.candidates);
     let markdown = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    console.log('Extracted markdown:', markdown);
     
     if (!markdown) {
+      console.error('No markdown extracted from response');
       throw new Error('No summary generated');
     }
     
-    const references = urls.map((url, i) => `[${i + 1}] ${url}`).join('\n');
     if (!markdown.toLowerCase().includes('## references')) {
-      markdown += `\n\n## References\n${references}`;
+      const references = urls.map((url, i) => `**${i + 1}.** [${url}](${url})  `).join('\n');
+      markdown += `\n\n## References\n\n${references}`;
     }
     
     const cacheData = { markdown, urls, timestamp: Date.now() };
@@ -401,6 +409,7 @@ Keep summary under ${wordLimit} words. Focus on key facts and insights.`;
     
   } catch (error) {
     console.error('Summarization error:', error);
+    console.error('Error details:', { name: error.name, message: error.message, stack: error.stack });
     const errorMsg = error.name === 'AbortError' ? 'Request timeout' : error.message;
     alert(`❌ Error: ${errorMsg}`);
   } finally {

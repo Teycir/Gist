@@ -132,12 +132,12 @@
   <h2>🚀 Gist Settings</h2>
   <div class="form-group">
     <label for="apiKey">🔑 API Key</label>
-    <input type="password" id="apiKey" placeholder="Enter your Google AI API Key" aria-required="true" aria-describedby="apiKeyHelp"/>
+    <input type="password" id="apiKey" placeholder="Enter your Google AI API Key" aria-required="true" aria-describedby="apiKeyHelp" autocomplete="off"/>
   </div>
   <div class="form-group">
     <label for="modelSelect">🤖 AI Model</label>
-    <select id="modelSelect" aria-label="Select AI model">
-      <option value="">Loading models...</option>
+    <select id="modelSelect" aria-label="Select AI model" required>
+      <option value="">Select a model</option>
     </select>
   </div>
   <div class="form-group">

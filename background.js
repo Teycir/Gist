@@ -1,4 +1,13 @@
+chrome.action.onClicked.addListener(() => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('popup/popup.html') });
+});
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'openPopup') {
+    chrome.tabs.create({ url: chrome.runtime.getURL('popup/popup.html') });
+    return;
+  }
+  
   if (request.action === 'fetchPage') {
     fetch(request.url, {
       method: 'GET',

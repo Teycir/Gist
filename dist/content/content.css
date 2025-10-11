@@ -18,6 +18,10 @@
   justify-content: center;
 }
 
+.summarize-btn[title] {
+  pointer-events: auto;
+}
+
 .summarize-btn::before {
   content: attr(title);
   position: absolute;
