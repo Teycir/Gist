@@ -77,21 +77,65 @@ function updateButtonLanguage() {
   });
 }
 
-function scrapeGoogleUrls() {
-  const links = document.querySelectorAll('div#search a[href^="http"]:not([href*="google.com"])');
+function detectSearchEngine() {
+  const hostname = window.location.hostname;
+  if (hostname.includes('google.com')) return 'google';
+  if (hostname.includes('bing.com')) return 'bing';
+  if (hostname.includes('duckduckgo.com')) return 'duckduckgo';
+  return null;
+}
+
+function scrapeUrls() {
+  const engine = detectSearchEngine();
   const urls = [];
   const seen = new Set();
   
-  for (const link of links) {
-    if (urls.length >= 3) break;
-    const url = link.href;
-    if (!YOUTUBE_REGEX.test(url) && !seen.has(url)) {
-      seen.add(url);
-      urls.push(url);
+  if (engine === 'bing') {
+    const links = document.querySelectorAll('#b_results li.b_algo h2 a');
+    for (const link of links) {
+      if (urls.length >= 3) break;
+      let href = link.getAttribute('href');
+      if (href && href.includes('/ck/a')) {
+        href = href.replace(/&amp;/g, '&');
+        const match = href.match(/[?&]u=a1([^&]+)/);
+        if (match) {
+          try {
+            const url = atob(decodeURIComponent(match[1]));
+            if (url && !YOUTUBE_REGEX.test(url) && !seen.has(url)) {
+              seen.add(url);
+              urls.push(url);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+  } else if (engine === 'duckduckgo') {
+    const links = document.querySelectorAll('article[data-testid="result"] a[href^="http"]');
+    for (const link of links) {
+      if (urls.length >= 3) break;
+      const url = link.href;
+      if (url && !YOUTUBE_REGEX.test(url) && !seen.has(url)) {
+        seen.add(url);
+        urls.push(url);
+      }
+    }
+  } else {
+    const links = document.querySelectorAll('div#search a[href^="http"]:not([href*="google.com"])');
+    for (const link of links) {
+      if (urls.length >= 3) break;
+      const url = link.href;
+      if (url && !YOUTUBE_REGEX.test(url) && !seen.has(url)) {
+        seen.add(url);
+        urls.push(url);
+      }
     }
   }
   
   return urls;
+}
+
+function scrapeGoogleUrls() {
+  return scrapeUrls();
 }
 
 function isValidUrl(url) {
@@ -136,7 +180,7 @@ function displaySummary(markdown, urls, format, language) {
       detailed: '🚀 AI Detailed Summary',
       keypoints: '🚀 AI Key Points Summary',
       top: 'Top',
-      analyzed: 'Google search results',
+      analyzed: 'search results',
       copy: 'Copy',
       share: 'Share',
       close: 'Close',
@@ -149,7 +193,7 @@ function displaySummary(markdown, urls, format, language) {
       detailed: '🚀 Resumen Detallado de IA',
       keypoints: '🚀 Puntos Clave de IA',
       top: 'Top',
-      analyzed: 'resultados de búsqueda de Google',
+      analyzed: 'resultados de búsqueda',
       copy: 'Copiar',
       share: 'Compartir',
       close: 'Cerrar',
@@ -162,7 +206,7 @@ function displaySummary(markdown, urls, format, language) {
       detailed: '🚀 Résumé Détaillé IA',
       keypoints: '🚀 Points Clés IA',
       top: 'Top',
-      analyzed: 'résultats de recherche Google',
+      analyzed: 'résultats de recherche',
       copy: 'Copier',
       share: 'Partager',
       close: 'Fermer',
@@ -175,7 +219,7 @@ function displaySummary(markdown, urls, format, language) {
       detailed: '🚀 KI-Detaillierte Zusammenfassung',
       keypoints: '🚀 KI-Kernpunkte',
       top: 'Top',
-      analyzed: 'Google-Suchergebnisse',
+      analyzed: 'Suchergebnisse',
       copy: 'Kopieren',
       share: 'Teilen',
       close: 'Schließen',
@@ -305,8 +349,17 @@ function displaySummary(markdown, urls, format, language) {
 }
 
 function extractSearchQuery() {
+  const engine = detectSearchEngine();
   const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get('q') || document.querySelector('input[name="q"]')?.value || '';
+  
+  if (engine === 'google' || engine === 'bing') {
+    return urlParams.get('q') || document.querySelector('input[name="q"]')?.value || '';
+  }
+  if (engine === 'duckduckgo') {
+    return urlParams.get('q') || document.querySelector('input[name="q"]')?.value || '';
+  }
+  
+  return urlParams.get('q') || '';
 }
 
 async function getCachedPage(url) {
@@ -495,31 +548,53 @@ IMPORTANT:
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${flashApiKey}`;
     console.log('API URL:', apiUrl.replace(flashApiKey, 'REDACTED'));
     
-    const apiResponse = await new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({
-        action: 'callAPI',
-        url: apiUrl,
-        body: {
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            maxOutputTokens: maxTokens,
-            temperature: 0.3
+    const callAPIWithRetry = async (maxRetries = 3, baseDelay = 2000) => {
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const response = await new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage({
+              action: 'callAPI',
+              url: apiUrl,
+              body: {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                  maxOutputTokens: maxTokens,
+                  temperature: 0.3
+                }
+              }
+            }, response => {
+              console.log('API Response:', response);
+              if (chrome.runtime.lastError) {
+                console.error('Chrome runtime error:', chrome.runtime.lastError);
+                reject(new Error(chrome.runtime.lastError.message));
+              } else if (response?.success) {
+                console.log('API call successful, data:', response.data);
+                resolve(response.data);
+              } else {
+                console.error('API call failed:', response);
+                reject(new Error(response?.error || 'API request failed'));
+              }
+            });
+          });
+          return response;
+        } catch (error) {
+          const isOverloaded = error.message.includes('overloaded');
+          const isLastAttempt = attempt === maxRetries - 1;
+          
+          if (isOverloaded && !isLastAttempt) {
+            const delay = baseDelay * Math.pow(2, attempt);
+            console.log(`API overloaded, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+            btn.innerHTML = `⏳ Retrying in ${Math.ceil(delay/1000)}s<span class="loading-spinner"></span>`;
+            await new Promise(resolve => setTimeout(resolve, delay));
+            btn.innerHTML = `${loading.generating}<span class="loading-spinner"></span>`;
+          } else {
+            throw error;
           }
         }
-      }, response => {
-        console.log('API Response:', response);
-        if (chrome.runtime.lastError) {
-          console.error('Chrome runtime error:', chrome.runtime.lastError);
-          reject(new Error(chrome.runtime.lastError.message));
-        } else if (response?.success) {
-          console.log('API call successful, data:', response.data);
-          resolve(response.data);
-        } else {
-          console.error('API call failed:', response);
-          reject(new Error(response?.error || 'API request failed'));
-        }
-      });
-    });
+      }
+    };
+    
+    const apiResponse = await callAPIWithRetry();
     
     const data = apiResponse;
     console.log('API response data:', data);
@@ -624,5 +699,5 @@ if (typeof document !== 'undefined') {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { scrapeGoogleUrls, cleanHtmlToText, addSummarizeButton, displaySummary, summarizeResults };
+  module.exports = { scrapeGoogleUrls, scrapeUrls, detectSearchEngine, cleanHtmlToText, addSummarizeButton, displaySummary, summarizeResults };
 }
