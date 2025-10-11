@@ -291,6 +291,12 @@ function displaySummary(markdown, urls, format, language) {
   const actions = document.createElement('div');
   actions.className = 'summary-actions';
   
+  const historyBtn = document.createElement('button');
+  historyBtn.className = 'close-btn';
+  historyBtn.innerHTML = '📚';
+  historyBtn.setAttribute('data-tooltip', 'History');
+  let historyVisible = false;
+  
   const copyBtn = document.createElement('button');
   copyBtn.className = 'close-btn';
   copyBtn.innerHTML = '📋';
@@ -377,6 +383,7 @@ function displaySummary(markdown, urls, format, language) {
   closeBtn.setAttribute('data-tooltip', t.close);
   closeBtn.onclick = () => overlay.remove();
   
+  actions.appendChild(historyBtn);
   actions.appendChild(copyBtn);
   actions.appendChild(saveBtn);
   actions.appendChild(shareBtn);
@@ -386,6 +393,50 @@ function displaySummary(markdown, urls, format, language) {
   
   const body = document.createElement('div');
   body.className = 'summary-body';
+  
+  const historyPanel = document.createElement('div');
+  historyPanel.className = 'history-panel-inline';
+  historyPanel.style.display = 'none';
+  
+  historyBtn.onclick = async () => {
+    historyVisible = !historyVisible;
+    if (historyVisible) {
+      const items = await chrome.storage.local.get(null);
+      const summaries = Object.entries(items)
+        .filter(([k]) => k.startsWith('summary_'))
+        .map(([k, v]) => ({ key: k, ...v }))
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 20);
+      
+      historyPanel.innerHTML = '';
+      summaries.forEach(({ markdown: md, urls: u, timestamp }) => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        const titleText = md.split('\n')[0].replace(/^#\s*/, '').slice(0, 60);
+        const date = new Date(timestamp).toLocaleDateString();
+        item.innerHTML = `<div class="history-item-title">${sanitizeText(titleText)}</div><div class="history-item-date">${date}</div>`;
+        item.onclick = () => {
+          body.innerHTML = showdownConverter ? showdownConverter.makeHtml(md) : md;
+          body.querySelectorAll('a').forEach(link => {
+            if (isValidUrl(link.href)) {
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              link.className = 'summary-link';
+            }
+          });
+          historyPanel.style.display = 'none';
+          body.style.display = 'block';
+          historyVisible = false;
+        };
+        historyPanel.appendChild(item);
+      });
+      body.style.display = 'none';
+      historyPanel.style.display = 'block';
+    } else {
+      body.style.display = 'block';
+      historyPanel.style.display = 'none';
+    }
+  };
   
   if (typeof showdown !== 'undefined') {
     if (!showdownConverter) showdownConverter = new showdown.Converter();
@@ -405,6 +456,7 @@ function displaySummary(markdown, urls, format, language) {
   }
   
   content.appendChild(header);
+  content.appendChild(historyPanel);
   content.appendChild(body);
   
   // Follow-up question section
@@ -501,7 +553,7 @@ function displaySummary(markdown, urls, format, language) {
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         .overlay-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 999999; }
-        .summary-content { background: white; border-radius: 16px; padding: 36px; max-width: 850px; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.35); }
+        .summary-content { background: white; border-radius: 16px; padding: 36px; max-width: 950px; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.35); }
         .summary-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #e8eaed; }
         .summary-title { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0; flex: 1; }
         .summary-sources { font-size: 13px; color: #5f6368; font-weight: 500; margin-top: 8px; display: block; }
@@ -531,6 +583,11 @@ function displaySummary(markdown, urls, format, language) {
         .followup-input { width: 100%; padding: 14px 20px; border: 3px solid #667eea; border-radius: 12px; font-size: 14px; outline: none; transition: all 0.2s ease; font-family: inherit; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15); }
         .followup-input:focus { border-color: #764ba2; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
         .followup-input:disabled { background: #f8f9fa; cursor: not-allowed; opacity: 0.6; }
+        .history-panel-inline { display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; margin-bottom: 20px; }
+        .history-item { padding: 12px 16px; background: #f8f9fa; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+        .history-item:hover { background: #e8eaed; border-color: #667eea; transform: translateX(-4px); }
+        .history-item-title { font-size: 14px; font-weight: 600; color: #202124; margin-bottom: 4px; }
+        .history-item-date { font-size: 11px; color: #5f6368; }
       </style>
     </head>
     <body></body>
