@@ -514,7 +514,7 @@ function displaySummary(markdown, urls, format, language) {
         .summary-link { color: #1a73e8; text-decoration: none; }
         .summary-link:hover { text-decoration: underline; }
         .followup-section { margin-top: 24px; padding-top: 20px; border-top: 2px solid #e8eaed; }
-        .conversation-history { max-height: 200px; overflow-y: auto; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .conversation-history { margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
         .chat-bubble { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 14px; line-height: 1.5; animation: bubbleIn 0.3s ease; }
         @keyframes bubbleIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .chat-bubble.user { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
