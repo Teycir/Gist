@@ -178,11 +178,23 @@ function sanitizeText(text) {
 function cleanHtmlToText(html) {
   const doc = domParser.parseFromString(html, 'text/html');
   
-  doc.querySelectorAll('script, style, nav, header, footer, iframe, noscript, aside, form').forEach(el => el.remove());
+  // Remove noise elements
+  const removeSelectors = [
+    'script', 'style', 'nav', 'header', 'footer', 'iframe', 'noscript', 'aside', 'form',
+    '.ad', '.advertisement', '.ads', '[class*="ad-"]', '[id*="ad-"]',
+    '[role="navigation"]', '[role="banner"]', '[role="complementary"]',
+    '.sidebar', '.menu', '.navigation', '.social-share', '.comments'
+  ];
+  removeSelectors.forEach(sel => doc.querySelectorAll(sel).forEach(el => el.remove()));
   
-  const mainContent = doc.querySelector('main, article, [role="main"], .content, .article, .post, .entry-content, .post-content, #main-content') || doc.body;
+  // Prioritize main content
+  const contentSelectors = ['article', 'main', '[role="main"]', '.content', '.article', '.post', '.entry-content', '.post-content', '#main-content'];
+  for (const sel of contentSelectors) {
+    const content = doc.querySelector(sel);
+    if (content) return content.textContent.replace(/\s+/g, ' ').slice(0, 2000).trim();
+  }
   
-  return (mainContent.textContent || '').replace(/\s+/g, ' ').slice(0, 2000).trim();
+  return (doc.body?.textContent || '').replace(/\s+/g, ' ').slice(0, 2000).trim();
 }
 
 function displaySummary(markdown, urls, format, language) {

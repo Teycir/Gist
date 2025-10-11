@@ -64,6 +64,55 @@ describe('Content Processing', () => {
     const result = cleanHtmlToText(html);
     expect(result).not.toContain('   ');
   });
+
+  test('should remove ad elements by class', () => {
+    const html = '<html><body><div class="ad">Ad content</div><p>Real content</p></body></html>';
+    const result = cleanHtmlToText(html);
+    expect(result).toContain('Real content');
+    expect(result).not.toContain('Ad content');
+  });
+
+  test('should remove ad elements by id pattern', () => {
+    const html = '<html><body><div id="ad-banner">Ad</div><p>Content</p></body></html>';
+    const result = cleanHtmlToText(html);
+    expect(result).toContain('Content');
+    expect(result).not.toContain('Ad');
+  });
+
+  test('should prioritize article over body', () => {
+    const html = '<html><body><div>Body noise</div><article>Article content</article></body></html>';
+    const result = cleanHtmlToText(html);
+    expect(result).toContain('Article content');
+    expect(result).not.toContain('Body noise');
+  });
+
+  test('should remove sidebar elements', () => {
+    const html = '<html><body><aside class="sidebar">Sidebar</aside><main>Main content</main></body></html>';
+    const result = cleanHtmlToText(html);
+    expect(result).toContain('Main content');
+    expect(result).not.toContain('Sidebar');
+  });
+
+  test('should remove social share buttons', () => {
+    const html = '<html><body><div class="social-share">Share</div><article>Content</article></body></html>';
+    const result = cleanHtmlToText(html);
+    expect(result).toContain('Content');
+    expect(result).not.toContain('Share');
+  });
+
+  test('should remove comments section', () => {
+    const html = '<html><body><article>Article</article><div class="comments">Comments</div></body></html>';
+    const result = cleanHtmlToText(html);
+    expect(result).toContain('Article');
+    expect(result).not.toContain('Comments');
+  });
+
+  test('should handle missing body gracefully', () => {
+    const html = '<html></html>';
+    const result = cleanHtmlToText(html);
+    expect(typeof result).toBe('string');
+    expect(result).toBe('');
+  });
 });
 
 describe('URL Scraping', () => {
