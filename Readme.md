@@ -2,30 +2,104 @@
 
 ## What is Gist?
 
-**Gist** saves you time by instantly summarizing Google search results using AI. Instead of clicking through multiple websites to find answers, get a clear, concise summary of the top results in seconds.
+**Gist** is a Chrome extension that transforms how you consume Google search results by providing instant AI-powered summaries. Instead of clicking through multiple websites and reading lengthy articles, get a comprehensive summary of the top search results in seconds.
 
-### For Everyone
+### Why Choose Gist Over Google's Native AI Summaries?
 
-**The Problem:** When you search on Google, you often need to open 5-10 tabs, read through lengthy articles, and piece together information yourself.
+**🎯 More Control & Customization**
+- **Choose Your Summary Style**: Select between Brief (fast scan), Detailed (comprehensive), or Key Points (fastest) formats
+- **Multilingual Flexibility**: Search in one language, get summaries in another (e.g., search in English, summarize in French)
+- **Model Selection**: Pick from the latest Google Gemini Flash models for optimal performance
+- **Your Own API Key**: Use Google's free tier (1500 requests/day) without restrictions
 
-**The Solution:** Gist reads the top search results for you and creates an easy-to-read summary with all the key points and sources.
+**🔒 Privacy & Transparency**
+- **100% Open Source**: Full code transparency - see exactly what the extension does
+- **No Data Collection**: Zero telemetry, analytics, or tracking
+- **Local Processing**: Your API key never leaves your browser
+- **No Middleman**: Direct connection to Google AI API
 
-**How it works:**
-1. Search anything on Google (like you normally do)
-2. Click the "✨ Summarize with AI" button
-3. Get an instant AI summary with references
+**⚡ Performance & Reliability**
+- **Smart Caching**: Instant results (<100ms) for repeated searches
+- **Offline-Ready**: Cached summaries work without internet
+- **No Rate Limits**: Unlike Google's native summaries, you control your quota
+- **Always Available**: Works on every Google search, not just select queries
 
-**Privacy First:** Your API key stays on your computer. No data is sent to our servers because we don't have any servers.
+### How to Use Gist
+
+**Step 1: Install & Configure**
+1. Install the extension from Chrome Web Store or load unpacked
+2. Click the Gist icon in your browser toolbar
+3. Get a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+4. Paste your API key and select your preferences
+5. Choose your preferred language and summary format
+
+**Step 2: Summarize Any Search**
+- **Method 1**: Click the vertical button on the right side of any Google search page
+- **Method 2**: Press `Ctrl+Shift+S` (or `Cmd+Shift+S` on Mac)
+- Wait 3-5 seconds for the AI to analyze the top 3 search results
+- View your summary in a beautiful popup with source references
+
+**Step 3: Customize Your Experience**
+- **Change Languages**: Search in English, get summaries in Spanish, French, or German
+- **Switch Formats**: 
+  - 🎯 **Brief** (3-5 bullet points, ~500 words, fastest)
+  - 📄 **Detailed** (comprehensive analysis, ~2000 words, slowest)
+  - ⚡ **Key Points** (essential takeaways only, ~250 words, ultra-fast)
+- **Share Results**: Use the share button to post on X (Twitter), LinkedIn, or email
+- **Copy to Clipboard**: One-click copy for pasting into documents
+
+### Understanding Summary Formats
+
+**🎯 Brief Summary** (Default, Recommended)
+- Perfect for quick research and fact-checking
+- 3-5 concise bullet points with citations
+- ~500 words, generates in 3-5 seconds
+- Best for: News, quick facts, simple questions
+
+**📄 Detailed Summary**
+- Comprehensive analysis with context and examples
+- 4-6 detailed sections with in-depth explanations
+- ~2000 words, generates in 8-12 seconds
+- Best for: Research, learning, complex topics
+
+**⚡ Key Points**
+- Ultra-fast extraction of essential information
+- Short bullet points, no fluff
+- ~250 words, generates in 2-3 seconds
+- Best for: Scanning multiple topics, time-sensitive searches
+
+### Multilingual Translation Feature
+
+**Search in Any Language, Summarize in Another**
+
+Gist's unique multilingual capability lets you:
+- Search Google in English → Get summary in French
+- Search in Spanish → Get summary in German
+- Search in any language → Get summary in your preferred language
+
+**Supported Languages:**
+- 🇺🇸 English
+- 🇪🇸 Spanish (Español)
+- 🇫🇷 French (Français)
+- 🇩🇪 German (Deutsch)
+
+**Example Use Cases:**
+- Research foreign topics but read summaries in your native language
+- Learn a new language by comparing search results with translated summaries
+- Share information with international colleagues in their preferred language
 
 ### ✨ Key Features
 
-- 🔑 **Use Your Own AI Key** - Bring your own Google AI API key (free tier available)
-- 🔒 **100% Private** - Everything runs in your browser, no external servers
-- ⚡ **Lightning Fast** - Optimized caching delivers summaries in under 100ms
-- 🎨 **Clean Interface** - Seamlessly integrates with Google Search
-- 🌍 **Multi-Language** - Supports 10+ languages including English, Spanish, French, German
-- 📝 **Flexible Formats** - Choose between detailed, bullet points, or concise summaries
-- ♿ **Accessible** - Full keyboard navigation and screen reader support
+- 🔑 **Use Your Own AI Key** - Free tier: 1500 requests/day from Google AI
+- 🔒 **100% Private** - No servers, no tracking, no data collection
+- ⚡ **Lightning Fast** - Cached results in <100ms, cold start in 3-5s
+- 🎨 **Clean Interface** - Seamless integration with Google Search
+- 🌍 **Multilingual** - Search in one language, summarize in another
+- 📝 **3 Summary Formats** - Brief, Detailed, or Key Points
+- 🔗 **Source References** - Every summary includes clickable citations
+- 📋 **Easy Sharing** - Share to X, LinkedIn, or email with one click
+- ⌨️ **Keyboard Shortcuts** - `Ctrl+Shift+S` to summarize instantly
+- ♿ **Fully Accessible** - Screen reader support and keyboard navigation
 
 ## 🎯 Quick Start (3 Steps)
 
@@ -159,9 +233,9 @@ npm run test:browser       # Playwright browser tests
 - Hash-based cache keys for fast lookups
 
 ✅ **Multi-Language Support**
-- English, Spanish, French, German, Italian, Portuguese, Dutch, Russian, Japanese, Chinese
+- English, Spanish, French, German
+- Cross-language summarization (search in one language, summarize in another)
 - Language-aware prompts
-- Automatic language detection
 
 ✅ **Flexible Summary Formats**
 - Detailed (comprehensive analysis)

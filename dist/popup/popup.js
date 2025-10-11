@@ -3,6 +3,81 @@ let cachedApiKey = null;
 let elements = null;
 const VERSION_REGEX = /(\d+\.\d+)/;
 
+const translations = {
+  English: {
+    title: '🚀 Gist Settings',
+    apiKey: '🔑 API Key',
+    model: '🤖 AI Model',
+    language: '🌐 Language',
+    format: '📝 Summary Format',
+    brief: '🎯 Brief Summary, Fast',
+    detailed: '📄 Detailed Summary, Slowest',
+    keypoints: '⚡ Key Points, Fastest',
+    save: 'Save Settings',
+    apiHelp: 'Get API key:',
+    howToUse: 'How to use:',
+    footer: 'Google search summarizer, made by'
+  },
+  Spanish: {
+    title: '🚀 Configuración de Gist',
+    apiKey: '🔑 Clave API',
+    model: '🤖 Modelo de IA',
+    language: '🌐 Idioma',
+    format: '📝 Formato de Resumen',
+    brief: '🎯 Resumen Breve, Rápido',
+    detailed: '📄 Resumen Detallado, Más Lento',
+    keypoints: '⚡ Puntos Clave, Más Rápido',
+    save: 'Guardar Configuración',
+    apiHelp: 'Obtener clave API:',
+    howToUse: 'Cómo usar:',
+    footer: 'Resumidor de búsqueda de Google, hecho por'
+  },
+  French: {
+    title: '🚀 Paramètres Gist',
+    apiKey: '🔑 Clé API',
+    model: '🤖 Modèle IA',
+    language: '🌐 Langue',
+    format: '📝 Format de Résumé',
+    brief: '🎯 Résumé Bref, Rapide',
+    detailed: '📄 Résumé Détaillé, Plus Lent',
+    keypoints: '⚡ Points Clés, Plus Rapide',
+    save: 'Enregistrer les Paramètres',
+    apiHelp: 'Obtenir clé API :',
+    howToUse: 'Comment utiliser :',
+    footer: 'Résumeur de recherche Google, créé par'
+  },
+  German: {
+    title: '🚀 Gist Einstellungen',
+    apiKey: '🔑 API-Schlüssel',
+    model: '🤖 KI-Modell',
+    language: '🌐 Sprache',
+    format: '📝 Zusammenfassungsformat',
+    brief: '🎯 Kurze Zusammenfassung, Schnell',
+    detailed: '📄 Detaillierte Zusammenfassung, Langsam',
+    keypoints: '⚡ Kernpunkte, Am Schnellsten',
+    save: 'Einstellungen Speichern',
+    apiHelp: 'API-Schlüssel erhalten:',
+    howToUse: 'So verwenden:',
+    footer: 'Google-Suchzusammenfasser, erstellt von'
+  }
+};
+
+function updateUILanguage(lang) {
+  const t = translations[lang] || translations.English;
+  document.getElementById('settingsTitle').textContent = t.title;
+  document.getElementById('apiKeyLabel').textContent = t.apiKey;
+  document.getElementById('modelLabel').textContent = t.model;
+  document.getElementById('languageLabel').textContent = t.language;
+  document.getElementById('formatLabel').textContent = t.format;
+  document.getElementById('briefOption').textContent = t.brief;
+  document.getElementById('detailedOption').textContent = t.detailed;
+  document.getElementById('keypointsOption').textContent = t.keypoints;
+  document.getElementById('saveButtonText').textContent = t.save;
+  document.getElementById('apiKeyHelpText').textContent = t.apiHelp;
+  document.getElementById('howToUseText').textContent = t.howToUse;
+  document.getElementById('footerMadeBy').textContent = t.footer;
+}
+
 function getElements() {
   if (!elements) {
     elements = {
@@ -62,6 +137,7 @@ async function loadModels(apiKey) {
       const name = m.displayName.toLowerCase();
       const desc = (m.description || '').toLowerCase();
       return name.includes('flash') && 
+             !name.includes('lite') &&
              !name.includes('image') && !name.includes('tts') && 
              !name.includes('vision') && !name.includes('robotics') && 
              !name.includes('computer use') && !name.includes('banana') &&
@@ -71,7 +147,7 @@ async function loadModels(apiKey) {
       const versionB = parseFloat(b.name.match(VERSION_REGEX)?.[1] || 0);
       if (versionB !== versionA) return versionB - versionA;
       return (b.version || '').localeCompare(a.version || '');
-    }).slice(0, 5) || [];
+    }).slice(0, 3) || [];
     
     const fragment = document.createDocumentFragment();
     const placeholder = document.createElement('option');
@@ -128,6 +204,10 @@ async function loadModels(apiKey) {
     if (select) select.disabled = false;
   }
 }
+
+document.getElementById('languageSelect')?.addEventListener('change', (e) => {
+  updateUILanguage(e.target.value);
+});
 
 document.getElementById('saveKey')?.addEventListener('click', async () => {
   const { apiKey, modelSelect, languageSelect, formatSelect, statusMsg } = getElements();
@@ -239,7 +319,10 @@ if (typeof document !== 'undefined') {
       const { flashApiKey, selectedModel, selectedLanguage, summaryFormat } = data;
       const { apiKey, modelSelect, languageSelect, formatSelect } = getElements();
       
-      if (languageSelect && selectedLanguage) languageSelect.value = selectedLanguage;
+      if (languageSelect && selectedLanguage) {
+        languageSelect.value = selectedLanguage;
+        updateUILanguage(selectedLanguage);
+      }
       if (formatSelect && summaryFormat) formatSelect.value = summaryFormat;
       
       if (flashApiKey && apiKey) {

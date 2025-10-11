@@ -63,8 +63,6 @@ function addSummarizeButton() {
       Spanish: 'Resumir',
       French: 'Résumer',
       German: 'Zusammenfassen',
-      Chinese: '总结',
-      Japanese: '要約',
       Arabic: 'تلخيص'
     };
     const tooltipText = translations[selectedLanguage] || 'Summarize';
@@ -117,7 +115,7 @@ function cleanHtmlToText(html) {
   return (mainContent.textContent || '').replace(/\s+/g, ' ').slice(0, 3000).trim();
 }
 
-function displaySummary(markdown, urls) {
+function displaySummary(markdown, urls, format, language) {
   const overlay = document.createElement('div');
   overlay.className = 'summary-overlay';
   
@@ -127,14 +125,69 @@ function displaySummary(markdown, urls) {
   const header = document.createElement('div');
   header.className = 'summary-header';
   
+  const translations = {
+    English: {
+      brief: '🚀 AI Brief Summary',
+      detailed: '🚀 AI Detailed Summary',
+      keypoints: '🚀 AI Key Points Summary',
+      top: 'Top',
+      analyzed: 'pages analyzed',
+      copy: 'Copy',
+      share: 'Share',
+      close: 'Close'
+    },
+    Spanish: {
+      brief: '🚀 Resumen Breve de IA',
+      detailed: '🚀 Resumen Detallado de IA',
+      keypoints: '🚀 Puntos Clave de IA',
+      top: 'Top',
+      analyzed: 'páginas analizadas',
+      copy: 'Copiar',
+      share: 'Compartir',
+      close: 'Cerrar'
+    },
+    French: {
+      brief: '🚀 Résumé Bref IA',
+      detailed: '🚀 Résumé Détaillé IA',
+      keypoints: '🚀 Points Clés IA',
+      top: 'Top',
+      analyzed: 'pages analysées',
+      copy: 'Copier',
+      share: 'Partager',
+      close: 'Fermer'
+    },
+    German: {
+      brief: '🚀 KI-Kurzzusammenfassung',
+      detailed: '🚀 KI-Detaillierte Zusammenfassung',
+      keypoints: '🚀 KI-Kernpunkte',
+      top: 'Top',
+      analyzed: 'Seiten analysiert',
+      copy: 'Kopieren',
+      share: 'Teilen',
+      close: 'Schließen'
+    },
+    Arabic: {
+      brief: '🚀 ملخص موجز بالذكاء الاصطناعي',
+      detailed: '🚀 ملخص مفصل بالذكاء الاصطناعي',
+      keypoints: '🚀 النقاط الرئيسية بالذكاء الاصطناعي',
+      top: 'أفضل',
+      analyzed: 'صفحات تم تحليلها',
+      copy: 'نسخ',
+      share: 'مشاركة',
+      close: 'إغلاق'
+    }
+  };
+  
+  const t = translations[language] || translations.English;
+  
   const title = document.createElement('h2');
   title.className = 'summary-title';
-  title.textContent = '🚀 AI Summary';
+  title.textContent = t[format] || t.brief;
   
   if (urls && urls.length > 0) {
     const urlsInfo = document.createElement('div');
     urlsInfo.className = 'summary-sources';
-    urlsInfo.textContent = `Sources: ${urls.length} pages analyzed`;
+    urlsInfo.textContent = `${t.top} ${urls.length} ${t.analyzed}`;
     title.appendChild(urlsInfo);
   }
   
@@ -144,19 +197,72 @@ function displaySummary(markdown, urls) {
   const copyBtn = document.createElement('button');
   copyBtn.className = 'close-btn';
   copyBtn.innerHTML = '📋';
-  copyBtn.title = 'Copy summary';
+  copyBtn.setAttribute('data-tooltip', t.copy);
   copyBtn.onclick = () => {
     navigator.clipboard.writeText(markdown);
     copyBtn.innerHTML = '✓';
     setTimeout(() => copyBtn.innerHTML = '📋', 2000);
   };
   
+  const shareBtn = document.createElement('button');
+  shareBtn.className = 'close-btn share-btn';
+  shareBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M15.5 6.5L8.5 10.5M8.5 13.5L15.5 17.5" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
+  shareBtn.setAttribute('data-tooltip', t.share);
+  shareBtn.onclick = (e) => {
+    e.stopPropagation();
+    const menu = document.createElement('div');
+    menu.className = 'share-menu';
+    
+    const xBtn = document.createElement('button');
+    xBtn.className = 'share-option';
+    xBtn.innerHTML = '𝕏 Share on X';
+    xBtn.onclick = () => {
+      const text = `${markdown.split('\n')[0].replace(/^#\s*/, '')}\n\nSearch: ${extractSearchQuery()}`;
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+      menu.remove();
+    };
+    
+    const linkedinBtn = document.createElement('button');
+    linkedinBtn.className = 'share-option';
+    linkedinBtn.innerHTML = 'in Share on LinkedIn';
+    linkedinBtn.onclick = () => {
+      const text = `${markdown.split('\n')[0].replace(/^#\s*/, '')}\n\nSearch: ${extractSearchQuery()}`;
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodeURIComponent(text)}`, '_blank');
+      menu.remove();
+    };
+    
+    const emailBtn = document.createElement('button');
+    emailBtn.className = 'share-option';
+    emailBtn.innerHTML = '✉️ Share via Email';
+    emailBtn.onclick = () => {
+      const subject = markdown.split('\n')[0].replace(/^#\s*/, '');
+      const body = `${markdown}\n\nSearch: ${extractSearchQuery()}`;
+      window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+      menu.remove();
+    };
+    
+    menu.appendChild(xBtn);
+    menu.appendChild(linkedinBtn);
+    menu.appendChild(emailBtn);
+    shareBtn.appendChild(menu);
+    
+    const closeMenu = (ev) => {
+      if (!shareBtn.contains(ev.target)) {
+        menu.remove();
+        document.removeEventListener('click', closeMenu);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', closeMenu), 0);
+  };
+  
   const closeBtn = document.createElement('button');
   closeBtn.className = 'close-btn';
   closeBtn.innerHTML = '×';
+  closeBtn.setAttribute('data-tooltip', t.close);
   closeBtn.onclick = () => overlay.remove();
   
   actions.appendChild(copyBtn);
+  actions.appendChild(shareBtn);
   actions.appendChild(closeBtn);
   header.appendChild(title);
   header.appendChild(actions);
@@ -280,7 +386,7 @@ async function summarizeResults() {
     console.log('Selected model:', selectedModel);
     const model = selectedModel;
     const language = selectedLanguage || 'English';
-    const format = summaryFormat || 'detailed';
+    const format = summaryFormat || 'brief';
     
     const searchQuery = extractSearchQuery();
     const urls = scrapeGoogleUrls();
@@ -288,7 +394,7 @@ async function summarizeResults() {
     
     const cached = summaryCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-      displaySummary(cached.markdown, cached.urls);
+      displaySummary(cached.markdown, cached.urls, format, language);
       return;
     }
     
@@ -296,7 +402,7 @@ async function summarizeResults() {
     const stored = await chrome.storage.local.get(storageKey);
     if (stored[storageKey] && (Date.now() - stored[storageKey].timestamp) < CACHE_DURATION) {
       summaryCache.set(cacheKey, stored[storageKey]);
-      displaySummary(stored[storageKey].markdown, stored[storageKey].urls);
+      displaySummary(stored[storageKey].markdown, stored[storageKey].urls, format, language);
       return;
     }
     
@@ -306,8 +412,21 @@ async function summarizeResults() {
       keypoints: 'List only the key takeaways as short bullet points.'
     };
     
-    const maxTokens = format === 'detailed' ? 4000 : 500;
-    const wordLimit = format === 'detailed' ? 2000 : 300;
+    let maxTokens, wordLimit;
+    switch (format) {
+      case 'detailed':
+        maxTokens = 15000;
+        wordLimit = 2000;
+        break;
+      case 'keypoints':
+        maxTokens = 2000;
+        wordLimit = 250;
+        break;
+      case 'brief':
+      default:
+        maxTokens = 3000;
+        wordLimit = 500;
+    }
     
     btn.disabled = true;
     btn.innerHTML = 'Finding sources<span class="loading-spinner"></span>';
@@ -341,14 +460,21 @@ async function summarizeResults() {
     btn.innerHTML = 'Generating summary<span class="loading-spinner"></span>';
     
     const sources = extractedContent.map((text, i) => `[${i + 1}] ${text}`);
-    const prompt = `Summarize these ${extractedContent.length} web sources about the search query.
+    const prompt = `Search Query: "${searchQuery}"
 
-Format: Start with "# Title" then ${format === 'detailed' ? '4-6 detailed bullet points' : '3-5 bullet points'} with [1], [2] citations in ${language}. ${formatInstructions[format]}
+Your task: Extract and summarize ONLY the information from these ${extractedContent.length} sources that directly answers or relates to the search query above. Ignore any content that doesn't address the query.
+
+Format: Start with "# [Answer to the Query]" then ${format === 'detailed' ? '4-6 detailed bullet points' : '3-5 bullet points'} with [1], [2] citations in ${language}. ${formatInstructions[format]}
 
 Sources:
 ${sources.join('\n\n')}
 
-Keep summary under ${wordLimit} words. Focus on key facts and insights.`;
+IMPORTANT:
+- Stay focused on answering the search query
+- Extract practical, actionable information when the query asks "how to"
+- Ignore background information or definitions unless the query specifically asks for them
+- Keep summary under ${wordLimit} words
+- Use citations [1], [2] to reference sources`;
     
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${flashApiKey}`;
     console.log('API URL:', apiUrl.replace(flashApiKey, 'REDACTED'));
@@ -382,17 +508,36 @@ Keep summary under ${wordLimit} words. Focus on key facts and insights.`;
     const data = apiResponse;
     console.log('API response data:', data);
     console.log('Candidates:', data.candidates);
-    let markdown = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    const finishReason = data.candidates?.[0]?.finishReason;
+    let markdown = data.candidates?.[0]?.content?.parts?.[0]?.text || 
+                   data.candidates?.[0]?.text ||
+                   data.text;
+    
     console.log('Extracted markdown:', markdown);
+    console.log('Finish reason:', finishReason);
     
     if (!markdown) {
+      if (finishReason === 'MAX_TOKENS') {
+        throw new Error('Response too long. Try using "Brief Summary" format.');
+      }
       console.error('No markdown extracted from response');
+      console.error('Full response structure:', JSON.stringify(data, null, 2));
       throw new Error('No summary generated');
     }
     
-    if (!markdown.toLowerCase().includes('## references')) {
+    const refTranslations = {
+      English: 'References',
+      Spanish: 'Referencias',
+      French: 'Références',
+      German: 'Referenzen',
+      Arabic: 'المراجع'
+    };
+    const refTitle = refTranslations[language] || 'References';
+    
+    if (!markdown.toLowerCase().includes('## references') && !markdown.toLowerCase().includes('## referencias') && !markdown.toLowerCase().includes('## références') && !markdown.toLowerCase().includes('## referenzen') && !markdown.toLowerCase().includes('## المراجع')) {
       const references = urls.map((url, i) => `**${i + 1}.** [${url}](${url})  `).join('\n');
-      markdown += `\n\n## References\n\n${references}`;
+      markdown += `\n\n## ${refTitle}\n\n${references}`;
     }
     
     const cacheData = { markdown, urls, timestamp: Date.now() };
@@ -405,7 +550,7 @@ Keep summary under ${wordLimit} words. Focus on key facts and insights.`;
     }
     
     cachedSummary = markdown;
-    displaySummary(markdown, urls);
+    displaySummary(markdown, urls, format, language);
     
   } catch (error) {
     console.error('Summarization error:', error);

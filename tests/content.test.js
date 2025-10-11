@@ -170,8 +170,8 @@ describe('Display Summary', () => {
 
   test('should remove overlay on close button', () => {
     const { displaySummary } = require('../content/content.js');
-    displaySummary('Test', []);
-    const closeBtn = document.querySelectorAll('.close-btn')[1];
+    displaySummary('Test', [], 'brief', 'English');
+    const closeBtn = document.querySelectorAll('.close-btn')[2];
     closeBtn.click();
     expect(document.querySelector('.summary-overlay')).toBeFalsy();
   });
