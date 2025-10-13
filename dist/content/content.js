@@ -1124,7 +1124,7 @@ async function setCachedPage(url, content) {
   }
 }
 
-async function fetchWithTimeout(url, timeout = 2000) {
+async function fetchWithTimeout(url, timeout = 2000, signal = null) {
   if (!isValidUrl(url)) return '';
   
   const cached = await getCachedPage(url);
@@ -1132,9 +1132,13 @@ async function fetchWithTimeout(url, timeout = 2000) {
   
   const content = await Promise.race([
     new Promise((resolve, reject) => {
+      if (signal?.aborted) return reject(new Error('aborted'));
+      const abortHandler = () => reject(new Error('aborted'));
+      signal?.addEventListener('abort', abortHandler);
       chrome.runtime.sendMessage(
         { action: 'fetchPage', url },
         response => {
+          signal?.removeEventListener('abort', abortHandler);
           if (chrome.runtime.lastError) {
             reject(new Error(chrome.runtime.lastError.message));
           } else if (response?.success) {
@@ -1260,12 +1264,15 @@ async function summarizeResults() {
     const fetchStart = Date.now();
     const results = [];
     const usedUrls = [];
+    const controllers = [];
     let completed = 0;
     
     await new Promise((resolve) => {
       urls.forEach((url, idx) => {
+        const controller = new AbortController();
+        controllers.push(controller);
         const urlStart = Date.now();
-        fetchWithTimeout(url, 1000).then(html => {
+        fetchWithTimeout(url, 1000, controller.signal).then(html => {
           const urlTime = Date.now() - urlStart;
           completed++;
           const text = cleanHtmlToText(html);
@@ -1275,6 +1282,7 @@ async function summarizeResults() {
             console.log(`[PERF] ✓ URL ${idx+1} loaded in ${urlTime}ms (${results.length}/3)`);
             if (results.length === 3) {
               console.log(`[PERF] Got 3 sources in ${Date.now() - fetchStart}ms`);
+              controllers.forEach((c, i) => { if (i !== idx && !c.signal.aborted) c.abort(); });
               resolve();
             }
           }
