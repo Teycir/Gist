@@ -657,7 +657,7 @@ async function displaySummary(markdown, urls, format, language) {
       
       const style = document.createElement('style');
       style.textContent = `
-        .history-item-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+        .history-item-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; margin-bottom: 8px; }
         .history-meta-badge { background: #e8eaed; color: #5f6368; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600; }
         .history-meta-badge.detailed { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
         .history-meta-badge.brief { background: #34a853; color: white; }
