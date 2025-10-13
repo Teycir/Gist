@@ -232,6 +232,108 @@ async function displaySummary(markdown, urls, format, language) {
   const header = document.createElement('div');
   header.className = 'summary-header';
   
+  // Tag input section
+  const tagSection = document.createElement('div');
+  tagSection.className = 'tag-section';
+  
+  const searchQuery = extractSearchQuery();
+  const summaryKey = `summary_${simpleHash(searchQuery + markdown.substring(0, 100))}`;
+  
+  const tagInput = document.createElement('input');
+  tagInput.type = 'text';
+  tagInput.className = 'tag-input';
+  tagInput.placeholder = language === 'Spanish' ? '🏷️ Agregar etiqueta y presionar Enter' : language === 'French' ? '🏷️ Ajouter une étiquette et appuyer sur Entrée' : language === 'German' ? '🏷️ Tag hinzufügen und Enter drücken' : '🏷️ Add a tag for categorization - then press Enter';
+  
+  const tagsDisplay = document.createElement('div');
+  tagsDisplay.className = 'tags-display';
+  
+  // Load existing tags
+  const loadTags = async () => {
+    const stored = await chrome.storage.local.get(summaryKey);
+    const tags = stored[summaryKey]?.tags || [];
+    tagsDisplay.innerHTML = '';
+    tags.forEach(tag => {
+      const tagBadge = document.createElement('span');
+      tagBadge.className = 'tag-badge';
+      tagBadge.textContent = tag;
+      const removeBtn = document.createElement('span');
+      removeBtn.className = 'tag-remove';
+      removeBtn.textContent = '×';
+      removeBtn.onclick = async () => {
+        const data = await chrome.storage.local.get(summaryKey);
+        const currentTags = data[summaryKey]?.tags || [];
+        const newTags = currentTags.filter(t => t !== tag);
+        await chrome.storage.local.set({ [summaryKey]: { ...data[summaryKey], tags: newTags } });
+        loadTags();
+      };
+      tagBadge.appendChild(removeBtn);
+      tagsDisplay.appendChild(tagBadge);
+    });
+  };
+  
+  // Get all existing tags for autocomplete
+  const getAllTags = async () => {
+    const items = await chrome.storage.local.get(null);
+    const allTags = new Set();
+    Object.entries(items).filter(([k]) => k.startsWith('summary_')).forEach(([_, v]) => {
+      if (v.tags) v.tags.forEach(t => allTags.add(t));
+    });
+    return Array.from(allTags);
+  };
+  
+  // Autocomplete dropdown
+  const dropdown = document.createElement('div');
+  dropdown.className = 'tag-dropdown';
+  dropdown.style.display = 'none';
+  
+  tagInput.oninput = async (e) => {
+    const val = e.target.value.trim();
+    if (!val) {
+      dropdown.style.display = 'none';
+      return;
+    }
+    const allTags = await getAllTags();
+    const matches = allTags.filter(t => t.toLowerCase().includes(val.toLowerCase()));
+    if (matches.length > 0) {
+      dropdown.innerHTML = '';
+      matches.slice(0, 5).forEach(tag => {
+        const option = document.createElement('div');
+        option.className = 'tag-option';
+        option.textContent = tag;
+        option.onclick = () => {
+          tagInput.value = tag;
+          dropdown.style.display = 'none';
+          tagInput.focus();
+        };
+        dropdown.appendChild(option);
+      });
+      dropdown.style.display = 'block';
+    } else {
+      dropdown.style.display = 'none';
+    }
+  };
+  
+  tagInput.onkeypress = async (e) => {
+    if (e.key === 'Enter') {
+      const tag = tagInput.value.trim();
+      if (!tag) return;
+      const stored = await chrome.storage.local.get(summaryKey);
+      const currentTags = stored[summaryKey]?.tags || [];
+      if (!currentTags.includes(tag)) {
+        currentTags.push(tag);
+        await chrome.storage.local.set({ [summaryKey]: { ...stored[summaryKey], tags: currentTags, markdown, urls, timestamp: Date.now() } });
+      }
+      tagInput.value = '';
+      dropdown.style.display = 'none';
+      loadTags();
+    }
+  };
+  
+  tagSection.appendChild(tagInput);
+  tagSection.appendChild(dropdown);
+  tagSection.appendChild(tagsDisplay);
+  loadTags();
+  
   const engine = detectSearchEngine();
   const engineNames = {
     google: 'Google',
@@ -309,6 +411,8 @@ async function displaySummary(markdown, urls, format, language) {
   
   const t = translations[language] || translations.English;
   
+  let historyVisible = false;
+  
   const title = document.createElement('h2');
   title.className = 'summary-title';
   title.textContent = t[format] || t.brief;
@@ -320,7 +424,6 @@ async function displaySummary(markdown, urls, format, language) {
   historyBtn.className = 'close-btn';
   historyBtn.innerHTML = '📚';
   historyBtn.setAttribute('data-tooltip', t.history);
-  let historyVisible = false;
   
   const refreshBtn = document.createElement('button');
   refreshBtn.className = 'close-btn';
@@ -455,6 +558,8 @@ async function displaySummary(markdown, urls, format, language) {
   actions.appendChild(closeBtn);
   header.appendChild(title);
   header.appendChild(actions);
+  content.appendChild(header);
+  content.appendChild(tagSection);
   
   const body = document.createElement('div');
   body.className = 'summary-body';
@@ -465,6 +570,7 @@ async function displaySummary(markdown, urls, format, language) {
   
   historyBtn.onclick = async () => {
     historyVisible = !historyVisible;
+    title.textContent = historyVisible ? t.history : (t[format] || t.brief);
     if (historyVisible) {
       const items = await chrome.storage.local.get(null);
       const allSummaries = Object.entries(items)
@@ -480,12 +586,47 @@ async function displaySummary(markdown, urls, format, language) {
       
       const summaries = [...favorites, ...allSummaries];
       historyPanel.innerHTML = '';
+      tagSection.style.display = 'none';
       
       const searchInput = document.createElement('input');
       searchInput.type = 'text';
       searchInput.className = 'history-search';
       searchInput.placeholder = language === 'Spanish' ? '🔍 Buscar en historial...' : language === 'French' ? '🔍 Rechercher dans l\'historique...' : language === 'German' ? '🔍 Im Verlauf suchen...' : '🔍 Search history...';
       historyPanel.appendChild(searchInput);
+      
+      // Tag filter badges
+      const allHistoryTags = new Set();
+      summaries.forEach(s => {
+        if (s.tags) s.tags.forEach(t => allHistoryTags.add(t));
+      });
+      
+      const selectedTags = new Set();
+      const tagFilterContainer = document.createElement('div');
+      tagFilterContainer.className = 'tag-filter-badges';
+      
+      const renderTagBadges = () => {
+        tagFilterContainer.innerHTML = '';
+        Array.from(allHistoryTags).forEach(tag => {
+          const badge = document.createElement('span');
+          badge.className = selectedTags.has(tag) ? 'filter-tag-badge active' : 'filter-tag-badge';
+          badge.textContent = tag;
+          badge.onclick = () => {
+            if (selectedTags.has(tag)) {
+              selectedTags.delete(tag);
+            } else {
+              selectedTags.add(tag);
+            }
+            renderTagBadges();
+            renderItems(searchInput.value, showOnlyFavorites);
+          };
+          tagFilterContainer.appendChild(badge);
+        });
+      };
+      
+      if (allHistoryTags.size > 0) {
+        renderTagBadges();
+        historyPanel.appendChild(tagFilterContainer);
+      }
       
       const filterBtn = document.createElement('button');
       filterBtn.className = 'history-filter-btn';
@@ -523,24 +664,26 @@ async function displaySummary(markdown, urls, format, language) {
       historyPanel.appendChild(scrollBtns);
       
       const renderItems = (filter = '', onlyFavorites = false) => {
-        const filtered = summaries.filter(({ markdown: md, query, isFav }) => {
+        const filtered = summaries.filter(({ markdown: md, query, isFav, tags }) => {
           const title = md.split('\n')[0].replace(/^#\s*/, '').toLowerCase();
           const q = (query || '').toLowerCase();
           const f = filter.toLowerCase();
           const matchesSearch = title.includes(f) || q.includes(f);
-          return onlyFavorites ? (isFav && matchesSearch) : matchesSearch;
+          const matchesTags = selectedTags.size === 0 || (tags && Array.from(selectedTags).every(st => tags.includes(st)));
+          return onlyFavorites ? (isFav && matchesSearch && matchesTags) : (matchesSearch && matchesTags);
         });
         
         batchDOMUpdates(() => {
           const fragment = document.createDocumentFragment();
-          filtered.forEach(({ markdown: md, urls: u, timestamp, query, isFav }) => {
+          filtered.forEach(({ markdown: md, urls: u, timestamp, query, isFav, tags }) => {
             const item = document.createElement('div');
             item.className = 'history-item';
             const titleText = md.split('\n')[0].replace(/^#\s*/, '').slice(0, 60);
             const date = new Date(timestamp).toLocaleDateString();
             const favIcon = isFav ? '⭐ ' : '';
             const queryText = query ? `<div class="history-item-query">🔍 ${sanitizeText(query)}</div>` : '';
-            item.innerHTML = `<div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}<div class="history-item-date">${date}</div>`;
+            const tagsHtml = tags && tags.length > 0 ? `<div class="history-item-tags">${tags.map(t => `<span class="history-tag-badge">${sanitizeText(t)}</span>`).join('')}</div>` : '';
+            item.innerHTML = `<div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}${tagsHtml}<div class="history-item-date">${date}</div>`;
             item.onclick = () => {
               body.innerHTML = showdownConverter ? showdownConverter.makeHtml(md) : md;
               body.querySelectorAll('a').forEach(link => {
@@ -553,7 +696,9 @@ async function displaySummary(markdown, urls, format, language) {
               historyPanel.style.display = 'none';
               body.style.display = 'block';
               followUpSection.style.display = 'block';
+              tagSection.style.display = 'block';
               historyVisible = false;
+              title.textContent = t[format] || t.brief;
             };
             fragment.appendChild(item);
           });
@@ -582,6 +727,7 @@ async function displaySummary(markdown, urls, format, language) {
       body.style.display = 'block';
       followUpSection.style.display = 'block';
       historyPanel.style.display = 'none';
+      tagSection.style.display = 'block';
     }
   };
   
@@ -591,7 +737,6 @@ async function displaySummary(markdown, urls, format, language) {
   body.setAttribute('data-markdown', markdown);
   body.textContent = 'Loading...';
   
-  content.appendChild(header);
   content.appendChild(historyPanel);
   content.appendChild(body);
   
@@ -749,6 +894,30 @@ async function displaySummary(markdown, urls, format, language) {
         .followup-input { width: 100%; padding: 14px 20px; border: 3px solid #667eea; border-radius: 12px; font-size: 14px; outline: none; transition: all 0.2s ease; font-family: inherit; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15); }
         .followup-input:focus { border-color: #764ba2; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
         .followup-input:disabled { background: #f8f9fa; cursor: not-allowed; opacity: 0.6; }
+        .tag-section { margin: 16px 0; padding: 12px 0; border-bottom: 1px solid #e8eaed; position: relative; }
+        .tag-input { width: 100%; padding: 10px 14px; border: 2px solid #e8eaed; border-radius: 8px; font-size: 13px; outline: none; transition: all 0.2s; font-family: inherit; }
+        .tag-input:focus { border-color: #667eea; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2); }
+        .tag-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e8eaed; border-radius: 6px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); max-height: 150px; overflow-y: auto; z-index: 1000; margin-top: 4px; }
+        .tag-option { padding: 8px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s; }
+        .tag-option:hover { background: #f1f3f4; }
+        .tags-display { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .tag-badge { display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .tag-remove { cursor: pointer; font-size: 16px; line-height: 1; opacity: 0.8; transition: opacity 0.2s; }
+        .tag-remove:hover { opacity: 1; }
+        body.dark .tag-input { background: #2a2a3e; color: #e0e0e0; border-color: #3a3a4e; }
+        body.dark .tag-input:focus { border-color: #667eea; }
+        body.dark .tag-dropdown { background: #2a2a3e; border-color: #3a3a4e; }
+        body.dark .tag-option:hover { background: #3a3a4e; }
+        .tag-filter-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; margin-right: 45px; }
+        .filter-tag-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; background: #e8eaed; color: #5f6368; border: 2px solid transparent; }
+        .filter-tag-badge:hover { background: #d8dadd; transform: scale(1.05); }
+        .filter-tag-badge.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-color: #667eea; }
+        .history-item-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+        .history-tag-badge { background: #e8eaed; color: #5f6368; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600; }
+        body.dark .filter-tag-badge { background: #3a3a4e; color: #b0b0b0; }
+        body.dark .filter-tag-badge:hover { background: #4a4a5e; }
+        body.dark .filter-tag-badge.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-color: #667eea; }
+        body.dark .history-tag-badge { background: #3a3a4e; color: #b0b0b0; }
         .history-panel-inline { display: flex; flex-direction: column; gap: 10px; max-height: 50vh; margin-bottom: 20px; position: relative; }
         .history-search { width: calc(100% - 90px); padding: 10px 14px; border: 2px solid #e8eaed; border-radius: 8px; font-size: 14px; outline: none; transition: all 0.2s; margin-bottom: 10px; }
         .history-filter-btn { position: absolute; top: 0; right: 45px; background: #f8f9fa; border: none; font-size: 20px; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; opacity: 0.5; }
@@ -969,7 +1138,7 @@ async function summarizeResults() {
       return {};
     });
     
-    if (!flashApiKey || !selectedModel) {
+    if (!flashApiKey) {
       chrome.runtime.sendMessage({ action: 'openPopup' });
       return;
     }
@@ -1103,11 +1272,47 @@ async function summarizeResults() {
     const sources = extractedContent.map((text, i) => `[${i + 1}] ${text}`);
     const prompt = `${searchQuery}\n\n${sources.join('\n\n')}\n\n${formatInstructions[format]} Use [1][2] citations. ${language}. Max ${wordLimit} words.`;
     
-    const { primaryModel, fallbackModels } = await chrome.storage.local.get(['primaryModel', 'fallbackModels']);
-    const primary = primaryModel || 'models/gemini-2.0-flash-exp';
-    const fallbacks = fallbackModels || ['models/gemini-exp-1206', 'models/gemini-2.5-flash-preview-09-2025'];
+    const { primaryModel, fallbackModels, flashApiKey: apiKey } = await chrome.storage.local.get(['primaryModel', 'fallbackModels', 'flashApiKey']);
     
-    console.log('[PERF] Using primary model:', primary);
+    let models = [];
+    
+    if (!primaryModel) {
+      const url = new URL('https://generativelanguage.googleapis.com/v1beta/models');
+      url.searchParams.set('key', apiKey);
+      const response = await fetch(url.toString());
+      const data = await response.json();
+      
+      const allModels = data.models?.filter(m => {
+        if (!m.supportedGenerationMethods?.includes('generateContent')) return false;
+        const displayName = m.displayName.toLowerCase();
+        return displayName.includes('flash') && !displayName.includes('lite');
+      }).sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        const aVersion = parseFloat((aName.match(/(\d+\.\d+)/) || ['0'])[0]);
+        const bVersion = parseFloat((bName.match(/(\d+\.\d+)/) || ['0'])[0]);
+        if (aVersion !== bVersion) return bVersion - aVersion;
+        const aHasPreview = aName.includes('preview');
+        const bHasPreview = bName.includes('preview');
+        if (aHasPreview !== bHasPreview) return aHasPreview ? 1 : -1;
+        return a.name.length - b.name.length;
+      }) || [];
+      
+      const latestVersion = allModels[0] ? parseFloat((allModels[0].name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) : 0;
+      const latestStable = allModels.find(m => !m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
+      const latestPreview = allModels.find(m => m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
+      const prevVersion = allModels.find(m => parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) < latestVersion);
+      
+      models = [latestStable?.name, latestPreview?.name, prevVersion?.name].filter(Boolean).slice(0, 3);
+      
+      if (models.length === 0) throw new Error('No compatible Flash models found');
+      
+      await chrome.storage.local.set({ primaryModel: models[0], fallbackModels: models.slice(1) });
+    } else {
+      models = [primaryModel, ...(fallbackModels || [])].filter(Boolean);
+    }
+    
+    console.log('[PERF] Models ready:', models);
     const apiStart = Date.now();
     
     const callModel = (modelName) => new Promise((resolve, reject) => {
@@ -1131,11 +1336,16 @@ async function summarizeResults() {
     });
     
     let apiResponse;
-    try {
-      apiResponse = await callModel(primary);
-    } catch (error) {
-      console.log('[PERF] Primary failed, using fallbacks');
-      apiResponse = await Promise.race(fallbacks.map(m => callModel(m)));
+    for (let i = 0; i < models.length; i++) {
+      try {
+        console.log(`[PERF] Trying model ${i + 1}/${models.length}: ${models[i]}`);
+        apiResponse = await callModel(models[i]);
+        console.log(`[PERF] Success with model: ${models[i]}`);
+        break;
+      } catch (error) {
+        console.log(`[PERF] Model ${models[i]} failed: ${error.message}`);
+        if (i === models.length - 1) throw error;
+      }
     }
     
     const apiTime = Date.now() - apiStart;

@@ -204,14 +204,24 @@ async function loadModels(apiKey) {
              !displayName.includes('computer use') && !displayName.includes('banana') &&
              !desc.includes('image generation') && !desc.includes('image');
     }).sort((a, b) => {
-      const aHasPreview = a.name.toLowerCase().includes('preview');
-      const bHasPreview = b.name.toLowerCase().includes('preview');
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      const aHasPreview = aName.includes('preview');
+      const bHasPreview = bName.includes('preview');
+      const aVersion = parseFloat((aName.match(/(\d+\.\d+)/) || ['0'])[0]);
+      const bVersion = parseFloat((bName.match(/(\d+\.\d+)/) || ['0'])[0]);
+      if (aVersion !== bVersion) return bVersion - aVersion;
       if (aHasPreview !== bHasPreview) return aHasPreview ? 1 : -1;
       return a.name.length - b.name.length;
     }) || [];
     
-    const primary = models[0]?.name;
-    const fallbacks = models.slice(1, 3).map(m => m.name);
+    const latestVersion = models[0] ? parseFloat((models[0].name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) : 0;
+    const latestStable = models.find(m => !m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
+    const latestPreview = models.find(m => m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
+    const prevVersion = models.find(m => parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) < latestVersion);
+    
+    const primary = latestStable?.name || latestPreview?.name || prevVersion?.name;
+    const fallbacks = [latestPreview?.name, prevVersion?.name].filter(Boolean).filter(m => m !== primary).slice(0, 2);
     
     cachedModels = models;
     cachedApiKey = apiKey;
@@ -307,9 +317,10 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
     statusMsg.textContent = 'Saving...';
     statusMsg.className = 'status-msg';
     
+    await loadModels(key);
+    
     await chrome.storage.local.set({ 
       flashApiKey: key, 
-      selectedModel: 'models/gemini-2.0-flash-exp', 
       selectedLanguage: languageSelect.value, 
       summaryFormat: formatSelect.value || 'brief',
       multiSearchEnabled: isMultiSearch,
