@@ -655,6 +655,18 @@ async function displaySummary(markdown, urls, format, language) {
       historyPanel.innerHTML = '';
       tagSection.style.display = 'none';
       
+      const style = document.createElement('style');
+      style.textContent = `
+        .history-item-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+        .history-meta-badge { background: #e8eaed; color: #5f6368; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600; }
+        .history-meta-badge.detailed { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .history-meta-badge.brief { background: #34a853; color: white; }
+        body.dark .history-meta-badge { background: #3a3a4e; color: #b0b0b0; }
+        body.dark .history-meta-badge.detailed { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        body.dark .history-meta-badge.brief { background: #34a853; color: white; }
+      `;
+      historyPanel.appendChild(style);
+      
       const searchInput = document.createElement('input');
       searchInput.type = 'text';
       searchInput.className = 'history-search';
@@ -742,7 +754,7 @@ async function displaySummary(markdown, urls, format, language) {
         
         batchDOMUpdates(() => {
           const fragment = document.createDocumentFragment();
-          filtered.forEach(({ markdown: md, urls: u, timestamp, query, isFav, tags }) => {
+          filtered.forEach(({ markdown: md, urls: u, timestamp, query, isFav, tags, format, language, model }) => {
             const item = document.createElement('div');
             item.className = 'history-item';
             const titleText = md.split('\n')[0].replace(/^#\s*/, '').slice(0, 60);
@@ -751,7 +763,11 @@ async function displaySummary(markdown, urls, format, language) {
             const favIcon = isFav ? '⭐ ' : '';
             const queryText = query ? `<div class="history-item-query">🔍 ${sanitizeText(query)}</div>` : '';
             const tagsHtml = tags && tags.length > 0 ? `<div class="history-item-tags">${tags.map(t => `<span class="history-tag-badge">${sanitizeText(t)}</span>`).join('')}</div>` : '';
-            item.innerHTML = `<div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}${tagsHtml}<div class="history-item-date">${date} ${time}</div>`;
+            const formatBadge = format ? `<span class="history-meta-badge ${format}">${format === 'detailed' ? '📄 Detailed' : '📝 Brief'}</span>` : '';
+            const langBadge = language ? `<span class="history-meta-badge">🌐 ${sanitizeText(language)}</span>` : '';
+            const modelBadge = model ? `<span class="history-meta-badge">🤖 ${sanitizeText(model.split('/').pop())}</span>` : '';
+            const metaHtml = (formatBadge || langBadge || modelBadge) ? `<div class="history-item-meta">${formatBadge}${langBadge}${modelBadge}</div>` : '';
+            item.innerHTML = `<div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}${tagsHtml}${metaHtml}<div class="history-item-date">${date} ${time}</div>`;
             item.onclick = () => {
               body.innerHTML = convertMarkdownToHtml(md);
               body.querySelectorAll('a').forEach(link => {
@@ -1360,7 +1376,7 @@ async function summarizeResults() {
     }
     
     const decodedMarkdown = markdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-    const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now(), format };
+    const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now(), format, language, model: models[0] };
     summaryCache.set(cacheKey, cacheData);
     
     cachedSummary = markdown;
@@ -1376,11 +1392,11 @@ async function summarizeResults() {
           const size = await getStorageSize();
           const MAX_STORAGE = 10 * 1024 * 1024;
           if (size > MAX_STORAGE) await clearOldCaches();
-          await chrome.storage.local.set({ [storageKey]: { ...cacheData, query: searchQuery } });
+          await chrome.storage.local.set({ [storageKey]: { ...cacheData, query: searchQuery, format, language, model: models[0] } });
         } catch (error) {
           if (error.message?.includes('quota')) {
             await clearOldCaches();
-            try { await chrome.storage.local.set({ [storageKey]: { ...cacheData, query: searchQuery } }); } catch (e) {}
+            try { await chrome.storage.local.set({ [storageKey]: { ...cacheData, query: searchQuery, format, language, model: models[0] } }); } catch (e) {}
           }
         }
       })(),
