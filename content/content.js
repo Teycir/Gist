@@ -7,6 +7,7 @@ const MAX_CACHE_SIZE = 15;
 const MAX_PAGE_CACHE_SIZE = 30;
 const domParser = new DOMParser();
 const memoCache = new Map();
+let isProcessing = false;
 
 function memoize(fn, keyFn) {
   return function(...args) {
@@ -25,8 +26,26 @@ function batchDOMUpdates(callback) {
 let summarizeBtn = null;
 let markdownWorker = null;
 const YOUTUBE_REGEX = /youtube\.com/;
-let isProcessing = false;
 let conversationHistory = [];
+
+const MD_PATTERNS = [
+  [/^### (.*$)/gim, '<h3>$1</h3>'],
+  [/^## (.*$)/gim, '<h2>$1</h2>'],
+  [/^# (.*$)/gim, '<h1>$1</h1>'],
+  [/\*\*(.+?)\*\*/g, '<strong>$1</strong>'],
+  [/\*(.+?)\*/g, '<em>$1</em>'],
+  [/`(.+?)`/g, '<code>$1</code>'],
+  [/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="summary-link">$1</a>'],
+  [/^\*   (.+)$/gim, '<li>$1</li>'],
+  [/(<li>.*<\/li>)/s, '<ul>$1</ul>'],
+  [/\n\n/g, '</p><p>'],
+  [/^(.+)$/gim, '<p>$1</p>'],
+  [/<\/p><p><h/g, '</p><h'],
+  [/<\/h([123])><\/p>/g, '</h$1>'],
+  [/<p><\/p>/g, ''],
+  [/<p>(<ul>)/g, '$1'],
+  [/(<\/ul>)<\/p>/g, '$1']
+];
 
 const simpleHash = memoize((str) => {
   let hash = 0;
@@ -193,24 +212,7 @@ function sanitizeText(text) {
 }
 
 function convertMarkdownToHtml(markdown) {
-  let html = markdown
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`(.+?)`/g, '<code>$1</code>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="summary-link">$1</a>')
-    .replace(/^\*   (.+)$/gim, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/^(.+)$/gim, '<p>$1</p>')
-    .replace(/<\/p><p><h/g, '</p><h')
-    .replace(/<\/h([123])><\/p>/g, '</h$1>')
-    .replace(/<p><\/p>/g, '')
-    .replace(/<p>(<ul>)/g, '$1')
-    .replace(/(<\/ul>)<\/p>/g, '$1');
-  return html;
+  return MD_PATTERNS.reduce((html, [pattern, replacement]) => html.replace(pattern, replacement), markdown);
 }
 
 const cleanHtmlToText = memoize((html) => {
@@ -1096,6 +1098,7 @@ async function fetchAndProcessPages(urls) {
 
 async function summarizeResults() {
   if (isProcessing) return;
+  isProcessing = true;
   
   const totalStart = Date.now();
   console.log('[PERF] ========== SUMMARIZE START ==========');
@@ -1104,8 +1107,6 @@ async function summarizeResults() {
   const btn = summarizeBtn;
   if (!btn) return;
   const originalText = btn.textContent;
-  
-  isProcessing = true;
   
   try {
     btn.setAttribute('aria-busy', 'true');
@@ -1336,30 +1337,29 @@ async function summarizeResults() {
     const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now() };
     summaryCache.set(cacheKey, cacheData);
     
-    try {
-      const size = await getStorageSize();
-      const MAX_STORAGE = 10 * 1024 * 1024;
-      
-      if (size > MAX_STORAGE) {
-        await clearOldCaches();
-      }
-      
-      await chrome.storage.local.set({ [storageKey]: cacheData });
-    } catch (error) {
-      if (error.message?.includes('quota')) {
-        await clearOldCaches();
-        try {
-          await chrome.storage.local.set({ [storageKey]: cacheData });
-        } catch (e) {}
-      }
-    }
-    
     cachedSummary = markdown;
     console.log('[PERF] Starting display summary...');
     const displayStart = Date.now();
     await displaySummary(markdown, urls, format, language);
     const displayTime = Date.now() - displayStart;
     console.log(`[PERF] Display completed in ${displayTime}ms`);
+    
+    Promise.all([
+      (async () => {
+        try {
+          const size = await getStorageSize();
+          const MAX_STORAGE = 10 * 1024 * 1024;
+          if (size > MAX_STORAGE) await clearOldCaches();
+          await chrome.storage.local.set({ [storageKey]: cacheData });
+        } catch (error) {
+          if (error.message?.includes('quota')) {
+            await clearOldCaches();
+            try { await chrome.storage.local.set({ [storageKey]: cacheData }); } catch (e) {}
+          }
+        }
+      })(),
+      updateStats('api')
+    ]);
     
   } catch (error) {
     console.error('Summarization error:', error);
