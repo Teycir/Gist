@@ -68,6 +68,8 @@ describe('Summarize Results', () => {
     chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
       if (msg.action === 'getTabId') {
         callback({ tabId: 123 });
+      } else if (msg.action === 'fetchAndProcessPages') {
+        callback({ success: true, results: ['Test content 1', 'Test content 2', 'Test content 3'], usedUrls: ['http://test1.com', 'http://test2.com', 'http://test3.com'] });
       } else if (msg.action === 'fetchPage') {
         setTimeout(() => callback({ success: true, html: '<html><body><main>Content here with enough text</main></body></html>' }), 0);
       } else if (msg.action === 'callAPI') {

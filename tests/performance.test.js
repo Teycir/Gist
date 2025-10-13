@@ -33,8 +33,8 @@ describe('Performance', () => {
           success: true, 
           data: { candidates: [{ content: { parts: [{ text: '# Test Summary\n\n- Key point 1 [1]\n- Key point 2 [2]' }] } }] }
         });
-      } else if (msg.action === 'fetchPage') {
-        callback({ success: true, html: '<html><body><main><p>Test content</p></main></body></html>' });
+      } else if (msg.action === 'fetchAndProcessPages') {
+        callback({ success: true, results: ['Test content 1', 'Test content 2', 'Test content 3'], usedUrls: ['http://test1.com', 'http://test2.com', 'http://test3.com'] });
       }
     });
     
@@ -52,32 +52,31 @@ describe('Performance', () => {
   test('should use cache for repeated queries', async () => {
     chrome.storage.local.get.mockResolvedValue({ 
       flashApiKey: 'test-key',
+      selectedModel: 'models/gemini-1.5-flash',
       selectedLanguage: 'English',
       summaryFormat: 'detailed'
     });
     
-    fetch.mockImplementation((url) => {
-      if (typeof url === 'string' && url.includes('generativelanguage.googleapis.com')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            candidates: [{ content: { parts: [{ text: '# Cached Summary' }] } }]
-          })
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+      if (msg.action === 'getTabId') {
+        callback({ tabId: 123 });
+      } else if (msg.action === 'callAPI') {
+        callback({ 
+          success: true, 
+          data: { candidates: [{ content: { parts: [{ text: '# Cached Summary' }] } }] }
         });
+      } else if (msg.action === 'fetchAndProcessPages') {
+        callback({ success: true, results: ['Content'], usedUrls: ['http://test1.com'] });
       }
-      return Promise.resolve({
-        ok: true,
-        text: () => Promise.resolve('<html><body><main>Content</main></body></html>')
-      });
     });
     
     const { summarizeResults } = require('../content/content.js');
     
     await summarizeResults();
-    const firstCallCount = fetch.mock.calls.length;
+    const firstCallCount = chrome.runtime.sendMessage.mock.calls.filter(c => c[0].action === 'callAPI').length;
     
     await summarizeResults();
-    const secondCallCount = fetch.mock.calls.length;
+    const secondCallCount = chrome.runtime.sendMessage.mock.calls.filter(c => c[0].action === 'callAPI').length;
     
     expect(secondCallCount).toBe(firstCallCount);
   });

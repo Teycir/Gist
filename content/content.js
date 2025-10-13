@@ -1079,81 +1079,19 @@ async function updateStats(type) {
   await chrome.storage.local.set({ usageStats: stats });
 }
 
-async function getCachedPage(url) {
-  const cached = pageCache.get(url);
-  if (cached && (Date.now() - cached.timestamp) < PAGE_CACHE_DURATION) {
-    return cached.content;
-  }
-  
-  try {
-    const storageKey = `page_${simpleHash(url)}`;
-    const stored = await chrome.storage.local.get(storageKey);
-    if (stored[storageKey] && (Date.now() - stored[storageKey].timestamp) < PAGE_CACHE_DURATION) {
-      pageCache.set(url, stored[storageKey]);
-      return stored[storageKey].content;
-    }
-  } catch (error) {
-    console.warn('Cache read error:', error);
-  }
-  
-  return null;
-}
-
-async function setCachedPage(url, content) {
-  const cacheData = { content, timestamp: Date.now() };
-  pageCache.set(url, cacheData);
-  
-  try {
-    const size = await getStorageSize();
-    const MAX_STORAGE = 10 * 1024 * 1024;
-    
-    if (size > MAX_STORAGE) {
-      await clearOldCaches();
-    }
-    
-    const storageKey = `page_${simpleHash(url)}`;
-    await chrome.storage.local.set({ [storageKey]: cacheData });
-  } catch (error) {
-    if (error.message?.includes('quota')) {
-      await clearOldCaches();
-      try {
-        const storageKey = `page_${simpleHash(url)}`;
-        await chrome.storage.local.set({ [storageKey]: cacheData });
-      } catch (e) {}
-    }
-  }
-}
-
-async function fetchWithTimeout(url, timeout = 2000, signal = null) {
-  if (!isValidUrl(url)) return '';
-  
-  const cached = await getCachedPage(url);
-  if (cached) return cached;
-  
-  const content = await Promise.race([
-    new Promise((resolve, reject) => {
-      if (signal?.aborted) return reject(new Error('aborted'));
-      const abortHandler = () => reject(new Error('aborted'));
-      signal?.addEventListener('abort', abortHandler);
-      chrome.runtime.sendMessage(
-        { action: 'fetchPage', url },
-        response => {
-          signal?.removeEventListener('abort', abortHandler);
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-          } else if (response?.success) {
-            resolve(response.html);
-          } else {
-            reject(new Error(response?.error || 'Fetch failed'));
-          }
+async function fetchAndProcessPages(urls) {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      { action: 'fetchAndProcessPages', urls },
+      response => {
+        if (chrome.runtime.lastError || !response?.success) {
+          resolve({ results: [], usedUrls: [] });
+        } else {
+          resolve({ results: response.results, usedUrls: response.usedUrls });
         }
-      );
-    }),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeout))
-  ]).catch(() => '');
-  
-  if (content) await setCachedPage(url, content);
-  return content;
+      }
+    );
+  });
 }
 
 async function summarizeResults() {
@@ -1259,48 +1197,14 @@ async function summarizeResults() {
     
     btn.innerHTML = `${loading.fetching}<span class="loading-spinner"></span>`;
     
-    // Race-to-3: Fetch all 9 URLs in TRUE PARALLEL, take first 3 that succeed
     console.log(`[PERF] Starting parallel fetch of ${urls.length} URLs`);
     const fetchStart = Date.now();
-    const results = [];
-    const usedUrls = [];
-    const controllers = [];
-    let completed = 0;
-    
-    await new Promise((resolve) => {
-      urls.forEach((url, idx) => {
-        const controller = new AbortController();
-        controllers.push(controller);
-        const urlStart = Date.now();
-        fetchWithTimeout(url, 1000, controller.signal).then(html => {
-          const urlTime = Date.now() - urlStart;
-          completed++;
-          const text = cleanHtmlToText(html);
-          if (text.length > 100 && results.length < 3) {
-            results.push(text);
-            usedUrls.push(url);
-            console.log(`[PERF] ✓ URL ${idx+1} loaded in ${urlTime}ms (${results.length}/3)`);
-            if (results.length === 3) {
-              console.log(`[PERF] Got 3 sources in ${Date.now() - fetchStart}ms`);
-              controllers.forEach((c, i) => { if (i !== idx && !c.signal.aborted) c.abort(); });
-              resolve();
-            }
-          }
-          if (completed === urls.length) resolve();
-        }).catch(() => {
-          completed++;
-          if (completed === urls.length) resolve();
-        });
-      });
-    });
-    
+    const { results, usedUrls } = await fetchAndProcessPages(urls);
     const fetchTime = Date.now() - fetchStart;
     console.log(`[PERF] Total fetch time: ${fetchTime}ms for ${results.length} sources`);
-    const analyzeStart = Date.now();
+    
     btn.innerHTML = `${loading.analyzing}<span class="loading-spinner"></span>`;
     const extractedContent = results;
-    const analyzeTime = Date.now() - analyzeStart;
-    console.log(`[PERF] Content analysis: ${analyzeTime}ms`);
     urls.length = 0;
     urls.push(...usedUrls);
     
