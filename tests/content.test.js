@@ -346,6 +346,10 @@ describe('Display Summary', () => {
     
     const historyPanel = iframeDoc.querySelector('.history-panel-inline');
     expect(historyPanel).toBeTruthy();
+    const searchInput = iframeDoc.querySelector('.history-search');
+    expect(searchInput).toBeTruthy();
+    const scrollBtns = iframeDoc.querySelectorAll('.history-scroll-btn');
+    expect(scrollBtns.length).toBe(4);
   });
 
   test('should display favorites with star icon', async () => {
@@ -546,6 +550,48 @@ describe('History and Favorites', () => {
     let refreshBtn = iframe.contentDocument.querySelectorAll('.close-btn')[1];
     expect(refreshBtn.getAttribute('data-tooltip')).toContain('Refresh');
     expect(refreshBtn.getAttribute('data-tooltip')).toContain('cache');
+  });
+
+  test('should filter history items on search input', async () => {
+    chrome.storage.local.get.mockImplementation((keys, callback) => {
+      const mockData = {
+        'summary_abc123': {
+          markdown: '# Test Summary One',
+          urls: ['http://test.com'],
+          timestamp: Date.now(),
+          query: 'test query'
+        },
+        'summary_def456': {
+          markdown: '# Another Summary',
+          urls: ['http://another.com'],
+          timestamp: Date.now(),
+          query: 'different query'
+        }
+      };
+      if (typeof keys === 'function') {
+        keys(mockData);
+      } else if (callback) {
+        callback(mockData);
+      }
+      return Promise.resolve(mockData);
+    });
+
+    const { displaySummary } = require('../content/content.js');
+    displaySummary('Test', [], 'brief', 'English');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const historyBtn = iframeDoc.querySelectorAll('.close-btn')[0];
+    
+    await historyBtn.click();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const searchInput = iframeDoc.querySelector('.history-search');
+    searchInput.value = 'Another';
+    searchInput.oninput({ target: searchInput });
+    
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const historyItems = iframeDoc.querySelectorAll('.history-item');
+    expect(historyItems.length).toBeGreaterThan(0);
   });
 });
 

@@ -472,30 +472,78 @@ function displaySummary(markdown, urls, format, language) {
       const summaries = [...favorites, ...allSummaries];
       historyPanel.innerHTML = '';
       
-      summaries.forEach(({ markdown: md, urls: u, timestamp, query, isFav }) => {
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        const titleText = md.split('\n')[0].replace(/^#\s*/, '').slice(0, 60);
-        const date = new Date(timestamp).toLocaleDateString();
-        const favIcon = isFav ? '⭐ ' : '';
-        const queryText = query ? `<div class="history-item-query">🔍 ${sanitizeText(query)}</div>` : '';
-        item.innerHTML = `<div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}<div class="history-item-date">${date}</div>`;
-        item.onclick = () => {
-          body.innerHTML = showdownConverter ? showdownConverter.makeHtml(md) : md;
-          body.querySelectorAll('a').forEach(link => {
-            if (isValidUrl(link.href)) {
-              link.target = '_blank';
-              link.rel = 'noopener noreferrer';
-              link.className = 'summary-link';
-            }
-          });
-          historyPanel.style.display = 'none';
-          body.style.display = 'block';
-          followUpSection.style.display = 'block';
-          historyVisible = false;
-        };
-        historyPanel.appendChild(item);
-      });
+      const searchInput = document.createElement('input');
+      searchInput.type = 'text';
+      searchInput.className = 'history-search';
+      searchInput.placeholder = language === 'Spanish' ? '🔍 Buscar en historial...' : language === 'French' ? '🔍 Rechercher dans l\'historique...' : language === 'German' ? '🔍 Im Verlauf suchen...' : '🔍 Search history...';
+      historyPanel.appendChild(searchInput);
+      
+      const itemsContainer = document.createElement('div');
+      itemsContainer.className = 'history-items-container';
+      historyPanel.appendChild(itemsContainer);
+      
+      const scrollBtns = document.createElement('div');
+      scrollBtns.className = 'history-scroll-btns';
+      const topBtn = document.createElement('button');
+      topBtn.className = 'history-scroll-btn';
+      topBtn.innerHTML = '⇈';
+      topBtn.onclick = () => itemsContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      const upBtn = document.createElement('button');
+      upBtn.className = 'history-scroll-btn';
+      upBtn.innerHTML = '▲';
+      upBtn.onclick = () => itemsContainer.scrollBy({ top: -100, behavior: 'smooth' });
+      const downBtn = document.createElement('button');
+      downBtn.className = 'history-scroll-btn';
+      downBtn.innerHTML = '▼';
+      downBtn.onclick = () => itemsContainer.scrollBy({ top: 100, behavior: 'smooth' });
+      const bottomBtn = document.createElement('button');
+      bottomBtn.className = 'history-scroll-btn';
+      bottomBtn.innerHTML = '⇊';
+      bottomBtn.onclick = () => itemsContainer.scrollTo({ top: itemsContainer.scrollHeight, behavior: 'smooth' });
+      scrollBtns.appendChild(topBtn);
+      scrollBtns.appendChild(upBtn);
+      scrollBtns.appendChild(downBtn);
+      scrollBtns.appendChild(bottomBtn);
+      historyPanel.appendChild(scrollBtns);
+      
+      const renderItems = (filter = '') => {
+        itemsContainer.innerHTML = '';
+        const filtered = summaries.filter(({ markdown: md, query }) => {
+          const title = md.split('\n')[0].replace(/^#\s*/, '').toLowerCase();
+          const q = (query || '').toLowerCase();
+          const f = filter.toLowerCase();
+          return title.includes(f) || q.includes(f);
+        });
+        
+        filtered.forEach(({ markdown: md, urls: u, timestamp, query, isFav }) => {
+          const item = document.createElement('div');
+          item.className = 'history-item';
+          const titleText = md.split('\n')[0].replace(/^#\s*/, '').slice(0, 60);
+          const date = new Date(timestamp).toLocaleDateString();
+          const favIcon = isFav ? '⭐ ' : '';
+          const queryText = query ? `<div class="history-item-query">🔍 ${sanitizeText(query)}</div>` : '';
+          item.innerHTML = `<div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}<div class="history-item-date">${date}</div>`;
+          item.onclick = () => {
+            body.innerHTML = showdownConverter ? showdownConverter.makeHtml(md) : md;
+            body.querySelectorAll('a').forEach(link => {
+              if (isValidUrl(link.href)) {
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.className = 'summary-link';
+              }
+            });
+            historyPanel.style.display = 'none';
+            body.style.display = 'block';
+            followUpSection.style.display = 'block';
+            historyVisible = false;
+          };
+          itemsContainer.appendChild(item);
+        });
+      };
+      
+      searchInput.oninput = (e) => renderItems(e.target.value);
+      renderItems();
+      
       body.style.display = 'none';
       followUpSection.style.display = 'none';
       historyPanel.style.display = 'block';
@@ -638,6 +686,8 @@ function displaySummary(markdown, urls, format, language) {
         body.dark .share-option:hover { background: #3a3a4e; }
         body.dark .followup-input { background: #2a2a3e; color: #e0e0e0; border-color: #667eea; }
         body.dark .chat-bubble.ai { background: #2a2a3e; color: #d0d0d0; }
+        body.dark .history-search { background: #2a2a3e; color: #e0e0e0; border-color: #3a3a4e; }
+        body.dark .history-search:focus { border-color: #667eea; }
         body.dark .history-item { background: #2a2a3e; border-color: #3a3a4e; }
         body.dark .history-item:hover { background: #3a3a4e; border-color: #667eea; }
         body.dark .history-item-title { color: #e0e0e0; }
@@ -675,8 +725,16 @@ function displaySummary(markdown, urls, format, language) {
         .followup-input { width: 100%; padding: 14px 20px; border: 3px solid #667eea; border-radius: 12px; font-size: 14px; outline: none; transition: all 0.2s ease; font-family: inherit; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15); }
         .followup-input:focus { border-color: #764ba2; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
         .followup-input:disabled { background: #f8f9fa; cursor: not-allowed; opacity: 0.6; }
-        .history-panel-inline { display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; margin-bottom: 20px; }
-        .history-item { padding: 14px 18px; background: #f8f9fa; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 2px solid #e8eaed; margin-bottom: 8px; }
+        .history-panel-inline { display: flex; flex-direction: column; gap: 10px; max-height: 50vh; margin-bottom: 20px; position: relative; }
+        .history-search { width: calc(100% - 45px); padding: 10px 14px; border: 2px solid #e8eaed; border-radius: 8px; font-size: 14px; outline: none; transition: all 0.2s; margin-bottom: 10px; }
+        .history-search:focus { border-color: #667eea; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2); }
+        .history-items-container { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow-y: hidden; }
+        .history-scroll-btns { position: absolute; right: 0; top: 50px; display: flex; flex-direction: column; gap: 8px; }
+        .history-scroll-btn { background: #f8f9fa; border: none; font-size: 18px; color: #5f6368; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .history-scroll-btn:hover { background: #e8eaed; transform: scale(1.1); }
+        body.dark .history-scroll-btn { background: #2a2a3e; color: #e0e0e0; }
+        body.dark .history-scroll-btn:hover { background: #3a3a4e; }
+        .history-item { padding: 14px 18px; background: #f8f9fa; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 2px solid #e8eaed; margin-bottom: 8px; margin-right: 45px; }
         .history-item:hover { background: #e8eaed; border-color: #667eea; }
         .history-item-title { font-size: 14px; font-weight: 600; color: #202124; margin-bottom: 4px; }
         .history-item-query { font-size: 12px; color: #667eea; margin-bottom: 3px; }
