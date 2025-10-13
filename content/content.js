@@ -767,7 +767,7 @@ async function displaySummary(markdown, urls, format, language) {
             const langBadge = language ? `<span class="history-meta-badge">🌐 ${sanitizeText(language)}</span>` : '';
             const modelBadge = model ? `<span class="history-meta-badge">🤖 ${sanitizeText(model.split('/').pop())}</span>` : '';
             const metaHtml = (formatBadge || langBadge || modelBadge) ? `<div class="history-item-meta">${formatBadge}${langBadge}${modelBadge}</div>` : '';
-            item.innerHTML = `<div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}${tagsHtml}${metaHtml}<div class="history-item-date">${date} ${time}</div>`;
+            item.innerHTML = `<div class="history-item-date">${date} ${time}</div><div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}${tagsHtml}${metaHtml}`;
             item.onclick = () => {
               body.innerHTML = convertMarkdownToHtml(md);
               body.querySelectorAll('a').forEach(link => {
