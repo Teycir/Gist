@@ -194,6 +194,27 @@ function sanitizeText(text) {
   });
 }
 
+function convertMarkdownToHtml(markdown) {
+  let html = markdown
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="summary-link">$1</a>')
+    .replace(/^\*   (.+)$/gim, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^(.+)$/gim, '<p>$1</p>')
+    .replace(/<\/p><p><h/g, '</p><h')
+    .replace(/<\/h([123])><\/p>/g, '</h$1>')
+    .replace(/<p><\/p>/g, '')
+    .replace(/<p>(<ul>)/g, '$1')
+    .replace(/(<\/ul>)<\/p>/g, '$1');
+  return html;
+}
+
 const cleanHtmlToText = memoize((html) => {
   const doc = domParser.parseFromString(html, 'text/html');
   
@@ -349,7 +370,7 @@ async function displaySummary(markdown, urls, format, language) {
       top: 'Top',
       analyzed: 'search results',
       copy: 'Copy',
-      save: 'Save',
+      download: 'Download as .md',
       share: 'Share',
       close: 'Close',
       shareX: 'Share on X',
@@ -365,7 +386,7 @@ async function displaySummary(markdown, urls, format, language) {
       top: 'Top',
       analyzed: 'resultados de búsqueda',
       copy: 'Copiar',
-      save: 'Guardar',
+      download: 'Descargar como .md',
       share: 'Compartir',
       close: 'Cerrar',
       shareX: 'Compartir en X',
@@ -381,7 +402,7 @@ async function displaySummary(markdown, urls, format, language) {
       top: 'Top',
       analyzed: 'résultats de recherche',
       copy: 'Copier',
-      save: 'Enregistrer',
+      download: 'Télécharger en .md',
       share: 'Partager',
       close: 'Fermer',
       shareX: 'Partager sur X',
@@ -397,7 +418,7 @@ async function displaySummary(markdown, urls, format, language) {
       top: 'Top',
       analyzed: 'Suchergebnisse',
       copy: 'Kopieren',
-      save: 'Speichern',
+      download: 'Als .md herunterladen',
       share: 'Teilen',
       close: 'Schließen',
       shareX: 'Auf X teilen',
@@ -473,23 +494,24 @@ async function displaySummary(markdown, urls, format, language) {
     setTimeout(() => copyBtn.innerHTML = '📋', 2000);
   };
   
-  const saveBtn = document.createElement('button');
-  saveBtn.className = 'close-btn';
-  saveBtn.innerHTML = '💾';
-  saveBtn.setAttribute('data-tooltip', t.save);
-  saveBtn.onclick = () => {
+  const downloadBtn = document.createElement('button');
+  downloadBtn.className = 'close-btn';
+  downloadBtn.innerHTML = '⬇️';
+  downloadBtn.setAttribute('data-tooltip', t.download);
+  downloadBtn.onclick = () => {
+    const decodedMarkdown = markdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
     const query = extractSearchQuery().replace(/[^a-z0-9]/gi, '_').slice(0, 50);
     const timestamp = new Date().toISOString().split('T')[0];
     const filename = `gist_${engineName.toLowerCase()}_${query}_${timestamp}.md`;
-    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const blob = new Blob([decodedMarkdown], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-    saveBtn.innerHTML = '✓';
-    setTimeout(() => saveBtn.innerHTML = '💾', 2000);
+    downloadBtn.innerHTML = '✓';
+    setTimeout(() => downloadBtn.innerHTML = '⬇️', 2000);
   };
   
   const shareBtn = document.createElement('button');
@@ -553,7 +575,7 @@ async function displaySummary(markdown, urls, format, language) {
   actions.appendChild(refreshBtn);
   actions.appendChild(starBtn);
   actions.appendChild(copyBtn);
-  actions.appendChild(saveBtn);
+  actions.appendChild(downloadBtn);
   actions.appendChild(shareBtn);
   actions.appendChild(closeBtn);
   header.appendChild(title);
@@ -685,7 +707,7 @@ async function displaySummary(markdown, urls, format, language) {
             const tagsHtml = tags && tags.length > 0 ? `<div class="history-item-tags">${tags.map(t => `<span class="history-tag-badge">${sanitizeText(t)}</span>`).join('')}</div>` : '';
             item.innerHTML = `<div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}${tagsHtml}<div class="history-item-date">${date}</div>`;
             item.onclick = () => {
-              body.innerHTML = showdownConverter ? showdownConverter.makeHtml(md) : md;
+              body.innerHTML = convertMarkdownToHtml(md);
               body.querySelectorAll('a').forEach(link => {
                 if (isValidUrl(link.href)) {
                   link.target = '_blank';
@@ -974,27 +996,7 @@ async function displaySummary(markdown, urls, format, language) {
         return;
       }
       
-      const decodedMarkdown = md.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-      
-      let html = decodedMarkdown
-        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-        .replace(/`(.+?)`/g, '<code>$1</code>')
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="summary-link">$1</a>')
-        .replace(/^\*   (.+)$/gim, '<li>$1</li>')
-        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/^(.+)$/gim, '<p>$1</p>')
-        .replace(/<\/p><p><h/g, '</p><h')
-        .replace(/<\/h([123])><\/p>/g, '</h$1>')
-        .replace(/<p><\/p>/g, '')
-        .replace(/<p>(<ul>)/g, '$1')
-        .replace(/(<\/ul>)<\/p>/g, '$1');
-      
-      iframeBody.innerHTML = html;
+      iframeBody.innerHTML = convertMarkdownToHtml(md);
       resolve();
     };
     
@@ -1386,7 +1388,8 @@ async function summarizeResults() {
       markdown += `\n\n## ${refTitle}\n\n${references}`;
     }
     
-    const cacheData = { markdown, urls, timestamp: Date.now() };
+    const decodedMarkdown = markdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now() };
     summaryCache.set(cacheKey, cacheData);
     
     try {
