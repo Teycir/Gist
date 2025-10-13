@@ -210,10 +210,10 @@ const cleanHtmlToText = memoize((html) => {
   const contentSelectors = ['article', 'main', '[role="main"]', '.content', '.article', '.post', '.entry-content', '.post-content', '#main-content'];
   for (const sel of contentSelectors) {
     const content = doc.querySelector(sel);
-    if (content) return content.textContent.replace(/\s+/g, ' ').slice(0, 2000).trim();
+    if (content) return content.textContent.replace(/\s+/g, ' ').slice(0, 1200).trim();
   }
   
-  return (doc.body?.textContent || '').replace(/\s+/g, ' ').slice(0, 2000).trim();
+  return (doc.body?.textContent || '').replace(/\s+/g, ' ').slice(0, 1200).trim();
 }, (html) => simpleHash(html));
 
 async function displaySummary(markdown, urls, format, language) {
@@ -820,7 +820,7 @@ async function displaySummary(markdown, urls, format, language) {
       resolve();
     };
     
-    setTimeout(convertMarkdown, 50);
+    setTimeout(convertMarkdown, 10);
     };
   });
   
@@ -912,7 +912,7 @@ async function setCachedPage(url, content) {
   }
 }
 
-async function fetchWithTimeout(url, timeout = 3000) {
+async function fetchWithTimeout(url, timeout = 2000) {
   if (!isValidUrl(url)) return '';
   
   const cached = await getCachedPage(url);
@@ -1043,7 +1043,7 @@ async function summarizeResults() {
       return;
     }
     
-    const MAX_CONCURRENT = 2;
+    const MAX_CONCURRENT = 3;
     const pages = [];
     
     for (let i = 0; i < urls.length; i += MAX_CONCURRENT) {
@@ -1066,22 +1066,13 @@ async function summarizeResults() {
     btn.innerHTML = `${loading.generating}<span class="loading-spinner"></span>`;
     
     const sources = extractedContent.map((text, i) => `[${i + 1}] ${text}`);
-    const prompt = `Search Query: "${searchQuery}"
+    const prompt = `Query: "${searchQuery}"
 
-Your task: Extract and summarize ONLY the information from these ${extractedContent.length} sources that directly answers or relates to the search query above. Ignore any content that doesn't address the query.
+Summarize these sources answering the query. ${formatInstructions[format]}
 
-Format: Start with a clear title "# [Title]" then ${format === 'detailed' ? '4-6 detailed bullet points' : '3-5 bullet points'} with [1], [2] citations. ${formatInstructions[format]}
-
-Sources:
 ${sources.join('\n\n')}
 
-IMPORTANT:
-- Write the ENTIRE summary in ${language} language
-- Stay focused on answering the search query
-- Extract practical, actionable information when the query asks "how to"
-- Ignore background information or definitions unless the query specifically asks for them
-- Keep summary under ${wordLimit} words
-- Use citations [1], [2] to reference sources`;
+Format: # Title\n${format === 'detailed' ? '4-6' : '3-5'} bullets with [1][2] citations\nLanguage: ${language}\nMax ${wordLimit} words`;
     
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${flashApiKey}`;
     console.log('API URL:', apiUrl.replace(flashApiKey, 'REDACTED'));
@@ -1097,7 +1088,9 @@ IMPORTANT:
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
                   maxOutputTokens: maxTokens,
-                  temperature: 0.3
+                  temperature: 0.2,
+                  topP: 0.8,
+                  topK: 40
                 }
               }
             }, response => {
