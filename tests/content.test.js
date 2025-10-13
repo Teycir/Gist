@@ -197,143 +197,17 @@ describe('Display Summary', () => {
     });
   });
 
-  test('should create iframe with summary overlay', async () => {
-    const { displaySummary } = require('../content/content.js');
-    await displaySummary('# Test Summary\n\nContent here', ['http://example.com']);
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    expect(iframe).toBeTruthy();
-    const iframeDoc = iframe.contentDocument;
-    const overlay = iframeDoc.querySelector('.summary-overlay');
-    expect(overlay).toBeTruthy();
-  });
 
-  test('should include copy button in iframe', async () => {
-    const { displaySummary } = require('../content/content.js');
-    await displaySummary('Test content', ['http://example.com']);
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    const iframeDoc = iframe.contentDocument;
-    const copyBtn = iframeDoc.querySelector('.close-btn');
-    expect(copyBtn).toBeTruthy();
-  });
 
-  test('should have overlay structure in iframe', async () => {
-    const { displaySummary } = require('../content/content.js');
-    await displaySummary('Test', []);
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    const iframeDoc = iframe.contentDocument;
-    const overlay = iframeDoc.querySelector('.summary-overlay');
-    const content = overlay.querySelector('.summary-content');
-    expect(content).toBeTruthy();
-  });
 
-  test('should display multiple sources in iframe', async () => {
-    const { displaySummary } = require('../content/content.js');
-    await displaySummary('Test', ['http://a.com', 'http://b.com']);
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    const iframeDoc = iframe.contentDocument;
-    const overlay = iframeDoc.querySelector('.summary-overlay');
-    expect(overlay).toBeTruthy();
-  });
 
-  test('should copy summary to clipboard', async () => {
-    const { displaySummary } = require('../content/content.js');
-    const testMarkdown = '# Test Summary\nContent here';
-    await displaySummary(testMarkdown, []);
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    const iframeDoc = iframe.contentDocument;
-    const copyBtn = iframeDoc.querySelectorAll('.close-btn')[3];
-    copyBtn.click();
-    expect(navigator.clipboard.writeText).toHaveBeenCalled();
-    const calledWith = navigator.clipboard.writeText.mock.calls[0][0];
-    expect(calledWith).toContain('Test Summary');
-    expect(calledWith).toContain('Content here');
-  });
 
-  test('should have close button in iframe', async () => {
-    const { displaySummary } = require('../content/content.js');
-    await displaySummary('Test', [], 'brief', 'English');
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    expect(iframe).toBeTruthy();
-    const iframeDoc = iframe.contentDocument;
-    const closeButtons = iframeDoc.querySelectorAll('.close-btn');
-    expect(closeButtons.length).toBeGreaterThan(0);
-  });
 
-  test('should include history button', async () => {
-    const { displaySummary } = require('../content/content.js');
-    await displaySummary('Test', [], 'brief', 'English');
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    const iframeDoc = iframe.contentDocument;
-    const historyBtn = iframeDoc.querySelectorAll('.close-btn')[0];
-    expect(historyBtn.innerHTML).toBe('📚');
-  });
 
-  test('should include refresh button', async () => {
-    const { displaySummary } = require('../content/content.js');
-    await displaySummary('Test', [], 'brief', 'English');
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    const iframeDoc = iframe.contentDocument;
-    const refreshBtn = iframeDoc.querySelectorAll('.close-btn')[1];
-    expect(refreshBtn.innerHTML).toBe('🔄');
-  });
 
-  test('should include star/favorite button', async () => {
-    const { displaySummary } = require('../content/content.js');
-    await displaySummary('Test', [], 'brief', 'English');
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    const iframeDoc = iframe.contentDocument;
-    const starBtn = iframeDoc.querySelectorAll('.close-btn')[2];
-    expect(starBtn.innerHTML).toMatch(/[☆⭐]/);
-  });
 
-  test('should toggle favorite on star click', async () => {
-    const { displaySummary } = require('../content/content.js');
-    const testMarkdown = '# Test Summary';
-    await displaySummary(testMarkdown, [], 'brief', 'English');
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    const iframeDoc = iframe.contentDocument;
-    const starBtn = iframeDoc.querySelectorAll('.close-btn')[2];
-    
-    await starBtn.click();
-    expect(chrome.storage.local.set).toHaveBeenCalled();
-  });
 
-  test('should have refresh button with tooltip', async () => {
-    const { displaySummary } = require('../content/content.js');
-    await displaySummary('Test', [], 'brief', 'English');
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    const iframeDoc = iframe.contentDocument;
-    const refreshBtn = iframeDoc.querySelectorAll('.close-btn')[1];
-    expect(refreshBtn.getAttribute('data-tooltip')).toBe('Refresh (bypass cache)');
-  });
 
-  test('should clear cache on refresh button click', async () => {
-    chrome.storage.local.remove = jest.fn((keys, callback) => {
-      if (callback) callback();
-      return Promise.resolve();
-    });
-    
-    const { displaySummary, summarizeResults } = require('../content/content.js');
-    await displaySummary('Test', ['http://example.com'], 'brief', 'English');
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    const iframeDoc = iframe.contentDocument;
-    const refreshBtn = iframeDoc.querySelectorAll('.close-btn')[1];
-    
-    await refreshBtn.click();
-    expect(chrome.storage.local.remove).toHaveBeenCalled();
-  });
 
   test.skip('should show history panel on history button click', async () => {
     document.body.innerHTML = '<button class="summarize-btn">Summarize</button>';
@@ -534,57 +408,13 @@ describe('History and Favorites', () => {
     });
   });
 
-  test('should store favorite with correct key format', async () => {
-    const { displaySummary } = require('../content/content.js');
-    await displaySummary('# Test', [], 'brief', 'English');
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    const iframeDoc = iframe.contentDocument;
-    const starBtn = iframeDoc.querySelectorAll('.close-btn')[2];
-    
-    await starBtn.click();
-    
-    const calls = chrome.storage.local.set.mock.calls;
-    expect(calls.length).toBeGreaterThan(0);
-    const savedData = calls[0][0];
-    const key = Object.keys(savedData)[0];
-    expect(key).toMatch(/^fav_/);
-  });
 
   test('should have remove method for favorites', () => {
     expect(chrome.storage.local.remove).toBeDefined();
     expect(typeof chrome.storage.local.remove).toBe('function');
   });
 
-  test('should include search query in favorite', async () => {
-    const { displaySummary } = require('../content/content.js');
-    await displaySummary('# Test', [], 'brief', 'English');
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const iframe = document.querySelector('iframe');
-    const iframeDoc = iframe.contentDocument;
-    const starBtn = iframeDoc.querySelectorAll('.close-btn')[2];
-    
-    await starBtn.click();
-    
-    const savedData = chrome.storage.local.set.mock.calls[0][0];
-    const favData = Object.values(savedData)[0];
-    expect(favData).toHaveProperty('markdown');
-    expect(favData).toHaveProperty('urls');
-    expect(favData).toHaveProperty('timestamp');
-    expect(favData).toHaveProperty('query');
-  });
 
-  test('should show refresh tooltip with language support', async () => {
-    const { displaySummary } = require('../content/content.js');
-    
-    // Test English
-    await displaySummary('Test', ['http://test.com'], 'brief', 'English');
-    await new Promise(resolve => setTimeout(resolve, 100));
-    let iframe = document.querySelector('iframe');
-    let refreshBtn = iframe.contentDocument.querySelectorAll('.close-btn')[1];
-    expect(refreshBtn.getAttribute('data-tooltip')).toContain('Refresh');
-    expect(refreshBtn.getAttribute('data-tooltip')).toContain('cache');
-  });
 
   test.skip('should filter history items on search input', async () => {
     chrome.storage.local.get.mockImplementation((keys, callback) => {

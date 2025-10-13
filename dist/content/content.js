@@ -774,7 +774,6 @@ async function displaySummary(markdown, urls, format, language) {
   // Wait for iframe to be ready
   const iframeLoadPromise = new Promise(resolve => {
     iframe.onload = () => {
-      resolve();
     console.log('[iframe.onload] Iframe loaded');
     
     console.log('[iframe.onload] Creating overlay background');
@@ -792,7 +791,10 @@ async function displaySummary(markdown, urls, format, language) {
       const iframeBody = iframeDoc.querySelector('.summary-body');
       const md = iframeBody?.getAttribute('data-markdown');
       
-      if (!md) return;
+      if (!md) {
+        resolve();
+        return;
+      }
       
       const decodedMarkdown = md.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
       
@@ -815,6 +817,7 @@ async function displaySummary(markdown, urls, format, language) {
         .replace(/(<\/ul>)<\/p>/g, '$1');
       
       iframeBody.innerHTML = html;
+      resolve();
     };
     
     setTimeout(convertMarkdown, 50);

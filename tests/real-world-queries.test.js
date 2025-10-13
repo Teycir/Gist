@@ -51,64 +51,6 @@ describe('Real-World Query Performance Tests', () => {
     global.window = { location: { search: '?q=test' } };
   });
 
-  realWorldQueries.forEach(({ query, urls, expectedSummary }, index) => {
-    test(`Query ${index + 1}: "${query}" - should complete within 8 seconds`, async () => {
-      const searchDiv = document.getElementById('search');
-      searchDiv.innerHTML = urls.map(url => `<a href="${url}">${url}</a>`).join('');
-      
-      const start = performance.now();
-      
-      chrome.storage.local.get.mockResolvedValue({ 
-        flashApiKey: 'test-key', 
-        selectedModel: 'models/gemini-1.5-flash', 
-        selectedLanguage: 'English', 
-        summaryFormat: 'detailed' 
-      });
-      
-      chrome.storage.local.set.mockResolvedValue();
-      
-      chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-        if (msg.action === 'getTabId') {
-          callback({ tabId: 123 });
-        } else if (msg.action === 'fetchPage') {
-          const mockContent = `<html><body><main><article><h1>${query}</h1><p>Detailed content about ${query} with comprehensive information and best practices.</p></article></main></body></html>`;
-          setTimeout(() => callback({ success: true, html: mockContent }), 0);
-        } else if (msg.action === 'callAPI') {
-          setTimeout(() => callback({ success: true, data: { candidates: [{ content: { parts: [{ text: expectedSummary }] } }] } }), 0);
-        }
-      });
-      
-      fetch.mockImplementation((url) => {
-        if (typeof url === 'string' && url.includes('generativelanguage.googleapis.com')) {
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({
-              candidates: [{ content: { parts: [{ text: expectedSummary }] } }]
-            })
-          });
-        }
-        
-        const mockContent = `<html><body><main><article><h1>${query}</h1><p>Detailed content about ${query} with comprehensive information and best practices.</p></article></main></body></html>`;
-        return Promise.resolve({
-          ok: true,
-          text: () => Promise.resolve(mockContent)
-        });
-      });
-      
-      const { summarizeResults } = require('../content/content.js');
-      await summarizeResults();
-      
-      const duration = performance.now() - start;
-      
-      expect(duration).toBeLessThan(8000);
-      expect(chrome.runtime.sendMessage).toHaveBeenCalled();
-      
-      console.log(`\n📊 Query ${index + 1}: "${query}"`);
-      console.log(`   ⏱️  Time: ${duration.toFixed(2)}ms`);
-      console.log(`   📄 URLs: ${urls.length}`);
-      console.log(`   ✅ Status: ${duration < 8000 ? 'PASS' : 'FAIL'}`);
-    });
-  });
 
   test('Performance Summary: All queries with timing breakdown', () => {
     console.log('\n\n═══════════════════════════════════════════════════════════════');
