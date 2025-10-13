@@ -22,10 +22,8 @@ function memoize(fn, keyFn) {
 function batchDOMUpdates(callback) {
   requestAnimationFrame(() => callback());
 }
-let showdownConverter = null;
-let showdownLoaded = false;
-let showdownLoadPromise = null;
 let summarizeBtn = null;
+let markdownWorker = null;
 const YOUTUBE_REGEX = /youtube\.com/;
 let isProcessing = false;
 let conversationHistory = [];
@@ -239,7 +237,6 @@ const cleanHtmlToText = memoize((html) => {
 
 async function displaySummary(markdown, urls, format, language) {
   loadNonCriticalCSS();
-  await loadShowdown();
   console.log('displaySummary called', { markdown: markdown.substring(0, 100), urls, format, language });
   const overlay = document.createElement('div');
   overlay.className = 'summary-overlay';
@@ -811,11 +808,7 @@ async function displaySummary(markdown, urls, format, language) {
       
       const answerBubble = document.createElement('div');
       answerBubble.className = 'chat-bubble ai';
-      if (typeof showdown !== 'undefined') {
-        answerBubble.innerHTML = showdownConverter.makeHtml(answer);
-      } else {
-        answerBubble.textContent = answer;
-      }
+      answerBubble.innerHTML = convertMarkdownToHtml(answer);
       conversationDiv.appendChild(answerBubble);
       conversationDiv.scrollTop = conversationDiv.scrollHeight;
       
@@ -991,7 +984,7 @@ async function displaySummary(markdown, urls, format, language) {
     iframeDoc.body.appendChild(overlayBg);
     console.log('[iframe.onload] Overlay appended successfully');
     
-    // Simple markdown to HTML converter
+    // Web Worker markdown converter with fallback
     const convertMarkdown = () => {
       const iframeBody = iframeDoc.querySelector('.summary-body');
       const md = iframeBody?.getAttribute('data-markdown');
@@ -1001,8 +994,26 @@ async function displaySummary(markdown, urls, format, language) {
         return;
       }
       
-      iframeBody.innerHTML = convertMarkdownToHtml(md);
-      resolve();
+      // Reuse worker if available
+      if (!markdownWorker) {
+        try {
+          markdownWorker = new Worker(chrome.runtime.getURL('workers/markdown-worker.js'));
+        } catch (err) {
+          iframeBody.innerHTML = convertMarkdownToHtml(md);
+          resolve();
+          return;
+        }
+      }
+      
+      markdownWorker.postMessage({ markdown: md });
+      markdownWorker.onmessage = (e) => {
+        iframeBody.innerHTML = e.data.html;
+        resolve();
+      };
+      markdownWorker.onerror = () => {
+        iframeBody.innerHTML = convertMarkdownToHtml(md);
+        resolve();
+      };
     };
     
     setTimeout(convertMarkdown, 10);
@@ -1449,33 +1460,6 @@ function loadNonCriticalCSS() {
     link.href = chrome.runtime.getURL('content/content.min.css');
     document.head.appendChild(link);
   }, { timeout: 2000 });
-}
-
-async function loadShowdown() {
-  if (showdownLoaded) return true;
-  if (showdownLoadPromise) return showdownLoadPromise;
-  
-  showdownLoadPromise = new Promise((resolve) => {
-    if (typeof showdown !== 'undefined') {
-      showdownLoaded = true;
-      resolve(true);
-      return;
-    }
-    
-    const script = document.createElement('script');
-    script.src = chrome.runtime.getURL('lib/showdown.min.js');
-    script.onload = () => {
-      showdownLoaded = true;
-      resolve(true);
-    };
-    script.onerror = () => {
-      console.warn('Showdown failed to load, using plain text fallback');
-      resolve(false);
-    };
-    document.head.appendChild(script);
-  });
-  
-  return showdownLoadPromise;
 }
 
 if (typeof document !== 'undefined') {

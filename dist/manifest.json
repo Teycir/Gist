@@ -34,7 +34,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["lib/showdown.min.js", "content/content.min.css"],
+      "resources": ["content/content.min.css", "workers/markdown-worker.js"],
       "matches": ["https://*/*"]
     }
   ]
