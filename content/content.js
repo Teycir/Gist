@@ -308,31 +308,35 @@ async function displaySummary(markdown, urls, format, language) {
   dropdown.className = 'tag-dropdown';
   dropdown.style.display = 'none';
   
+  let tagInputTimeout;
   tagInput.oninput = async (e) => {
+    clearTimeout(tagInputTimeout);
     const val = e.target.value.trim();
     if (!val) {
       dropdown.style.display = 'none';
       return;
     }
-    const allTags = await getAllTags();
-    const matches = allTags.filter(t => t.toLowerCase().includes(val.toLowerCase()));
-    if (matches.length > 0) {
-      dropdown.innerHTML = '';
-      matches.slice(0, 5).forEach(tag => {
-        const option = document.createElement('div');
-        option.className = 'tag-option';
-        option.textContent = tag;
-        option.onclick = () => {
-          tagInput.value = tag;
-          dropdown.style.display = 'none';
-          tagInput.focus();
-        };
-        dropdown.appendChild(option);
-      });
-      dropdown.style.display = 'block';
-    } else {
-      dropdown.style.display = 'none';
-    }
+    tagInputTimeout = setTimeout(async () => {
+      const allTags = await getAllTags();
+      const matches = allTags.filter(t => t.toLowerCase().includes(val.toLowerCase()));
+      if (matches.length > 0) {
+        dropdown.innerHTML = '';
+        matches.slice(0, 5).forEach(tag => {
+          const option = document.createElement('div');
+          option.className = 'tag-option';
+          option.textContent = tag;
+          option.onclick = () => {
+            tagInput.value = tag;
+            dropdown.style.display = 'none';
+            tagInput.focus();
+          };
+          dropdown.appendChild(option);
+        });
+        dropdown.style.display = 'block';
+      } else {
+        dropdown.style.display = 'none';
+      }
+    }, 150);
   };
   
   tagInput.onkeypress = async (e) => {
