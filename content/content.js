@@ -487,6 +487,13 @@ async function displaySummary(markdown, urls, format, language) {
       searchInput.placeholder = language === 'Spanish' ? '🔍 Buscar en historial...' : language === 'French' ? '🔍 Rechercher dans l\'historique...' : language === 'German' ? '🔍 Im Verlauf suchen...' : '🔍 Search history...';
       historyPanel.appendChild(searchInput);
       
+      const filterBtn = document.createElement('button');
+      filterBtn.className = 'history-filter-btn';
+      filterBtn.innerHTML = '⭐';
+      filterBtn.setAttribute('data-tooltip', t.favorites);
+      let showOnlyFavorites = false;
+      historyPanel.appendChild(filterBtn);
+      
       const itemsContainer = document.createElement('div');
       itemsContainer.className = 'history-items-container';
       historyPanel.appendChild(itemsContainer);
@@ -515,12 +522,13 @@ async function displaySummary(markdown, urls, format, language) {
       scrollBtns.appendChild(bottomBtn);
       historyPanel.appendChild(scrollBtns);
       
-      const renderItems = (filter = '') => {
-        const filtered = summaries.filter(({ markdown: md, query }) => {
+      const renderItems = (filter = '', onlyFavorites = false) => {
+        const filtered = summaries.filter(({ markdown: md, query, isFav }) => {
           const title = md.split('\n')[0].replace(/^#\s*/, '').toLowerCase();
           const q = (query || '').toLowerCase();
           const f = filter.toLowerCase();
-          return title.includes(f) || q.includes(f);
+          const matchesSearch = title.includes(f) || q.includes(f);
+          return onlyFavorites ? (isFav && matchesSearch) : matchesSearch;
         });
         
         batchDOMUpdates(() => {
@@ -554,10 +562,16 @@ async function displaySummary(markdown, urls, format, language) {
         });
       };
       
+      filterBtn.onclick = () => {
+        showOnlyFavorites = !showOnlyFavorites;
+        filterBtn.style.opacity = showOnlyFavorites ? '1' : '0.5';
+        renderItems(searchInput.value, showOnlyFavorites);
+      };
+      
       let searchTimeout;
       searchInput.oninput = (e) => {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => renderItems(e.target.value), 150);
+        searchTimeout = setTimeout(() => renderItems(e.target.value, showOnlyFavorites), 150);
       };
       renderItems();
       
@@ -736,8 +750,14 @@ async function displaySummary(markdown, urls, format, language) {
         .followup-input:focus { border-color: #764ba2; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
         .followup-input:disabled { background: #f8f9fa; cursor: not-allowed; opacity: 0.6; }
         .history-panel-inline { display: flex; flex-direction: column; gap: 10px; max-height: 50vh; margin-bottom: 20px; position: relative; }
-        .history-search { width: calc(100% - 45px); padding: 10px 14px; border: 2px solid #e8eaed; border-radius: 8px; font-size: 14px; outline: none; transition: all 0.2s; margin-bottom: 10px; }
+        .history-search { width: calc(100% - 90px); padding: 10px 14px; border: 2px solid #e8eaed; border-radius: 8px; font-size: 14px; outline: none; transition: all 0.2s; margin-bottom: 10px; }
+        .history-filter-btn { position: absolute; top: 0; right: 45px; background: #f8f9fa; border: none; font-size: 20px; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; opacity: 0.5; }
+        .history-filter-btn:hover { background: #e8eaed; transform: scale(1.1); opacity: 1; }
+        body.dark .history-filter-btn { background: #2a2a3e; color: #e0e0e0; }
+        body.dark .history-filter-btn:hover { background: #3a3a4e; }
         .history-search:focus { border-color: #667eea; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2); }
+        .history-filter-btn[data-tooltip]:hover::after { content: attr(data-tooltip); position: absolute; bottom: -32px; left: 50%; transform: translateX(-50%); background: white; color: #202124; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: 1px solid #e8eaed; }
+        body.dark .history-filter-btn[data-tooltip]:hover::after { background: #2a2a3e; color: #e0e0e0; border-color: #3a3a4e; }
         .history-items-container { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow-y: hidden; }
         .history-scroll-btns { position: absolute; right: 0; top: 50px; display: flex; flex-direction: column; gap: 8px; }
         .history-scroll-btn { background: #f8f9fa; border: none; font-size: 18px; color: #5f6368; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
