@@ -6,20 +6,38 @@ const PAGE_CACHE_DURATION = 30 * 60 * 1000;
 const MAX_CACHE_SIZE = 15;
 const MAX_PAGE_CACHE_SIZE = 30;
 const domParser = new DOMParser();
+const memoCache = new Map();
+
+function memoize(fn, keyFn) {
+  return function(...args) {
+    const key = keyFn ? keyFn(...args) : args[0];
+    if (memoCache.has(key)) return memoCache.get(key);
+    const result = fn.apply(this, args);
+    memoCache.set(key, result);
+    if (memoCache.size > 100) memoCache.delete(memoCache.keys().next().value);
+    return result;
+  };
+}
+
+function batchDOMUpdates(callback) {
+  requestAnimationFrame(() => callback());
+}
 let showdownConverter = null;
+let showdownLoaded = false;
+let showdownLoadPromise = null;
 let summarizeBtn = null;
 const YOUTUBE_REGEX = /youtube\.com/;
 let isProcessing = false;
 let conversationHistory = [];
 
-function simpleHash(str) {
+const simpleHash = memoize((str) => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = ((hash << 5) - hash) + str.charCodeAt(i);
     hash = hash & hash;
   }
   return Math.abs(hash).toString(36).slice(0, 8);
-}
+});
 
 async function getStorageSize() {
   try {
@@ -70,16 +88,17 @@ function cleanupCaches() {
 function addSummarizeButton() {
   if (document.querySelector('.summarize-btn')) return;
   
-  const btn = document.createElement('button');
-  btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="24" height="24"><rect x="28" y="20" width="72" height="88" rx="8" fill="#fff"/><rect x="40" y="40" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="52" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="64" width="32" height="4" rx="2" fill="#667eea" opacity="0.9"/><path d="M88 76 L92 80 L88 84 M84 80 L92 80" stroke="#ffd700" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="78" cy="72" r="2" fill="#ffd700"/><circle cx="94" cy="72" r="1.5" fill="#ffd700"/><circle cx="94" cy="88" r="1.5" fill="#ffd700"/></svg>';
-  btn.className = 'summarize-btn';
-  btn.setAttribute('data-tooltip', 'Summarize');
-  btn.setAttribute('aria-label', 'Summarize search results with AI');
-  btn.onclick = summarizeResults;
-  document.body.appendChild(btn);
-  summarizeBtn = btn;
-  
-  updateButtonLanguage();
+  batchDOMUpdates(() => {
+    const btn = document.createElement('button');
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="24" height="24"><rect x="28" y="20" width="72" height="88" rx="8" fill="#fff"/><rect x="40" y="40" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="52" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="64" width="32" height="4" rx="2" fill="#667eea" opacity="0.9"/><path d="M88 76 L92 80 L88 84 M84 80 L92 80" stroke="#ffd700" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="78" cy="72" r="2" fill="#ffd700"/><circle cx="94" cy="72" r="1.5" fill="#ffd700"/><circle cx="94" cy="88" r="1.5" fill="#ffd700"/></svg>';
+    btn.className = 'summarize-btn';
+    btn.setAttribute('data-tooltip', 'Summarize');
+    btn.setAttribute('aria-label', 'Summarize search results with AI');
+    btn.onclick = summarizeResults;
+    document.body.appendChild(btn);
+    summarizeBtn = btn;
+    updateButtonLanguage();
+  });
 }
 
 function updateButtonLanguage() {
@@ -175,7 +194,7 @@ function sanitizeText(text) {
   });
 }
 
-function cleanHtmlToText(html) {
+const cleanHtmlToText = memoize((html) => {
   const doc = domParser.parseFromString(html, 'text/html');
   
   // Remove noise elements
@@ -195,9 +214,10 @@ function cleanHtmlToText(html) {
   }
   
   return (doc.body?.textContent || '').replace(/\s+/g, ' ').slice(0, 2000).trim();
-}
+}, (html) => simpleHash(html));
 
-function displaySummary(markdown, urls, format, language) {
+async function displaySummary(markdown, urls, format, language) {
+  loadNonCriticalCSS();
   console.log('displaySummary called', { markdown: markdown.substring(0, 100), urls, format, language });
   const overlay = document.createElement('div');
   overlay.className = 'summary-overlay';
@@ -507,7 +527,6 @@ function displaySummary(markdown, urls, format, language) {
       historyPanel.appendChild(scrollBtns);
       
       const renderItems = (filter = '') => {
-        itemsContainer.innerHTML = '';
         const filtered = summaries.filter(({ markdown: md, query }) => {
           const title = md.split('\n')[0].replace(/^#\s*/, '').toLowerCase();
           const q = (query || '').toLowerCase();
@@ -515,33 +534,42 @@ function displaySummary(markdown, urls, format, language) {
           return title.includes(f) || q.includes(f);
         });
         
-        filtered.forEach(({ markdown: md, urls: u, timestamp, query, isFav }) => {
-          const item = document.createElement('div');
-          item.className = 'history-item';
-          const titleText = md.split('\n')[0].replace(/^#\s*/, '').slice(0, 60);
-          const date = new Date(timestamp).toLocaleDateString();
-          const favIcon = isFav ? '⭐ ' : '';
-          const queryText = query ? `<div class="history-item-query">🔍 ${sanitizeText(query)}</div>` : '';
-          item.innerHTML = `<div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}<div class="history-item-date">${date}</div>`;
-          item.onclick = () => {
-            body.innerHTML = showdownConverter ? showdownConverter.makeHtml(md) : md;
-            body.querySelectorAll('a').forEach(link => {
-              if (isValidUrl(link.href)) {
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                link.className = 'summary-link';
-              }
-            });
-            historyPanel.style.display = 'none';
-            body.style.display = 'block';
-            followUpSection.style.display = 'block';
-            historyVisible = false;
-          };
-          itemsContainer.appendChild(item);
+        batchDOMUpdates(() => {
+          const fragment = document.createDocumentFragment();
+          filtered.forEach(({ markdown: md, urls: u, timestamp, query, isFav }) => {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            const titleText = md.split('\n')[0].replace(/^#\s*/, '').slice(0, 60);
+            const date = new Date(timestamp).toLocaleDateString();
+            const favIcon = isFav ? '⭐ ' : '';
+            const queryText = query ? `<div class="history-item-query">🔍 ${sanitizeText(query)}</div>` : '';
+            item.innerHTML = `<div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}<div class="history-item-date">${date}</div>`;
+            item.onclick = () => {
+              body.innerHTML = showdownConverter ? showdownConverter.makeHtml(md) : md;
+              body.querySelectorAll('a').forEach(link => {
+                if (isValidUrl(link.href)) {
+                  link.target = '_blank';
+                  link.rel = 'noopener noreferrer';
+                  link.className = 'summary-link';
+                }
+              });
+              historyPanel.style.display = 'none';
+              body.style.display = 'block';
+              followUpSection.style.display = 'block';
+              historyVisible = false;
+            };
+            fragment.appendChild(item);
+          });
+          itemsContainer.innerHTML = '';
+          itemsContainer.appendChild(fragment);
         });
       };
       
-      searchInput.oninput = (e) => renderItems(e.target.value);
+      let searchTimeout;
+      searchInput.oninput = (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => renderItems(e.target.value), 150);
+      };
       renderItems();
       
       body.style.display = 'none';
@@ -554,6 +582,7 @@ function displaySummary(markdown, urls, format, language) {
     }
   };
   
+  await loadShowdown();
   if (typeof showdown !== 'undefined') {
     if (!showdownConverter) showdownConverter = new showdown.Converter();
     const decodedMarkdown = markdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
@@ -640,8 +669,12 @@ function displaySummary(markdown, urls, format, language) {
     }
   };
   
+  let followUpTimeout;
   followUpInput.onkeypress = (e) => {
-    if (e.key === 'Enter') handleFollowUp();
+    if (e.key === 'Enter') {
+      clearTimeout(followUpTimeout);
+      followUpTimeout = setTimeout(handleFollowUp, 100);
+    }
   };
   
   followUpSection.appendChild(conversationDiv);
@@ -923,7 +956,7 @@ async function summarizeResults() {
     const cached = summaryCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
       await updateStats('cache');
-      displaySummary(cached.markdown, cached.urls, format, language);
+      await displaySummary(cached.markdown, cached.urls, format, language);
       return;
     }
     
@@ -932,7 +965,7 @@ async function summarizeResults() {
     if (stored[storageKey] && (Date.now() - stored[storageKey].timestamp) < CACHE_DURATION) {
       summaryCache.set(cacheKey, stored[storageKey]);
       await updateStats('cache');
-      displaySummary(stored[storageKey].markdown, stored[storageKey].urls, format, language);
+      await displaySummary(stored[storageKey].markdown, stored[storageKey].urls, format, language);
       return;
     }
     
@@ -1115,7 +1148,7 @@ IMPORTANT:
     }
     
     cachedSummary = markdown;
-    displaySummary(markdown, urls, format, language);
+    await displaySummary(markdown, urls, format, language);
     
   } catch (error) {
     console.error('Summarization error:', error);
@@ -1128,6 +1161,44 @@ IMPORTANT:
     btn.setAttribute('aria-busy', 'false');
     isProcessing = false;
   }
+}
+
+let nonCriticalCSSLoaded = false;
+
+function loadNonCriticalCSS() {
+  if (nonCriticalCSSLoaded) return;
+  nonCriticalCSSLoaded = true;
+  
+  requestIdleCallback(() => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = chrome.runtime.getURL('content/content.min.css');
+    document.head.appendChild(link);
+  }, { timeout: 2000 });
+}
+
+async function loadShowdown() {
+  if (showdownLoaded) return;
+  if (showdownLoadPromise) return showdownLoadPromise;
+  
+  showdownLoadPromise = new Promise((resolve, reject) => {
+    if (typeof showdown !== 'undefined') {
+      showdownLoaded = true;
+      resolve();
+      return;
+    }
+    
+    const script = document.createElement('script');
+    script.src = chrome.runtime.getURL('lib/showdown.min.js');
+    script.onload = () => {
+      showdownLoaded = true;
+      resolve();
+    };
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+  
+  return showdownLoadPromise;
 }
 
 if (typeof document !== 'undefined') {
@@ -1182,12 +1253,16 @@ if (typeof document !== 'undefined') {
   });
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', addSummarizeButton, { once: true });
+    document.addEventListener('DOMContentLoaded', () => {
+      requestIdleCallback(addSummarizeButton, { timeout: 1000 });
+    }, { once: true });
   } else {
-    typeof requestIdleCallback !== 'undefined' ? requestIdleCallback(addSummarizeButton) : addSummarizeButton();
+    requestIdleCallback(addSummarizeButton, { timeout: 1000 });
   }
   
-  setInterval(cleanupCaches, 5 * 60 * 1000);
+  requestIdleCallback(() => {
+    setInterval(cleanupCaches, 5 * 60 * 1000);
+  }, { timeout: 5000 });
   
   window.addEventListener('beforeunload', () => {
     summaryCache.clear();
@@ -1196,8 +1271,8 @@ if (typeof document !== 'undefined') {
   
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      typeof requestIdleCallback !== 'undefined' ? requestIdleCallback(cleanupCaches) : setTimeout(cleanupCaches, 1000);
-    });
+      requestIdleCallback(cleanupCaches, { timeout: 2000 });
+    }, { passive: true });
   }
 }
 

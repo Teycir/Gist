@@ -8,9 +8,13 @@
     "test": "tests"
   },
   "scripts": {
+    "build:optimized": "./build-optimized.sh",
+    "build:analyze": "node scripts/analyze-bundle.js",
     "build": "./build.sh",
     "watch": "nodemon --watch content --watch popup --watch icons --watch lib --watch background.js --watch manifest.json --exec npm run build",
     "test": "jest",
+    "test:perf": "jest tests/performance*.test.js",
+    "minify:css": "node scripts/minify-css.js",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --coverageReporters=html lcov text",
     "test:e2e": "jest e2e.test.js",

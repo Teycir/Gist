@@ -28,8 +28,14 @@
         "https://www.bing.com/search*",
         "https://duckduckgo.com/*"
       ],
-      "js": ["lib/showdown.min.js", "content/content.js"],
-      "css": ["content/content.css"]
+      "js": ["content/content.js"],
+      "css": ["content/content-critical.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["lib/showdown.min.js", "content/content.min.css"],
+      "matches": ["https://*/*"]
     }
   ]
 }

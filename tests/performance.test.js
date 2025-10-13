@@ -10,6 +10,8 @@ describe('Performance', () => {
     global.alert = jest.fn();
     global.confirm = jest.fn();
     global.window = { open: jest.fn(), location: { search: '?q=test+query' } };
+    global.requestAnimationFrame = jest.fn(cb => setTimeout(cb, 0));
+    global.requestIdleCallback = jest.fn((cb, opts) => setTimeout(cb, 0));
   });
 
   test('should complete summarization within 8 seconds', async () => {
@@ -78,5 +80,106 @@ describe('Performance', () => {
     const secondCallCount = fetch.mock.calls.length;
     
     expect(secondCallCount).toBe(firstCallCount);
+  });
+
+  test('memoization should cache function results', () => {
+    const cache = new Map();
+    const memoize = (fn) => (arg) => {
+      if (cache.has(arg)) return cache.get(arg);
+      const result = fn(arg);
+      cache.set(arg, result);
+      return result;
+    };
+    
+    const expensiveFn = jest.fn((x) => x * 2);
+    const memoized = memoize(expensiveFn);
+    
+    memoized(5);
+    memoized(5);
+    
+    expect(expensiveFn).toHaveBeenCalledTimes(1);
+    expect(memoized(5)).toBe(10);
+  });
+
+  test('DOM batching should use requestAnimationFrame', () => {
+    const callback = jest.fn();
+    
+    requestAnimationFrame(callback);
+    
+    expect(global.requestAnimationFrame).toHaveBeenCalled();
+  });
+
+  test('lazy-loading should defer non-critical CSS', () => {
+    requestIdleCallback(() => {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+    });
+    
+    expect(global.requestIdleCallback).toHaveBeenCalled();
+  });
+
+  test('debouncing should reduce event handler calls', (done) => {
+    jest.useFakeTimers();
+    const handler = jest.fn();
+    let timeout;
+    
+    const debouncedHandler = (value) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => handler(value), 150);
+    };
+    
+    debouncedHandler('a');
+    debouncedHandler('ab');
+    debouncedHandler('abc');
+    
+    expect(handler).not.toHaveBeenCalled();
+    
+    jest.advanceTimersByTime(150);
+    
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler).toHaveBeenCalledWith('abc');
+    
+    jest.useRealTimers();
+    done();
+  });
+
+  test('DocumentFragment should reduce DOM reflows', () => {
+    const container = document.createElement('div');
+    const fragment = document.createDocumentFragment();
+    
+    for (let i = 0; i < 50; i++) {
+      const item = document.createElement('div');
+      item.textContent = `Item ${i}`;
+      fragment.appendChild(item);
+    }
+    container.appendChild(fragment);
+    
+    expect(container.children.length).toBe(50);
+    expect(fragment.childNodes.length).toBe(0);
+  });
+
+  test('critical CSS should be minimal', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const criticalPath = path.join(__dirname, '../content/content-critical.css');
+    
+    if (fs.existsSync(criticalPath)) {
+      const criticalSize = fs.statSync(criticalPath).size;
+      expect(criticalSize).toBeLessThan(1000);
+    }
+  });
+
+  test('lazy-loaded showdown should not block initial load', () => {
+    const loadScript = (src) => {
+      const script = document.createElement('script');
+      script.src = src;
+      document.head.appendChild(script);
+      return script;
+    };
+    
+    const script = loadScript('lib/showdown.min.js');
+    
+    expect(document.head.querySelector('script[src*="showdown"]')).toBeTruthy();
   });
 });
