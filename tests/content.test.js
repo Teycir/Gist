@@ -4,7 +4,6 @@
 
 global.requestIdleCallback = jest.fn(cb => setTimeout(cb, 0));
 global.requestAnimationFrame = jest.fn(cb => setTimeout(cb, 0));
-global.showdown = { Converter: jest.fn(() => ({ makeHtml: (md) => md })) };
 
 const { scrapeGoogleUrls, cleanHtmlToText } = require('../content/content.js');
 
@@ -184,7 +183,6 @@ describe('Display Summary', () => {
     document.body.innerHTML = '';
     global.navigator.clipboard = { writeText: jest.fn() };
     global.requestIdleCallback = jest.fn(cb => setTimeout(cb, 0));
-    global.showdown = { Converter: jest.fn(() => ({ makeHtml: (md) => md })) };
     chrome.storage.local.get.mockImplementation((keys, callback) => {
       if (typeof keys === 'function') {
         keys({});
@@ -202,6 +200,7 @@ describe('Display Summary', () => {
   test('should create iframe with summary overlay', async () => {
     const { displaySummary } = require('../content/content.js');
     await displaySummary('# Test Summary\n\nContent here', ['http://example.com']);
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     expect(iframe).toBeTruthy();
     const iframeDoc = iframe.contentDocument;
@@ -212,6 +211,7 @@ describe('Display Summary', () => {
   test('should include copy button in iframe', async () => {
     const { displaySummary } = require('../content/content.js');
     await displaySummary('Test content', ['http://example.com']);
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
     const copyBtn = iframeDoc.querySelector('.close-btn');
@@ -221,6 +221,7 @@ describe('Display Summary', () => {
   test('should have overlay structure in iframe', async () => {
     const { displaySummary } = require('../content/content.js');
     await displaySummary('Test', []);
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
     const overlay = iframeDoc.querySelector('.summary-overlay');
@@ -231,6 +232,7 @@ describe('Display Summary', () => {
   test('should display multiple sources in iframe', async () => {
     const { displaySummary } = require('../content/content.js');
     await displaySummary('Test', ['http://a.com', 'http://b.com']);
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
     const overlay = iframeDoc.querySelector('.summary-overlay');
@@ -241,6 +243,7 @@ describe('Display Summary', () => {
     const { displaySummary } = require('../content/content.js');
     const testMarkdown = '# Test Summary\nContent here';
     await displaySummary(testMarkdown, []);
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
     const copyBtn = iframeDoc.querySelectorAll('.close-btn')[3];
@@ -254,6 +257,7 @@ describe('Display Summary', () => {
   test('should have close button in iframe', async () => {
     const { displaySummary } = require('../content/content.js');
     await displaySummary('Test', [], 'brief', 'English');
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     expect(iframe).toBeTruthy();
     const iframeDoc = iframe.contentDocument;
@@ -264,6 +268,7 @@ describe('Display Summary', () => {
   test('should include history button', async () => {
     const { displaySummary } = require('../content/content.js');
     await displaySummary('Test', [], 'brief', 'English');
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
     const historyBtn = iframeDoc.querySelectorAll('.close-btn')[0];
@@ -273,6 +278,7 @@ describe('Display Summary', () => {
   test('should include refresh button', async () => {
     const { displaySummary } = require('../content/content.js');
     await displaySummary('Test', [], 'brief', 'English');
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
     const refreshBtn = iframeDoc.querySelectorAll('.close-btn')[1];
@@ -282,6 +288,7 @@ describe('Display Summary', () => {
   test('should include star/favorite button', async () => {
     const { displaySummary } = require('../content/content.js');
     await displaySummary('Test', [], 'brief', 'English');
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
     const starBtn = iframeDoc.querySelectorAll('.close-btn')[2];
@@ -292,6 +299,7 @@ describe('Display Summary', () => {
     const { displaySummary } = require('../content/content.js');
     const testMarkdown = '# Test Summary';
     await displaySummary(testMarkdown, [], 'brief', 'English');
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
     const starBtn = iframeDoc.querySelectorAll('.close-btn')[2];
@@ -303,6 +311,7 @@ describe('Display Summary', () => {
   test('should have refresh button with tooltip', async () => {
     const { displaySummary } = require('../content/content.js');
     await displaySummary('Test', [], 'brief', 'English');
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
     const refreshBtn = iframeDoc.querySelectorAll('.close-btn')[1];
@@ -317,6 +326,7 @@ describe('Display Summary', () => {
     
     const { displaySummary, summarizeResults } = require('../content/content.js');
     await displaySummary('Test', ['http://example.com'], 'brief', 'English');
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
     const refreshBtn = iframeDoc.querySelectorAll('.close-btn')[1];
@@ -506,7 +516,6 @@ describe('History and Favorites', () => {
     document.body.innerHTML = '';
     jest.clearAllMocks();
     global.requestIdleCallback = jest.fn(cb => setTimeout(cb, 0));
-    global.showdown = { Converter: jest.fn(() => ({ makeHtml: (md) => md })) };
     chrome.storage.local.get.mockImplementation((keys, callback) => {
       if (typeof keys === 'function') {
         keys({});
@@ -528,6 +537,7 @@ describe('History and Favorites', () => {
   test('should store favorite with correct key format', async () => {
     const { displaySummary } = require('../content/content.js');
     await displaySummary('# Test', [], 'brief', 'English');
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
     const starBtn = iframeDoc.querySelectorAll('.close-btn')[2];
@@ -549,6 +559,7 @@ describe('History and Favorites', () => {
   test('should include search query in favorite', async () => {
     const { displaySummary } = require('../content/content.js');
     await displaySummary('# Test', [], 'brief', 'English');
+    await new Promise(resolve => setTimeout(resolve, 100));
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
     const starBtn = iframeDoc.querySelectorAll('.close-btn')[2];
@@ -568,6 +579,7 @@ describe('History and Favorites', () => {
     
     // Test English
     await displaySummary('Test', ['http://test.com'], 'brief', 'English');
+    await new Promise(resolve => setTimeout(resolve, 100));
     let iframe = document.querySelector('iframe');
     let refreshBtn = iframe.contentDocument.querySelectorAll('.close-btn')[1];
     expect(refreshBtn.getAttribute('data-tooltip')).toContain('Refresh');

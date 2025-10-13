@@ -582,23 +582,11 @@ async function displaySummary(markdown, urls, format, language) {
     }
   };
   
-  await loadShowdown();
-  if (typeof showdown !== 'undefined') {
-    if (!showdownConverter) showdownConverter = new showdown.Converter();
-    const decodedMarkdown = markdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-    body.innerHTML = showdownConverter.makeHtml(decodedMarkdown);
-    body.querySelectorAll('a').forEach(link => {
-      if (isValidUrl(link.href)) {
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.className = 'summary-link';
-      } else {
-        link.removeAttribute('href');
-      }
-    });
-  } else {
-    body.textContent = markdown;
-  }
+  // Store markdown for later conversion in iframe
+  console.log('[displaySummary] Storing markdown in body attribute');
+  console.log('[displaySummary] Markdown length:', markdown.length);
+  body.setAttribute('data-markdown', markdown);
+  body.textContent = 'Loading...';
   
   content.appendChild(header);
   content.appendChild(historyPanel);
@@ -698,7 +686,7 @@ async function displaySummary(markdown, urls, format, language) {
     if (data.darkMode) iframeDoc.body.classList.add('dark');
   });
   
-  iframeDoc.write(`
+  const iframeHTML = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -776,14 +764,64 @@ async function displaySummary(markdown, urls, format, language) {
     </head>
     <body></body>
     </html>
-  `);
-  iframeDoc.close();
+  `;
   
-  const overlayBg = iframeDoc.createElement('div');
-  overlayBg.className = 'overlay-bg';
-  overlayBg.onclick = (e) => { if (e.target === overlayBg) iframe.remove(); };
-  overlayBg.appendChild(overlay);
-  iframeDoc.body.appendChild(overlayBg);
+  console.log('[displaySummary] Writing HTML to iframe');
+  iframeDoc.write(iframeHTML);
+  iframeDoc.close();
+  console.log('[displaySummary] iframe document closed');
+  
+  // Wait for iframe to be ready
+  const iframeLoadPromise = new Promise(resolve => {
+    iframe.onload = () => {
+      resolve();
+    console.log('[iframe.onload] Iframe loaded');
+    
+    console.log('[iframe.onload] Creating overlay background');
+    const overlayBg = iframeDoc.createElement('div');
+    overlayBg.className = 'overlay-bg';
+    overlayBg.onclick = (e) => { if (e.target === overlayBg) iframe.remove(); };
+    console.log('[iframe.onload] Appending overlay to overlayBg');
+    overlayBg.appendChild(overlay);
+    console.log('[iframe.onload] Appending overlayBg to iframe body');
+    iframeDoc.body.appendChild(overlayBg);
+    console.log('[iframe.onload] Overlay appended successfully');
+    
+    // Simple markdown to HTML converter
+    const convertMarkdown = () => {
+      const iframeBody = iframeDoc.querySelector('.summary-body');
+      const md = iframeBody?.getAttribute('data-markdown');
+      
+      if (!md) return;
+      
+      const decodedMarkdown = md.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+      
+      let html = decodedMarkdown
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`(.+?)`/g, '<code>$1</code>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="summary-link">$1</a>')
+        .replace(/^\*   (.+)$/gim, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/^(.+)$/gim, '<p>$1</p>')
+        .replace(/<\/p><p><h/g, '</p><h')
+        .replace(/<\/h([123])><\/p>/g, '</h$1>')
+        .replace(/<p><\/p>/g, '')
+        .replace(/<p>(<ul>)/g, '$1')
+        .replace(/(<\/ul>)<\/p>/g, '$1');
+      
+      iframeBody.innerHTML = html;
+    };
+    
+    setTimeout(convertMarkdown, 50);
+    };
+  });
+  
+  await iframeLoadPromise;
   
   // Update remove function
   const originalRemove = overlay.remove.bind(overlay);
@@ -994,7 +1032,8 @@ async function summarizeResults() {
     
     btn.disabled = true;
     btn.innerHTML = `${loading.finding}<span class="loading-spinner"></span>`;
-    console.log('References:', urls);
+    const decodedUrls = urls.map(url => url.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&'));
+    console.log('References:', decodedUrls);
     
     if (urls.length === 0) {
       alert('No search results found to summarize.');
@@ -1179,13 +1218,13 @@ function loadNonCriticalCSS() {
 }
 
 async function loadShowdown() {
-  if (showdownLoaded) return;
+  if (showdownLoaded) return true;
   if (showdownLoadPromise) return showdownLoadPromise;
   
-  showdownLoadPromise = new Promise((resolve, reject) => {
+  showdownLoadPromise = new Promise((resolve) => {
     if (typeof showdown !== 'undefined') {
       showdownLoaded = true;
-      resolve();
+      resolve(true);
       return;
     }
     
@@ -1193,9 +1232,12 @@ async function loadShowdown() {
     script.src = chrome.runtime.getURL('lib/showdown.min.js');
     script.onload = () => {
       showdownLoaded = true;
-      resolve();
+      resolve(true);
     };
-    script.onerror = reject;
+    script.onerror = () => {
+      console.warn('Showdown failed to load, using plain text fallback');
+      resolve(false);
+    };
     document.head.appendChild(script);
   });
   
