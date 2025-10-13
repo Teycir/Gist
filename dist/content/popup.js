@@ -112,42 +112,31 @@ const translations = {
 
 function updateUILanguage(lang) {
   const t = translations[lang] || translations.English;
-  const el = (id) => document.getElementById(id);
-  
-  if (el('settingsTitle')) el('settingsTitle').textContent = t.title;
-  if (el('languageLabel')) el('languageLabel').textContent = t.language;
-  if (el('formatLabel')) el('formatLabel').textContent = t.format;
-  if (el('briefOption')) el('briefOption').textContent = t.brief;
-  if (el('detailedOption')) el('detailedOption').textContent = t.detailed;
-  
-  const multiSearchLabel = el('multiSearchLabel');
-  if (multiSearchLabel) {
-    multiSearchLabel.textContent = t.multiSearch;
-    multiSearchLabel.setAttribute('data-tooltip', t.multiSearchTooltip);
-  }
-  
-  const autoSummarizeLabel = el('autoSummarizeLabel');
-  if (autoSummarizeLabel) {
-    autoSummarizeLabel.textContent = t.autoSummarize;
-    autoSummarizeLabel.setAttribute('data-tooltip', t.autoSummarizeTooltip);
-  }
-  
-  if (el('darkModeLabel')) el('darkModeLabel').textContent = t.darkMode;
-  if (el('saveButtonText')) el('saveButtonText').textContent = t.save;
-  if (el('googleKeyHelpText')) el('googleKeyHelpText').textContent = t.apiHelp;
-  if (el('openrouterKeyHelpText')) el('openrouterKeyHelpText').textContent = t.apiHelp;
-  if (el('howToUseText')) el('howToUseText').textContent = t.howToUse;
-  if (el('footerMadeBy')) el('footerMadeBy').textContent = t.footer;
-  
+  document.getElementById('settingsTitle').textContent = t.title;
+  document.getElementById('apiKeyLabel').textContent = t.apiKey;
+  document.getElementById('languageLabel').textContent = t.language;
+  document.getElementById('formatLabel').textContent = t.format;
+  document.getElementById('briefOption').textContent = t.brief;
+  document.getElementById('detailedOption').textContent = t.detailed;
+  const multiSearchLabel = document.getElementById('multiSearchLabel');
+  multiSearchLabel.textContent = t.multiSearch;
+  multiSearchLabel.setAttribute('data-tooltip', t.multiSearchTooltip);
+  const autoSummarizeLabel = document.getElementById('autoSummarizeLabel');
+  autoSummarizeLabel.textContent = t.autoSummarize;
+  autoSummarizeLabel.setAttribute('data-tooltip', t.autoSummarizeTooltip);
+  document.getElementById('darkModeLabel').textContent = t.darkMode;
+  document.getElementById('saveButtonText').textContent = t.save;
+  document.getElementById('apiKeyHelpText').textContent = t.apiHelp;
+  document.getElementById('howToUseText').textContent = t.howToUse;
+  document.getElementById('footerMadeBy').textContent = t.footer;
   const githubLink = document.querySelector('.github-link a');
   if (githubLink) githubLink.setAttribute('aria-label', t.github);
-  
-  if (el('todayLabel')) el('todayLabel').textContent = t.todayLabel;
-  if (el('totalLabel')) el('totalLabel').textContent = t.totalLabel;
-  if (el('cacheLabel')) el('cacheLabel').textContent = t.cacheLabel;
-  if (el('todayStat')) el('todayStat').setAttribute('data-tooltip', t.todayTooltip);
-  if (el('totalStat')) el('totalStat').setAttribute('data-tooltip', t.totalTooltip);
-  if (el('cacheStat')) el('cacheStat').setAttribute('data-tooltip', t.cacheTooltip);
+  if (document.getElementById('todayLabel')) document.getElementById('todayLabel').textContent = t.todayLabel;
+  if (document.getElementById('totalLabel')) document.getElementById('totalLabel').textContent = t.totalLabel;
+  if (document.getElementById('cacheLabel')) document.getElementById('cacheLabel').textContent = t.cacheLabel;
+  if (document.getElementById('todayStat')) document.getElementById('todayStat').setAttribute('data-tooltip', t.todayTooltip);
+  if (document.getElementById('totalStat')) document.getElementById('totalStat').setAttribute('data-tooltip', t.totalTooltip);
+  if (document.getElementById('cacheStat')) document.getElementById('cacheStat').setAttribute('data-tooltip', t.cacheTooltip);
 }
 
 function getElements() {
@@ -425,8 +414,6 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
     if (saveBtn) saveBtn.disabled = true;
     statusMsg.textContent = 'Saving...';
     statusMsg.className = 'status-msg';
-    
-    await chrome.storage.local.remove(['primaryModel', 'fallbackModels', 'openrouterPrimaryModel', 'openrouterFallbackModels']);
     
     if (provider === 'google') {
       await loadModels(googleKey);

@@ -439,8 +439,19 @@
     </div>
   </div>
   <div class="form-group">
-    <label for="apiKey" id="apiKeyLabel">🔑 API Key</label>
-    <input type="password" id="apiKey" placeholder="Enter your Google AI API Key" aria-required="true" aria-describedby="apiKeyHelp" autocomplete="off"/>
+    <label for="providerSelect" id="providerLabel">🔐 AI Provider</label>
+    <select id="providerSelect" aria-label="Select AI provider">
+      <option value="google">Google AI (Gemini Flash)</option>
+      <option value="openrouter">OpenRouter (Qwen, Private)</option>
+    </select>
+  </div>
+  <div class="form-group" id="googleKeyGroup">
+    <label for="googleApiKey" id="googleApiKeyLabel">🔑 Google AI Key</label>
+    <input type="password" id="googleApiKey" placeholder="AIza..." aria-describedby="googleKeyHelp" autocomplete="off"/>
+  </div>
+  <div class="form-group" id="openrouterKeyGroup" style="display:none;">
+    <label for="openrouterApiKey" id="openrouterApiKeyLabel">🔑 OpenRouter Key</label>
+    <input type="password" id="openrouterApiKey" placeholder="sk-or-v1-..." aria-describedby="openrouterKeyHelp" autocomplete="off"/>
   </div>
 
   <div class="form-group">
@@ -473,7 +484,8 @@
   </div>
   <div id="statusMsg" class="status-msg" role="status" aria-live="polite"></div>
   <button id="saveKey" aria-label="Save settings">💾 <span id="saveButtonText">Save Settings</span></button>
-  <div class="info" id="apiKeyHelp" dir="auto"><span id="apiKeyHelpText">Get your API key from</span> <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer">Google AI Studio</a></div>
+  <div class="info" id="googleKeyHelp" dir="auto"><span id="googleKeyHelpText">Get key from</span> <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer">Google AI Studio</a></div>
+  <div class="info" id="openrouterKeyHelp" dir="auto" style="display:none;"><span id="openrouterKeyHelpText">Get key from</span> <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer">OpenRouter</a></div>
   <div class="info" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e8eaed;" id="howToUseText">How to use:</div>
   <div class="github-link">
     <a href="https://github.com/Teycir/Gist#readme" target="_blank" rel="noopener noreferrer" aria-label="View on GitHub">

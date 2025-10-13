@@ -1152,7 +1152,7 @@ async function summarizeResults() {
   
   try {
     btn.setAttribute('aria-busy', 'true');
-    const { flashApiKey, selectedModel, selectedLanguage, summaryFormat, multiSearchEnabled } = await chrome.storage.local.get(['flashApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled']).catch(error => {
+    const { flashApiKey, aiProvider, selectedModel, selectedLanguage, summaryFormat, multiSearchEnabled } = await chrome.storage.local.get(['flashApiKey', 'aiProvider', 'selectedModel', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled']).catch(error => {
       console.error('Storage error:', error);
       return {};
     });
@@ -1161,6 +1161,8 @@ async function summarizeResults() {
       chrome.runtime.sendMessage({ action: 'openPopup' });
       return;
     }
+    
+    const provider = aiProvider || 'google';
     
     const tabIdResponse = await new Promise(resolve => chrome.runtime.sendMessage({ action: 'getTabId' }, resolve));
     const wasAutoKey = tabIdResponse?.tabId ? `wasAuto_${tabIdResponse.tabId}` : null;
@@ -1261,67 +1263,145 @@ async function summarizeResults() {
     const sources = extractedContent.map((text, i) => `[${i + 1}] ${text}`);
     const prompt = `${searchQuery}\n\n${sources.join('\n\n')}\n\n${formatInstructions[format]} Use [1][2] citations. ${language}. Max ${wordLimit} words.`;
     
-    const { primaryModel, fallbackModels, flashApiKey: apiKey } = await chrome.storage.local.get(['primaryModel', 'fallbackModels', 'flashApiKey']);
-    
     let models = [];
     
-    if (!primaryModel) {
-      const url = new URL('https://generativelanguage.googleapis.com/v1beta/models');
-      url.searchParams.set('key', apiKey);
-      const response = await fetch(url.toString());
-      const data = await response.json();
+    if (provider === 'openrouter') {
+      const { openrouterPrimaryModel, openrouterFallbackModels } = await chrome.storage.local.get(['openrouterPrimaryModel', 'openrouterFallbackModels']);
       
-      const allModels = data.models?.filter(m => {
-        if (!m.supportedGenerationMethods?.includes('generateContent')) return false;
-        const displayName = m.displayName.toLowerCase();
-        return displayName.includes('flash') && !displayName.includes('lite');
-      }).sort((a, b) => {
-        const aName = a.name.toLowerCase();
-        const bName = b.name.toLowerCase();
-        const aVersion = parseFloat((aName.match(/(\d+\.\d+)/) || ['0'])[0]);
-        const bVersion = parseFloat((bName.match(/(\d+\.\d+)/) || ['0'])[0]);
-        if (aVersion !== bVersion) return bVersion - aVersion;
-        const aHasPreview = aName.includes('preview');
-        const bHasPreview = bName.includes('preview');
-        if (aHasPreview !== bHasPreview) return aHasPreview ? 1 : -1;
-        return a.name.length - b.name.length;
-      }) || [];
-      
-      const latestVersion = allModels[0] ? parseFloat((allModels[0].name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) : 0;
-      const latestStable = allModels.find(m => !m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
-      const latestPreview = allModels.find(m => m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
-      const prevVersion = allModels.find(m => parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) < latestVersion);
-      
-      models = [latestStable?.name, latestPreview?.name, prevVersion?.name].filter(Boolean).slice(0, 3);
-      
-      if (models.length === 0) throw new Error('No compatible Flash models found');
-      
-      await chrome.storage.local.set({ primaryModel: models[0], fallbackModels: models.slice(1) });
+      if (!openrouterPrimaryModel) {
+        const response = await fetch('https://openrouter.ai/api/v1/models', {
+          headers: { 'Authorization': `Bearer ${flashApiKey}` }
+        });
+        const data = await response.json();
+        
+        const allModels = data.data?.filter(m => {
+          const id = m.id.toLowerCase();
+          return id.includes('qwen') && id.includes('free');
+        }).sort((a, b) => {
+          const aId = a.id.toLowerCase();
+          const bId = b.id.toLowerCase();
+          const aMatch = aId.match(/qwen[\/-]?([\d.]+)/) || aId.match(/qwen\s+([\d.]+)/);
+          const bMatch = bId.match(/qwen[\/-]?([\d.]+)/) || bId.match(/qwen\s+([\d.]+)/);
+          const aVer = parseFloat(aMatch?.[1] || '0');
+          const bVer = parseFloat(bMatch?.[1] || '0');
+          if (aVer !== bVer) return bVer - aVer;
+          const aSize = parseInt((aId.match(/(\d+)b/)?.[1] || '0'));
+          const bSize = parseInt((bId.match(/(\d+)b/)?.[1] || '0'));
+          if (aSize !== bSize) return bSize - aSize;
+          const aInstruct = aId.includes('instruct');
+          const bInstruct = bId.includes('instruct');
+          if (aInstruct !== bInstruct) return aInstruct ? -1 : 1;
+          return a.id.length - b.id.length;
+        }) || [];
+        
+        const latestVersion = allModels[0] ? parseFloat((allModels[0].id.toLowerCase().match(/qwen[\/-]?([\d.]+)/) || allModels[0].id.toLowerCase().match(/qwen\s+([\d.]+)/))?.[1] || '0') : 0;
+        const latestLargest = allModels.find(m => {
+          const id = m.id.toLowerCase();
+          const ver = parseFloat((id.match(/qwen[\/-]?([\d.]+)/) || id.match(/qwen\s+([\d.]+)/))?.[1] || '0');
+          return ver === latestVersion;
+        });
+        const prevVersion = allModels.find(m => {
+          const id = m.id.toLowerCase();
+          const ver = parseFloat((id.match(/qwen[\/-]?([\d.]+)/) || id.match(/qwen\s+([\d.]+)/))?.[1] || '0');
+          return ver < latestVersion;
+        });
+        
+        models = [latestLargest?.id, prevVersion?.id].filter(Boolean).slice(0, 3);
+        if (models.length === 0) throw new Error('No free Qwen models found');
+        
+        console.log('[OpenRouter] Latest version:', latestVersion, 'Primary:', latestLargest?.id, 'Fallback:', prevVersion?.id);
+        
+        await chrome.storage.local.set({ 
+          openrouterPrimaryModel: models[0],
+          openrouterFallbackModels: models.slice(1)
+        });
+      } else {
+        models = [openrouterPrimaryModel, ...(openrouterFallbackModels || [])].filter(Boolean);
+        console.log('[OpenRouter] Using cached models:', models);
+      }
     } else {
-      models = [primaryModel, ...(fallbackModels || [])].filter(Boolean);
+      const { primaryModel, fallbackModels } = await chrome.storage.local.get(['primaryModel', 'fallbackModels']);
+      
+      if (!primaryModel) {
+        const url = new URL('https://generativelanguage.googleapis.com/v1beta/models');
+        url.searchParams.set('key', flashApiKey);
+        const response = await fetch(url.toString());
+        const data = await response.json();
+      
+        const allModels = data.models?.filter(m => {
+          if (!m.supportedGenerationMethods?.includes('generateContent')) return false;
+          const displayName = m.displayName.toLowerCase();
+          return displayName.includes('flash') && !displayName.includes('lite');
+        }).sort((a, b) => {
+          const aName = a.name.toLowerCase();
+          const bName = b.name.toLowerCase();
+          const aVersion = parseFloat((aName.match(/(\d+\.\d+)/) || ['0'])[0]);
+          const bVersion = parseFloat((bName.match(/(\d+\.\d+)/) || ['0'])[0]);
+          if (aVersion !== bVersion) return bVersion - aVersion;
+          const aHasPreview = aName.includes('preview');
+          const bHasPreview = bName.includes('preview');
+          if (aHasPreview !== bHasPreview) return aHasPreview ? 1 : -1;
+          return a.name.length - b.name.length;
+        }) || [];
+        
+        const latestVersion = allModels[0] ? parseFloat((allModels[0].name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) : 0;
+        const latestStable = allModels.find(m => !m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
+        const latestPreview = allModels.find(m => m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
+        const prevVersion = allModels.find(m => parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) < latestVersion);
+        
+        models = [latestStable?.name, latestPreview?.name, prevVersion?.name].filter(Boolean).slice(0, 3);
+        
+        if (models.length === 0) throw new Error('No compatible Flash models found');
+        
+        await chrome.storage.local.set({ primaryModel: models[0], fallbackModels: models.slice(1) });
+      } else {
+        models = [primaryModel, ...(fallbackModels || [])].filter(Boolean);
+      }
     }
     
     console.log('[PERF] Models ready:', models);
     const apiStart = Date.now();
     
     const callModel = (modelName) => new Promise((resolve, reject) => {
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${flashApiKey}`;
-      chrome.runtime.sendMessage({
-        action: 'callAPI',
-        url: apiUrl,
-        body: {
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.2, topP: 0.8, topK: 40 }
-        }
-      }, response => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-        } else if (response?.success) {
-          resolve(response.data);
-        } else {
-          reject(new Error(response?.error || 'API failed'));
-        }
-      });
+      if (provider === 'openrouter') {
+        chrome.runtime.sendMessage({
+          action: 'callOpenRouter',
+          url: 'https://openrouter.ai/api/v1/chat/completions',
+          apiKey: flashApiKey,
+          body: {
+            model: modelName,
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: maxTokens,
+            temperature: 0.2
+          }
+        }, response => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else if (response?.success) {
+            resolve(response.data);
+          } else {
+            reject(new Error(response?.error || 'API failed'));
+          }
+        });
+      } else {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${flashApiKey}`;
+        chrome.runtime.sendMessage({
+          action: 'callAPI',
+          url: apiUrl,
+          body: {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: maxTokens, temperature: 0.2, topP: 0.8, topK: 40 }
+          }
+        }, response => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else if (response?.success) {
+            resolve(response.data);
+          } else {
+            reject(new Error(response?.error || 'API failed'));
+          }
+        });
+      }
     });
     
     let apiResponse;
@@ -1343,20 +1423,25 @@ async function summarizeResults() {
     
     const data = apiResponse;
     console.log('API response data:', data);
-    console.log('Candidates:', data.candidates);
     
-    const finishReason = data.candidates?.[0]?.finishReason;
-    let markdown = data.candidates?.[0]?.content?.parts?.[0]?.text || 
-                   data.candidates?.[0]?.text ||
-                   data.text;
-    
-    console.log('Extracted markdown:', markdown);
-    console.log('Finish reason:', finishReason);
-    
-    if (!markdown) {
-      if (finishReason === 'MAX_TOKENS') {
+    let markdown;
+    if (provider === 'openrouter') {
+      markdown = data.choices?.[0]?.message?.content;
+    } else {
+      console.log('Candidates:', data.candidates);
+      const finishReason = data.candidates?.[0]?.finishReason;
+      markdown = data.candidates?.[0]?.content?.parts?.[0]?.text || 
+                 data.candidates?.[0]?.text ||
+                 data.text;
+      
+      if (!markdown && finishReason === 'MAX_TOKENS') {
         throw new Error('Response too long. Try using "Brief Summary" format.');
       }
+    }
+    
+    console.log('Extracted markdown:', markdown);
+    
+    if (!markdown) {
       console.error('No markdown extracted from response');
       console.error('Full response structure:', JSON.stringify(data, null, 2));
       throw new Error('No summary generated');

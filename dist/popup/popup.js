@@ -112,37 +112,50 @@ const translations = {
 
 function updateUILanguage(lang) {
   const t = translations[lang] || translations.English;
-  document.getElementById('settingsTitle').textContent = t.title;
-  document.getElementById('apiKeyLabel').textContent = t.apiKey;
-  document.getElementById('languageLabel').textContent = t.language;
-  document.getElementById('formatLabel').textContent = t.format;
-  document.getElementById('briefOption').textContent = t.brief;
-  document.getElementById('detailedOption').textContent = t.detailed;
-  const multiSearchLabel = document.getElementById('multiSearchLabel');
-  multiSearchLabel.textContent = t.multiSearch;
-  multiSearchLabel.setAttribute('data-tooltip', t.multiSearchTooltip);
-  const autoSummarizeLabel = document.getElementById('autoSummarizeLabel');
-  autoSummarizeLabel.textContent = t.autoSummarize;
-  autoSummarizeLabel.setAttribute('data-tooltip', t.autoSummarizeTooltip);
-  document.getElementById('darkModeLabel').textContent = t.darkMode;
-  document.getElementById('saveButtonText').textContent = t.save;
-  document.getElementById('apiKeyHelpText').textContent = t.apiHelp;
-  document.getElementById('howToUseText').textContent = t.howToUse;
-  document.getElementById('footerMadeBy').textContent = t.footer;
+  const el = (id) => document.getElementById(id);
+  
+  if (el('settingsTitle')) el('settingsTitle').textContent = t.title;
+  if (el('languageLabel')) el('languageLabel').textContent = t.language;
+  if (el('formatLabel')) el('formatLabel').textContent = t.format;
+  if (el('briefOption')) el('briefOption').textContent = t.brief;
+  if (el('detailedOption')) el('detailedOption').textContent = t.detailed;
+  
+  const multiSearchLabel = el('multiSearchLabel');
+  if (multiSearchLabel) {
+    multiSearchLabel.textContent = t.multiSearch;
+    multiSearchLabel.setAttribute('data-tooltip', t.multiSearchTooltip);
+  }
+  
+  const autoSummarizeLabel = el('autoSummarizeLabel');
+  if (autoSummarizeLabel) {
+    autoSummarizeLabel.textContent = t.autoSummarize;
+    autoSummarizeLabel.setAttribute('data-tooltip', t.autoSummarizeTooltip);
+  }
+  
+  if (el('darkModeLabel')) el('darkModeLabel').textContent = t.darkMode;
+  if (el('saveButtonText')) el('saveButtonText').textContent = t.save;
+  if (el('googleKeyHelpText')) el('googleKeyHelpText').textContent = t.apiHelp;
+  if (el('openrouterKeyHelpText')) el('openrouterKeyHelpText').textContent = t.apiHelp;
+  if (el('howToUseText')) el('howToUseText').textContent = t.howToUse;
+  if (el('footerMadeBy')) el('footerMadeBy').textContent = t.footer;
+  
   const githubLink = document.querySelector('.github-link a');
   if (githubLink) githubLink.setAttribute('aria-label', t.github);
-  if (document.getElementById('todayLabel')) document.getElementById('todayLabel').textContent = t.todayLabel;
-  if (document.getElementById('totalLabel')) document.getElementById('totalLabel').textContent = t.totalLabel;
-  if (document.getElementById('cacheLabel')) document.getElementById('cacheLabel').textContent = t.cacheLabel;
-  if (document.getElementById('todayStat')) document.getElementById('todayStat').setAttribute('data-tooltip', t.todayTooltip);
-  if (document.getElementById('totalStat')) document.getElementById('totalStat').setAttribute('data-tooltip', t.totalTooltip);
-  if (document.getElementById('cacheStat')) document.getElementById('cacheStat').setAttribute('data-tooltip', t.cacheTooltip);
+  
+  if (el('todayLabel')) el('todayLabel').textContent = t.todayLabel;
+  if (el('totalLabel')) el('totalLabel').textContent = t.totalLabel;
+  if (el('cacheLabel')) el('cacheLabel').textContent = t.cacheLabel;
+  if (el('todayStat')) el('todayStat').setAttribute('data-tooltip', t.todayTooltip);
+  if (el('totalStat')) el('totalStat').setAttribute('data-tooltip', t.totalTooltip);
+  if (el('cacheStat')) el('cacheStat').setAttribute('data-tooltip', t.cacheTooltip);
 }
 
 function getElements() {
   if (!elements) {
     elements = {
-      apiKey: document.getElementById('apiKey'),
+      providerSelect: document.getElementById('providerSelect'),
+      googleApiKey: document.getElementById('googleApiKey'),
+      openrouterApiKey: document.getElementById('openrouterApiKey'),
       languageSelect: document.getElementById('languageSelect'),
       formatSelect: document.getElementById('formatSelect'),
       multiSearch: document.getElementById('multiSearch'),
@@ -161,6 +174,86 @@ function constantTimeCompare(a, b) {
     result |= a.charCodeAt(i) ^ b.charCodeAt(i);
   }
   return result === 0;
+}
+
+async function loadOpenRouterModels(apiKey) {
+  if (!apiKey || typeof apiKey !== 'string' || apiKey.length < 20) return [];
+  
+  const { statusMsg } = getElements();
+  
+  try {
+    if (statusMsg) {
+      statusMsg.textContent = 'Loading models...';
+      statusMsg.className = 'status-msg';
+    }
+    
+    const response = await fetch('https://openrouter.ai/api/v1/models', {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json();
+    
+    const allModels = data.data?.filter(m => {
+      const id = m.id.toLowerCase();
+      return id.includes('qwen') && id.includes('free');
+    }).sort((a, b) => {
+      const aId = a.id.toLowerCase();
+      const bId = b.id.toLowerCase();
+      const aVer = parseFloat((aId.match(/qwen[\/-]?([\d.]+)/) || aId.match(/qwen\s+([\d.]+)/))?.[1] || '0');
+      const bVer = parseFloat((bId.match(/qwen[\/-]?([\d.]+)/) || bId.match(/qwen\s+([\d.]+)/))?.[1] || '0');
+      if (aVer !== bVer) return bVer - aVer;
+      const aSize = parseInt((aId.match(/(\d+)b/)?.[1] || '0'));
+      const bSize = parseInt((bId.match(/(\d+)b/)?.[1] || '0'));
+      if (aSize !== bSize) return bSize - aSize;
+      const aInstruct = aId.includes('instruct');
+      const bInstruct = bId.includes('instruct');
+      if (aInstruct !== bInstruct) return aInstruct ? -1 : 1;
+      return a.id.length - b.id.length;
+    }) || [];
+    
+    const latestVersion = allModels[0] ? parseFloat((allModels[0].id.toLowerCase().match(/qwen[\/-]?([\d.]+)/) || allModels[0].id.toLowerCase().match(/qwen\s+([\d.]+)/))?.[1] || '0') : 0;
+    const latestLargest = allModels.find(m => {
+      const id = m.id.toLowerCase();
+      const ver = parseFloat((id.match(/qwen[\/-]?([\d.]+)/) || id.match(/qwen\s+([\d.]+)/))?.[1] || '0');
+      return ver === latestVersion;
+    });
+    const prevVersion = allModels.find(m => {
+      const id = m.id.toLowerCase();
+      const ver = parseFloat((id.match(/qwen[\/-]?([\d.]+)/) || id.match(/qwen\s+([\d.]+)/))?.[1] || '0');
+      return ver < latestVersion;
+    });
+    
+    const primary = latestLargest?.id;
+    const fallbacks = [prevVersion?.id].filter(Boolean);
+    
+    await chrome.storage.local.set({ 
+      openrouterPrimaryModel: primary,
+      openrouterFallbackModels: fallbacks
+    });
+    
+    if (statusMsg) {
+      statusMsg.textContent = primary ? `✓ Model: ${primary.split('/').pop()}` : '⚠️ No models found';
+      statusMsg.className = primary ? 'status-msg success' : 'status-msg error';
+      setTimeout(() => {
+        statusMsg.textContent = '';
+        statusMsg.className = 'status-msg';
+      }, 2000);
+    }
+    
+    return models;
+  } catch (error) {
+    console.error('Failed to load OpenRouter models:', error);
+    if (statusMsg) {
+      statusMsg.textContent = `⚠️ ${error.message}`;
+      statusMsg.className = 'status-msg error';
+      setTimeout(() => {
+        statusMsg.textContent = '';
+        statusMsg.className = 'status-msg';
+      }, 4000);
+    }
+    return [];
+  }
 }
 
 async function loadModels(apiKey) {
@@ -268,11 +361,21 @@ document.getElementById('darkMode')?.addEventListener('change', (e) => {
   chrome.storage.local.set({ darkMode: e.target.checked });
 });
 
+document.getElementById('providerSelect')?.addEventListener('change', (e) => {
+  const isOpenRouter = e.target.value === 'openrouter';
+  document.getElementById('googleKeyGroup').style.display = isOpenRouter ? 'none' : 'block';
+  document.getElementById('openrouterKeyGroup').style.display = isOpenRouter ? 'block' : 'none';
+  document.getElementById('googleKeyHelp').style.display = isOpenRouter ? 'none' : 'block';
+  document.getElementById('openrouterKeyHelp').style.display = isOpenRouter ? 'block' : 'none';
+});
+
 document.getElementById('saveKey')?.addEventListener('click', async () => {
-  const { apiKey, languageSelect, formatSelect, multiSearch, autoSummarize, statusMsg } = getElements();
-  if (!apiKey || !statusMsg) return;
+  const { providerSelect, googleApiKey, openrouterApiKey, languageSelect, formatSelect, multiSearch, autoSummarize, statusMsg } = getElements();
+  if (!statusMsg) return;
   
-  const key = apiKey.value.trim();
+  const provider = providerSelect.value;
+  const googleKey = googleApiKey.value.trim();
+  const openrouterKey = openrouterApiKey.value.trim();
   const language = languageSelect.value.trim();
   const format = formatSelect.value.trim();
   const isMultiSearch = multiSearch.checked;
@@ -280,16 +383,22 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
   const isDarkMode = document.getElementById('darkMode').checked;
   const saveBtn = document.getElementById('saveKey');
   
-  if (!key || key.length < 39 || !/^AIza[0-9A-Za-z_-]{35}$/.test(key)) {
-    statusMsg.textContent = '⚠️ Please enter a valid Google AI API key';
-    statusMsg.className = 'status-msg error';
-    apiKey.style.borderColor = '#c5221f';
-    apiKey.setAttribute('aria-invalid', 'true');
-    setTimeout(() => {
-      statusMsg.textContent = '';
-      statusMsg.className = 'status-msg';
-    }, 3000);
-    return;
+  if (provider === 'google') {
+    if (!googleKey || googleKey.length < 39 || !/^AIza[0-9A-Za-z_-]{35}$/.test(googleKey)) {
+      statusMsg.textContent = '⚠️ Please enter a valid Google AI API key';
+      statusMsg.className = 'status-msg error';
+      googleApiKey.style.borderColor = '#c5221f';
+      setTimeout(() => { statusMsg.textContent = ''; statusMsg.className = 'status-msg'; }, 3000);
+      return;
+    }
+  } else {
+    if (!openrouterKey || openrouterKey.length < 20) {
+      statusMsg.textContent = '⚠️ Please enter a valid OpenRouter API key';
+      statusMsg.className = 'status-msg error';
+      openrouterApiKey.style.borderColor = '#c5221f';
+      setTimeout(() => { statusMsg.textContent = ''; statusMsg.className = 'status-msg'; }, 3000);
+      return;
+    }
   }
   
   if (!language) {
@@ -317,10 +426,19 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
     statusMsg.textContent = 'Saving...';
     statusMsg.className = 'status-msg';
     
-    await loadModels(key);
+    await chrome.storage.local.remove(['primaryModel', 'fallbackModels', 'openrouterPrimaryModel', 'openrouterFallbackModels']);
+    
+    if (provider === 'google') {
+      await loadModels(googleKey);
+    } else {
+      await loadOpenRouterModels(openrouterKey);
+    }
     
     await chrome.storage.local.set({ 
-      flashApiKey: key, 
+      aiProvider: provider,
+      googleApiKey: googleKey,
+      openrouterApiKey: openrouterKey,
+      flashApiKey: provider === 'google' ? googleKey : openrouterKey,
       selectedLanguage: languageSelect.value, 
       summaryFormat: formatSelect.value || 'brief',
       multiSearchEnabled: isMultiSearch,
@@ -331,9 +449,13 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
     const t = translations[languageSelect.value] || translations.English;
     statusMsg.textContent = `✓ ${t.saved}`;
     statusMsg.className = 'status-msg success';
-    apiKey.classList.add('valid');
-    apiKey.style.borderColor = '';
-    apiKey.setAttribute('aria-invalid', 'false');
+    if (provider === 'google') {
+      googleApiKey.classList.add('valid');
+      googleApiKey.style.borderColor = '';
+    } else {
+      openrouterApiKey.classList.add('valid');
+      openrouterApiKey.style.borderColor = '';
+    }
     
     setTimeout(() => {
       statusMsg.textContent = '';
@@ -348,7 +470,7 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
   }
 });
 
-document.getElementById('apiKey')?.addEventListener('input', (e) => {
+document.getElementById('googleApiKey')?.addEventListener('input', (e) => {
   const key = e.target.value.trim();
   if (key.length >= 39 && /^AIza[0-9A-Za-z_-]{35}$/.test(key)) {
     e.target.classList.add('valid');
@@ -358,10 +480,13 @@ document.getElementById('apiKey')?.addEventListener('input', (e) => {
   }
 });
 
-document.getElementById('apiKey')?.addEventListener('blur', async (e) => {
+document.getElementById('openrouterApiKey')?.addEventListener('input', (e) => {
   const key = e.target.value.trim();
-  if (key && key.length >= 39 && /^AIza[0-9A-Za-z_-]{35}$/.test(key) && !constantTimeCompare(key, cachedApiKey)) {
-    await loadModels(key);
+  if (key.length >= 20) {
+    e.target.classList.add('valid');
+    e.target.style.borderColor = '';
+  } else {
+    e.target.classList.remove('valid');
   }
 });
 
@@ -390,9 +515,28 @@ async function loadStats() {
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', async () => {
     try {
-      const data = await chrome.storage.local.get(['flashApiKey', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled', 'autoSummarizeEnabled', 'darkMode']);
-      const { flashApiKey, selectedLanguage, summaryFormat, multiSearchEnabled, autoSummarizeEnabled, darkMode } = data;
-      const { apiKey, languageSelect, formatSelect, multiSearch, autoSummarize } = getElements();
+      const data = await chrome.storage.local.get(['aiProvider', 'googleApiKey', 'openrouterApiKey', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled', 'autoSummarizeEnabled', 'darkMode']);
+      const { aiProvider, googleApiKey, openrouterApiKey, selectedLanguage, summaryFormat, multiSearchEnabled, autoSummarizeEnabled, darkMode } = data;
+      const { providerSelect, googleApiKey: googleKeyInput, openrouterApiKey: openrouterKeyInput, languageSelect, formatSelect, multiSearch, autoSummarize } = getElements();
+      
+      if (providerSelect) {
+        providerSelect.value = aiProvider || 'google';
+        const isOpenRouter = (aiProvider || 'google') === 'openrouter';
+        document.getElementById('googleKeyGroup').style.display = isOpenRouter ? 'none' : 'block';
+        document.getElementById('openrouterKeyGroup').style.display = isOpenRouter ? 'block' : 'none';
+        document.getElementById('googleKeyHelp').style.display = isOpenRouter ? 'none' : 'block';
+        document.getElementById('openrouterKeyHelp').style.display = isOpenRouter ? 'block' : 'none';
+      }
+      
+      if (googleKeyInput && googleApiKey) {
+        googleKeyInput.value = googleApiKey;
+        googleKeyInput.classList.add('valid');
+      }
+      
+      if (openrouterKeyInput && openrouterApiKey) {
+        openrouterKeyInput.value = openrouterApiKey;
+        openrouterKeyInput.classList.add('valid');
+      }
       
       if (languageSelect && selectedLanguage) {
         languageSelect.value = selectedLanguage;
@@ -406,12 +550,6 @@ if (typeof document !== 'undefined') {
       if (darkModeCheckbox) {
         darkModeCheckbox.checked = darkMode || false;
         if (darkMode) document.body.classList.add('dark');
-      }
-      
-      if (flashApiKey && apiKey) {
-        apiKey.value = flashApiKey;
-        apiKey.classList.add('valid');
-        await loadModels(flashApiKey);
       }
       
       await loadStats();

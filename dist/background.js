@@ -17,6 +17,23 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     return true;
   }
   
+  if (msg.action === 'callOpenRouter') {
+    fetch(msg.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${msg.apiKey}`,
+        'HTTP-Referer': 'https://github.com/Teycir/Gist',
+        'X-Title': 'Gist Search Summarizer'
+      },
+      body: JSON.stringify(msg.body)
+    })
+      .then(r => r.json())
+      .then(data => reply({ success: true, data }))
+      .catch(err => reply({ success: false, error: err.message }));
+    return true;
+  }
+  
   if (msg.action === 'fetchPage') {
     fetch(msg.url, { 
       signal: AbortSignal.timeout(2000),
