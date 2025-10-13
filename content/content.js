@@ -214,25 +214,41 @@ function convertMarkdownToHtml(markdown) {
 }
 
 const cleanHtmlToText = memoize((html) => {
-  const doc = domParser.parseFromString(html, 'text/html');
-  
-  // Remove noise elements
-  const removeSelectors = [
-    'script', 'style', 'nav', 'header', 'footer', 'iframe', 'noscript', 'aside', 'form',
-    '.ad', '.advertisement', '.ads', '[class*="ad-"]', '[id*="ad-"]',
-    '[role="navigation"]', '[role="banner"]', '[role="complementary"]',
-    '.sidebar', '.menu', '.navigation', '.social-share', '.comments'
+  let text = html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+    .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
+    .replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '')
+    .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '')
+    .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '')
+    .replace(/<div[^>]*class="[^"]*\bad[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
+    .replace(/<div[^>]*id="[^"]*\bad[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
+
+  const contentPatterns = [
+    /<article[^>]*>([\s\S]*?)<\/article>/i,
+    /<main[^>]*>([\s\S]*?)<\/main>/i,
+    /<div[^>]*class="[^"]*content[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+    /<div[^>]*id="main-content"[^>]*>([\s\S]*?)<\/div>/i
   ];
-  removeSelectors.forEach(sel => doc.querySelectorAll(sel).forEach(el => el.remove()));
-  
-  // Prioritize main content
-  const contentSelectors = ['article', 'main', '[role="main"]', '.content', '.article', '.post', '.entry-content', '.post-content', '#main-content'];
-  for (const sel of contentSelectors) {
-    const content = doc.querySelector(sel);
-    if (content) return content.textContent.replace(/\s+/g, ' ').slice(0, 1200).trim();
+
+  for (const pattern of contentPatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      text = match[1];
+      break;
+    }
   }
-  
-  return (doc.body?.textContent || '').replace(/\s+/g, ' ').slice(0, 1200).trim();
+
+  return text
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&[a-z]+;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 1200);
 }, (html) => simpleHash(html));
 
 async function displaySummary(markdown, urls, format, language) {
