@@ -904,6 +904,7 @@ async function summarizeResults() {
   
   if (!summarizeBtn) summarizeBtn = document.querySelector('.summarize-btn');
   const btn = summarizeBtn;
+  if (!btn) return;
   const originalText = btn.textContent;
   
   isProcessing = true;

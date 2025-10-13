@@ -2,6 +2,10 @@
  * @jest-environment jsdom
  */
 
+global.requestIdleCallback = jest.fn(cb => setTimeout(cb, 0));
+global.requestAnimationFrame = jest.fn(cb => setTimeout(cb, 0));
+global.showdown = { Converter: jest.fn(() => ({ makeHtml: (md) => md })) };
+
 const { scrapeGoogleUrls, cleanHtmlToText } = require('../content/content.js');
 
 describe('Multi-Engine Search Support', () => {

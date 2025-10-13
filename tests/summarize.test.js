@@ -12,12 +12,15 @@ describe('Summarize Results', () => {
     global.alert = jest.fn();
     global.confirm = jest.fn();
     global.window.open = jest.fn();
+    global.requestAnimationFrame = jest.fn(cb => setTimeout(cb, 0));
+    global.requestIdleCallback = jest.fn(cb => setTimeout(cb, 0));
   });
 
   test('should open popup when no API key', async () => {
     chrome.storage.local.get.mockResolvedValue({});
     chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-      if (callback) callback();
+      if (msg.action === 'getTabId') callback({ tabId: 123 });
+      else if (callback) callback();
     });
 
     const { summarizeResults } = require('../content/content.js');
@@ -29,7 +32,8 @@ describe('Summarize Results', () => {
   test('should open popup when API key missing', async () => {
     chrome.storage.local.get.mockResolvedValue({ flashApiKey: 'test-key' });
     chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-      if (callback) callback();
+      if (msg.action === 'getTabId') callback({ tabId: 123 });
+      else if (callback) callback();
     });
 
     const { summarizeResults } = require('../content/content.js');
@@ -40,6 +44,9 @@ describe('Summarize Results', () => {
 
   test('should handle no search results', async () => {
     chrome.storage.local.get.mockResolvedValue({ flashApiKey: 'test-key', selectedModel: 'models/gemini-1.5-flash' });
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+      if (msg.action === 'getTabId') callback({ tabId: 123 });
+    });
     document.body.innerHTML = '<button class="summarize-btn">Summarize</button><div id="search"></div>';
 
     const { summarizeResults } = require('../content/content.js');
@@ -50,7 +57,7 @@ describe('Summarize Results', () => {
 
   test('should use default settings', async () => {
     chrome.storage.local.get.mockImplementation((keys, callback) => {
-      const data = { flashApiKey: 'AIzaSyDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' };
+      const data = { flashApiKey: 'AIzaSyDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', selectedModel: 'models/gemini-1.5-flash' };
       if (callback) callback(data);
       return Promise.resolve(data);
     });
@@ -59,7 +66,13 @@ describe('Summarize Results', () => {
       return Promise.resolve();
     });
     chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-      setTimeout(() => callback({ success: true, html: '<html><body><main>Content here with enough text</main></body></html>' }), 0);
+      if (msg.action === 'getTabId') {
+        callback({ tabId: 123 });
+      } else if (msg.action === 'fetchPage') {
+        setTimeout(() => callback({ success: true, html: '<html><body><main>Content here with enough text</main></body></html>' }), 0);
+      } else if (msg.action === 'callAPI') {
+        setTimeout(() => callback({ success: true, data: { candidates: [{ content: { parts: [{ text: '# Summary\n\nTest summary' }] } }] } }), 0);
+      }
     });
     
     document.body.innerHTML = '<button class="summarize-btn">Summarize</button><div id="search"><a href="https://test.com">Test</a></div>';
