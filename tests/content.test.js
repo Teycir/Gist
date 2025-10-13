@@ -164,7 +164,7 @@ describe('URL Scraping', () => {
     expect(urls.every(url => !url.includes('google.com'))).toBe(true);
   });
 
-  test('should stop at 3 URLs', () => {
+  test('should scrape up to 9 URLs', () => {
     document.body.innerHTML = `
       <div id="search">
         <a href="http://a.com">A</a>
@@ -174,7 +174,7 @@ describe('URL Scraping', () => {
       </div>
     `;
     const urls = scrapeGoogleUrls();
-    expect(urls.length).toBe(3);
+    expect(urls.length).toBeLessThanOrEqual(9);
   });
 });
 

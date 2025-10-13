@@ -133,7 +133,7 @@ function scrapeUrls() {
   if (engine === 'bing') {
     const links = document.querySelectorAll('#b_results li.b_algo h2 a');
     for (const link of links) {
-      if (urls.length >= 3) break;
+      if (urls.length >= 9) break;
       let href = link.getAttribute('href');
       if (href && href.includes('/ck/a')) {
         href = href.replace(/&amp;/g, '&');
@@ -152,7 +152,7 @@ function scrapeUrls() {
   } else if (engine === 'duckduckgo') {
     const links = document.querySelectorAll('article[data-testid="result"] a[href^="http"]');
     for (const link of links) {
-      if (urls.length >= 3) break;
+      if (urls.length >= 9) break;
       const url = link.href;
       if (url && !YOUTUBE_REGEX.test(url) && !seen.has(url)) {
         seen.add(url);
@@ -162,7 +162,7 @@ function scrapeUrls() {
   } else {
     const links = document.querySelectorAll('div#search a[href^="http"]:not([href*="google.com"])');
     for (const link of links) {
-      if (urls.length >= 3) break;
+      if (urls.length >= 9) break;
       const url = link.href;
       if (url && !YOUTUBE_REGEX.test(url) && !seen.has(url)) {
         seen.add(url);
@@ -1012,9 +1012,9 @@ async function summarizeResults() {
     }
     
     const formatInstructions = {
-      detailed: 'Provide a comprehensive summary with detailed explanations, context, examples, and in-depth analysis for each point.',
-      brief: 'Provide a brief, concise summary in 3-5 bullet points.',
-      keypoints: 'List only the key takeaways as short bullet points.'
+      detailed: 'Write 4-6 detailed points.',
+      brief: 'Write 3-5 concise points.',
+      keypoints: 'List key points only.'
     };
     
     let maxTokens, wordLimit;
@@ -1043,20 +1043,45 @@ async function summarizeResults() {
       return;
     }
     
-    const MAX_CONCURRENT = 3;
-    const pages = [];
+    btn.innerHTML = `${loading.fetching}<span class="loading-spinner"></span>`;
     
-    for (let i = 0; i < urls.length; i += MAX_CONCURRENT) {
-      btn.innerHTML = `${loading.fetching} (${i}/${urls.length})<span class="loading-spinner"></span>`;
-      const batch = urls.slice(i, i + MAX_CONCURRENT);
-      const batchResults = await Promise.all(batch.map(url => fetchWithTimeout(url)));
-      pages.push(...batchResults);
-    }
+    // Race-to-3: Fetch all 9 URLs in TRUE PARALLEL, take first 3 that succeed
+    console.log(`[PERF] Starting parallel fetch of ${urls.length} URLs`);
+    const fetchStart = Date.now();
+    const results = [];
+    const usedUrls = [];
+    let completed = 0;
     
+    await new Promise((resolve) => {
+      urls.forEach((url, idx) => {
+        const urlStart = Date.now();
+        fetchWithTimeout(url, 1000).then(html => {
+          const urlTime = Date.now() - urlStart;
+          completed++;
+          const text = cleanHtmlToText(html);
+          if (text.length > 100 && results.length < 3) {
+            results.push(text);
+            usedUrls.push(url);
+            console.log(`[PERF] ✓ URL ${idx+1} loaded in ${urlTime}ms (${results.length}/3)`);
+            if (results.length === 3) {
+              console.log(`[PERF] Got 3 sources in ${Date.now() - fetchStart}ms`);
+              resolve();
+            }
+          }
+          if (completed === urls.length) resolve();
+        }).catch(() => {
+          completed++;
+          if (completed === urls.length) resolve();
+        });
+      });
+    });
+    
+    const fetchTime = Date.now() - fetchStart;
+    console.log(`[PERF] Total fetch time: ${fetchTime}ms for ${results.length} sources`);
     btn.innerHTML = `${loading.analyzing}<span class="loading-spinner"></span>`;
-    const extractedContent = pages
-      .map(html => cleanHtmlToText(html))
-      .filter(text => text.length > 100);
+    const extractedContent = results;
+    urls.length = 0;
+    urls.push(...usedUrls);
     
     if (extractedContent.length === 0) {
       alert('Could not extract content from search results.');
@@ -1065,14 +1090,12 @@ async function summarizeResults() {
     
     btn.innerHTML = `${loading.generating}<span class="loading-spinner"></span>`;
     
-    const sources = extractedContent.map((text, i) => `[${i + 1}] ${text}`);
-    const prompt = `Query: "${searchQuery}"
+    const sources = extractedContent.map((text, i) => `[${i + 1}] ${text.slice(0, 800)}`);
+    const prompt = `${searchQuery}
 
-Summarize these sources answering the query. ${formatInstructions[format]}
+${sources.join('\n')}
 
-${sources.join('\n\n')}
-
-Format: # Title\n${format === 'detailed' ? '4-6' : '3-5'} bullets with [1][2] citations\nLanguage: ${language}\nMax ${wordLimit} words`;
+${formatInstructions[format]} Use [1][2] citations. ${language}. Max ${wordLimit} words.`;
     
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${flashApiKey}`;
     console.log('API URL:', apiUrl.replace(flashApiKey, 'REDACTED'));
@@ -1088,9 +1111,9 @@ Format: # Title\n${format === 'detailed' ? '4-6' : '3-5'} bullets with [1][2] ci
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
                   maxOutputTokens: maxTokens,
-                  temperature: 0.2,
-                  topP: 0.8,
-                  topK: 40
+                  temperature: 0.1,
+                  topP: 0.9,
+                  topK: 20
                 }
               }
             }, response => {
