@@ -4,13 +4,13 @@
   right: 0;
   transform: translateY(-50%);
   z-index: 10000;
-  padding: 12px;
+  padding: 16px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 12px 0 0 12px;
+  border-radius: 16px 0 0 16px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
   display: flex;
@@ -45,8 +45,8 @@
 }
 
 .summarize-btn:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+  transform: translateY(-50%) translateX(-4px) scale(1.05);
+  box-shadow: 0 8px 28px rgba(102, 126, 234, 0.6);
 }
 
 .summarize-btn:active {
