@@ -16,12 +16,20 @@ const translations = {
     multiSearch: '🔍 Multi-Search',
     multiSearchTooltip: 'Google + Bing + DuckDuckGo',
     autoSummarize: '⚡ Auto-Summarize',
+    autoSummarizeTooltip: 'Summarize automatically on search',
     darkMode: '🌙 Dark Mode',
     save: 'Save Settings',
+    saved: 'Saved!',
     apiHelp: 'Get API key:',
     howToUse: 'How to use:',
     footer: 'Google search summarizer, made by',
-    github: 'View on GitHub'
+    github: 'View on GitHub',
+    todayLabel: 'Today',
+    todayTooltip: 'Summaries generated today',
+    totalLabel: 'Total',
+    totalTooltip: 'Total summaries generated',
+    cacheLabel: 'Instant',
+    cacheTooltip: 'Instant results from memory'
   },
   Spanish: {
     title: '🚀 Configuración de Gist',
@@ -35,12 +43,20 @@ const translations = {
     multiSearch: '🔍 Búsqueda Múltiple',
     multiSearchTooltip: 'Google + Bing + DuckDuckGo',
     autoSummarize: '⚡ Auto-Resumir',
+    autoSummarizeTooltip: 'Resumir automáticamente al buscar',
     darkMode: '🌙 Modo Oscuro',
     save: 'Guardar Configuración',
+    saved: '¡Guardado!',
     apiHelp: 'Obtener clave API:',
     howToUse: 'Cómo usar:',
     footer: 'Resumidor de búsqueda de Google, hecho por',
-    github: 'Ver en GitHub'
+    github: 'Ver en GitHub',
+    todayLabel: 'Hoy',
+    todayTooltip: 'Resúmenes generados hoy',
+    totalLabel: 'Total',
+    totalTooltip: 'Total de resúmenes generados',
+    cacheLabel: 'Instantáneo',
+    cacheTooltip: 'Resultados instantáneos desde memoria'
   },
   French: {
     title: '🚀 Paramètres Gist',
@@ -54,12 +70,20 @@ const translations = {
     multiSearch: '🔍 Recherche Multiple',
     multiSearchTooltip: 'Google + Bing + DuckDuckGo',
     autoSummarize: '⚡ Résumé Auto',
+    autoSummarizeTooltip: 'Résumer automatiquement lors de la recherche',
     darkMode: '🌙 Mode Sombre',
     save: 'Enregistrer les Paramètres',
+    saved: 'Enregistré!',
     apiHelp: 'Obtenir clé API :',
     howToUse: 'Comment utiliser :',
     footer: 'Résumeur de recherche Google, créé par',
-    github: 'Voir sur GitHub'
+    github: 'Voir sur GitHub',
+    todayLabel: "Aujourd'hui",
+    todayTooltip: "Résumés générés aujourd'hui",
+    totalLabel: 'Total',
+    totalTooltip: 'Total des résumés générés',
+    cacheLabel: 'Instantané',
+    cacheTooltip: 'Résultats instantanés depuis la mémoire'
   },
   German: {
     title: '🚀 Gist Einstellungen',
@@ -73,12 +97,20 @@ const translations = {
     multiSearch: '🔍 Multi-Suche',
     multiSearchTooltip: 'Google + Bing + DuckDuckGo',
     autoSummarize: '⚡ Auto-Zusammenfassung',
+    autoSummarizeTooltip: 'Automatisch bei Suche zusammenfassen',
     darkMode: '🌙 Dunkelmodus',
     save: 'Einstellungen Speichern',
+    saved: 'Gespeichert!',
     apiHelp: 'API-Schlüssel erhalten:',
     howToUse: 'So verwenden:',
     footer: 'Google-Suchzusammenfasser, erstellt von',
-    github: 'Auf GitHub ansehen'
+    github: 'Auf GitHub ansehen',
+    todayLabel: 'Heute',
+    todayTooltip: 'Heute generierte Zusammenfassungen',
+    totalLabel: 'Gesamt',
+    totalTooltip: 'Gesamtzahl der generierten Zusammenfassungen',
+    cacheLabel: 'Sofort',
+    cacheTooltip: 'Sofortige Ergebnisse aus dem Speicher'
   }
 };
 
@@ -95,7 +127,9 @@ function updateUILanguage(lang) {
   const multiSearchLabel = document.getElementById('multiSearchLabel');
   multiSearchLabel.textContent = t.multiSearch;
   multiSearchLabel.setAttribute('data-tooltip', t.multiSearchTooltip);
-  document.getElementById('autoSummarizeLabel').textContent = t.autoSummarize;
+  const autoSummarizeLabel = document.getElementById('autoSummarizeLabel');
+  autoSummarizeLabel.textContent = t.autoSummarize;
+  autoSummarizeLabel.setAttribute('data-tooltip', t.autoSummarizeTooltip);
   document.getElementById('darkModeLabel').textContent = t.darkMode;
   document.getElementById('saveButtonText').textContent = t.save;
   document.getElementById('apiKeyHelpText').textContent = t.apiHelp;
@@ -103,6 +137,12 @@ function updateUILanguage(lang) {
   document.getElementById('footerMadeBy').textContent = t.footer;
   const githubLink = document.querySelector('.github-link a');
   if (githubLink) githubLink.setAttribute('aria-label', t.github);
+  if (document.getElementById('todayLabel')) document.getElementById('todayLabel').textContent = t.todayLabel;
+  if (document.getElementById('totalLabel')) document.getElementById('totalLabel').textContent = t.totalLabel;
+  if (document.getElementById('cacheLabel')) document.getElementById('cacheLabel').textContent = t.cacheLabel;
+  if (document.getElementById('todayStat')) document.getElementById('todayStat').setAttribute('data-tooltip', t.todayTooltip);
+  if (document.getElementById('totalStat')) document.getElementById('totalStat').setAttribute('data-tooltip', t.totalTooltip);
+  if (document.getElementById('cacheStat')) document.getElementById('cacheStat').setAttribute('data-tooltip', t.cacheTooltip);
 }
 
 function getElements() {
@@ -316,16 +356,17 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
       darkMode: isDarkMode
     });
     
-    statusMsg.textContent = '✓ Settings saved successfully!';
+    const t = translations[languageSelect.value] || translations.English;
+    statusMsg.textContent = `✓ ${t.saved}`;
     statusMsg.className = 'status-msg success';
     apiKey.classList.add('valid');
     apiKey.style.borderColor = '';
     apiKey.setAttribute('aria-invalid', 'false');
     
     setTimeout(() => {
-      statusMsg.textContent = '✓ Settings saved! Closing...';
-      setTimeout(() => window.close(), 1000);
-    }, 1000);
+      statusMsg.textContent = '';
+      statusMsg.className = 'status-msg';
+    }, 2000);
   } catch (error) {
     console.error('Save error:', error);
     statusMsg.textContent = '⚠️ Failed to save settings';
@@ -351,6 +392,26 @@ document.getElementById('apiKey')?.addEventListener('blur', async (e) => {
     await loadModels(key);
   }
 });
+
+async function loadStats() {
+  const today = new Date().toDateString();
+  const data = await chrome.storage.local.get(['usageStats']);
+  const stats = data.usageStats || { apiCalls: 0, cacheHits: 0, totalSummaries: 0, lastReset: today };
+  
+  if (stats.lastReset !== today) {
+    stats.apiCalls = 0;
+    stats.cacheHits = 0;
+    stats.lastReset = today;
+    await chrome.storage.local.set({ usageStats: stats });
+  }
+  
+  const todayTotal = stats.apiCalls + stats.cacheHits;
+  const cacheRate = todayTotal > 0 ? Math.round((stats.cacheHits / todayTotal) * 100) : 0;
+  
+  document.getElementById('todayCount').textContent = todayTotal;
+  document.getElementById('totalCount').textContent = stats.totalSummaries;
+  document.getElementById('cacheHitRate').textContent = `${cacheRate}%`;
+}
 
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', async () => {
@@ -383,6 +444,8 @@ if (typeof document !== 'undefined') {
           }
         }
       }
+      
+      await loadStats();
     } catch (error) {
       console.error('DOMContentLoaded error:', error);
     }

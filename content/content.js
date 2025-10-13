@@ -692,6 +692,28 @@ function extractSearchQuery() {
   return urlParams.get('q') || '';
 }
 
+async function updateStats(type) {
+  const today = new Date().toDateString();
+  const data = await chrome.storage.local.get(['usageStats']);
+  const stats = data.usageStats || { apiCalls: 0, cacheHits: 0, totalSummaries: 0, lastReset: today };
+  
+  if (stats.lastReset !== today) {
+    stats.apiCalls = 0;
+    stats.cacheHits = 0;
+    stats.lastReset = today;
+  }
+  
+  if (type === 'api') {
+    stats.apiCalls++;
+    stats.totalSummaries++;
+  } else if (type === 'cache') {
+    stats.cacheHits++;
+    stats.totalSummaries++;
+  }
+  
+  await chrome.storage.local.set({ usageStats: stats });
+}
+
 async function getCachedPage(url) {
   const cached = pageCache.get(url);
   if (cached && (Date.now() - cached.timestamp) < PAGE_CACHE_DURATION) {
@@ -821,6 +843,7 @@ async function summarizeResults() {
     
     const cached = summaryCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+      await updateStats('cache');
       displaySummary(cached.markdown, cached.urls, format, language);
       return;
     }
@@ -829,6 +852,7 @@ async function summarizeResults() {
     const stored = await chrome.storage.local.get(storageKey);
     if (stored[storageKey] && (Date.now() - stored[storageKey].timestamp) < CACHE_DURATION) {
       summaryCache.set(cacheKey, stored[storageKey]);
+      await updateStats('cache');
       displaySummary(stored[storageKey].markdown, stored[storageKey].urls, format, language);
       return;
     }
@@ -954,6 +978,7 @@ IMPORTANT:
     };
     
     const apiResponse = await callAPIWithRetry();
+    await updateStats('api');
     
     const data = apiResponse;
     console.log('API response data:', data);

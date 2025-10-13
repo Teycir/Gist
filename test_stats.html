@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stats Feature Test</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .stats { background: #f0f0f0; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .stat { display: inline-block; margin: 10px 20px; }
+    .stat-value { font-size: 24px; font-weight: bold; color: #667eea; }
+    .stat-label { font-size: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <h1>📊 Usage Stats Feature Test</h1>
+  
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value" id="today">0/1500</div>
+      <div class="stat-label">Today</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="total">0</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="cache">0%</div>
+      <div class="stat-label">Cache Hits</div>
+    </div>
+  </div>
+  
+  <button onclick="simulateAPI()">Simulate API Call</button>
+  <button onclick="simulateCache()">Simulate Cache Hit</button>
+  <button onclick="resetStats()">Reset Stats</button>
+  
+  <script>
+    // Mock chrome.storage.local for testing
+    const mockStorage = { usageStats: { apiCalls: 0, cacheHits: 0, totalSummaries: 0, lastReset: new Date().toDateString() } };
+    
+    function updateDisplay() {
+      const stats = mockStorage.usageStats;
+      const todayTotal = stats.apiCalls + stats.cacheHits;
+      const cacheRate = todayTotal > 0 ? Math.round((stats.cacheHits / todayTotal) * 100) : 0;
+      
+      document.getElementById('today').textContent = `${todayTotal}/1500`;
+      document.getElementById('total').textContent = stats.totalSummaries;
+      document.getElementById('cache').textContent = `${cacheRate}%`;
+    }
+    
+    function simulateAPI() {
+      mockStorage.usageStats.apiCalls++;
+      mockStorage.usageStats.totalSummaries++;
+      updateDisplay();
+    }
+    
+    function simulateCache() {
+      mockStorage.usageStats.cacheHits++;
+      mockStorage.usageStats.totalSummaries++;
+      updateDisplay();
+    }
+    
+    function resetStats() {
+      mockStorage.usageStats = { apiCalls: 0, cacheHits: 0, totalSummaries: 0, lastReset: new Date().toDateString() };
+      updateDisplay();
+    }
+    
+    updateDisplay();
+  </script>
+</body>
+</html>
