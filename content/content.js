@@ -486,8 +486,8 @@ async function displaySummary(markdown, urls, format, language) {
       duckduckgo: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`
     };
     const searchUrl = engineUrls[engine] || engineUrls.google;
-    await chrome.storage.local.set({ summaryFormat: 'detailed' });
-    chrome.runtime.sendMessage({ action: 'openDetailedSearch', url: searchUrl });
+    const { selectedLanguage, selectedModel } = await chrome.storage.local.get(['selectedLanguage', 'selectedModel']);
+    chrome.runtime.sendMessage({ action: 'openDetailedSearch', url: searchUrl, language: selectedLanguage, model: selectedModel });
   };
   
   const refreshBtn = document.createElement('button');
@@ -1184,10 +1184,10 @@ async function summarizeResults() {
     const format = summaryFormat || 'brief';
     
     const loadingTranslations = {
-      English: { finding: 'Finding sources', fetching: 'Fetching content', analyzing: 'Analyzing', generating: 'Generating summary' },
-      Spanish: { finding: 'Buscando fuentes', fetching: 'Obteniendo contenido', analyzing: 'Analizando', generating: 'Generando resumen' },
-      French: { finding: 'Recherche de sources', fetching: 'Récupération du contenu', analyzing: 'Analyse', generating: 'Génération du résumé' },
-      German: { finding: 'Quellen suchen', fetching: 'Inhalt abrufen', analyzing: 'Analysieren', generating: 'Zusammenfassung erstellen' }
+      English: { finding: 'Finding', fetching: 'Fetching', analyzing: 'Analyzing', generating: 'Summarizing' },
+      Spanish: { finding: 'Buscando', fetching: 'Obteniendo', analyzing: 'Analizando', generating: 'Resumiendo' },
+      French: { finding: 'Recherche', fetching: 'Récupération', analyzing: 'Analyse', generating: 'Résumant' },
+      German: { finding: 'Suchen', fetching: 'Abrufen', analyzing: 'Analysieren', generating: 'Zusammenfassen' }
     };
     const loading = loadingTranslations[language] || loadingTranslations.English;
     
