@@ -236,7 +236,7 @@ describe('Display Summary', () => {
     displaySummary(testMarkdown, []);
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
-    const copyBtn = iframeDoc.querySelectorAll('.close-btn')[2];
+    const copyBtn = iframeDoc.querySelectorAll('.close-btn')[3];
     copyBtn.click();
     expect(navigator.clipboard.writeText).toHaveBeenCalled();
     const calledWith = navigator.clipboard.writeText.mock.calls[0][0];
@@ -263,12 +263,21 @@ describe('Display Summary', () => {
     expect(historyBtn.innerHTML).toBe('📚');
   });
 
+  test('should include refresh button', () => {
+    const { displaySummary } = require('../content/content.js');
+    displaySummary('Test', [], 'brief', 'English');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const refreshBtn = iframeDoc.querySelectorAll('.close-btn')[1];
+    expect(refreshBtn.innerHTML).toBe('🔄');
+  });
+
   test('should include star/favorite button', () => {
     const { displaySummary } = require('../content/content.js');
     displaySummary('Test', [], 'brief', 'English');
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
-    const starBtn = iframeDoc.querySelectorAll('.close-btn')[1];
+    const starBtn = iframeDoc.querySelectorAll('.close-btn')[2];
     expect(starBtn.innerHTML).toMatch(/[☆⭐]/);
   });
 
@@ -278,10 +287,35 @@ describe('Display Summary', () => {
     displaySummary(testMarkdown, [], 'brief', 'English');
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
-    const starBtn = iframeDoc.querySelectorAll('.close-btn')[1];
+    const starBtn = iframeDoc.querySelectorAll('.close-btn')[2];
     
     await starBtn.click();
     expect(chrome.storage.local.set).toHaveBeenCalled();
+  });
+
+  test('should have refresh button with tooltip', () => {
+    const { displaySummary } = require('../content/content.js');
+    displaySummary('Test', [], 'brief', 'English');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const refreshBtn = iframeDoc.querySelectorAll('.close-btn')[1];
+    expect(refreshBtn.getAttribute('data-tooltip')).toBe('Refresh (bypass cache)');
+  });
+
+  test('should clear cache on refresh button click', async () => {
+    chrome.storage.local.remove = jest.fn((keys, callback) => {
+      if (callback) callback();
+      return Promise.resolve();
+    });
+    
+    const { displaySummary, summarizeResults } = require('../content/content.js');
+    displaySummary('Test', ['http://example.com'], 'brief', 'English');
+    const iframe = document.querySelector('iframe');
+    const iframeDoc = iframe.contentDocument;
+    const refreshBtn = iframeDoc.querySelectorAll('.close-btn')[1];
+    
+    await refreshBtn.click();
+    expect(chrome.storage.local.remove).toHaveBeenCalled();
   });
 
   test('should show history panel on history button click', async () => {
@@ -445,6 +479,7 @@ describe('DOM Manipulation', () => {
 
 describe('History and Favorites', () => {
   beforeEach(() => {
+    document.body.innerHTML = '';
     jest.clearAllMocks();
     chrome.storage.local.get.mockImplementation((keys, callback) => {
       if (typeof keys === 'function') {
@@ -469,7 +504,7 @@ describe('History and Favorites', () => {
     displaySummary('# Test', [], 'brief', 'English');
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
-    const starBtn = iframeDoc.querySelectorAll('.close-btn')[1];
+    const starBtn = iframeDoc.querySelectorAll('.close-btn')[2];
     
     await starBtn.click();
     
@@ -490,7 +525,7 @@ describe('History and Favorites', () => {
     displaySummary('# Test', [], 'brief', 'English');
     const iframe = document.querySelector('iframe');
     const iframeDoc = iframe.contentDocument;
-    const starBtn = iframeDoc.querySelectorAll('.close-btn')[1];
+    const starBtn = iframeDoc.querySelectorAll('.close-btn')[2];
     
     await starBtn.click();
     
@@ -500,6 +535,17 @@ describe('History and Favorites', () => {
     expect(favData).toHaveProperty('urls');
     expect(favData).toHaveProperty('timestamp');
     expect(favData).toHaveProperty('query');
+  });
+
+  test('should show refresh tooltip with language support', () => {
+    const { displaySummary } = require('../content/content.js');
+    
+    // Test English
+    displaySummary('Test', ['http://test.com'], 'brief', 'English');
+    let iframe = document.querySelector('iframe');
+    let refreshBtn = iframe.contentDocument.querySelectorAll('.close-btn')[1];
+    expect(refreshBtn.getAttribute('data-tooltip')).toContain('Refresh');
+    expect(refreshBtn.getAttribute('data-tooltip')).toContain('cache');
   });
 });
 

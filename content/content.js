@@ -313,6 +313,26 @@ function displaySummary(markdown, urls, format, language) {
   historyBtn.setAttribute('data-tooltip', t.history);
   let historyVisible = false;
   
+  const refreshBtn = document.createElement('button');
+  refreshBtn.className = 'close-btn';
+  refreshBtn.innerHTML = '🔄';
+  const refreshTooltips = {
+    English: 'Refresh (bypass cache)',
+    Spanish: 'Actualizar (omitir caché)',
+    French: 'Actualiser (ignorer le cache)',
+    German: 'Aktualisieren (Cache umgehen)'
+  };
+  refreshBtn.setAttribute('data-tooltip', refreshTooltips[language] || refreshTooltips.English);
+  refreshBtn.onclick = async () => {
+    overlay.remove();
+    const searchQuery = extractSearchQuery();
+    const cacheKey = `${searchQuery}-${urls.join(',')}-${language}-${format}`;
+    summaryCache.delete(cacheKey);
+    const storageKey = `summary_${simpleHash(cacheKey)}`;
+    await chrome.storage.local.remove(storageKey);
+    await summarizeResults();
+  };
+  
   const starBtn = document.createElement('button');
   starBtn.className = 'close-btn';
   const favKey = `fav_${simpleHash(markdown)}`;
@@ -418,6 +438,7 @@ function displaySummary(markdown, urls, format, language) {
   closeBtn.onclick = () => overlay.remove();
   
   actions.appendChild(historyBtn);
+  actions.appendChild(refreshBtn);
   actions.appendChild(starBtn);
   actions.appendChild(copyBtn);
   actions.appendChild(saveBtn);
