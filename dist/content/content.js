@@ -244,7 +244,6 @@ async function displaySummary(markdown, urls, format, language) {
     English: {
       brief: `🚀 ${engineName} Brief Summary`,
       detailed: `🚀 ${engineName} Detailed Summary`,
-      keypoints: `🚀 ${engineName} Key Points Summary`,
       top: 'Top',
       analyzed: 'search results',
       copy: 'Copy',
@@ -261,7 +260,6 @@ async function displaySummary(markdown, urls, format, language) {
     Spanish: {
       brief: `🚀 Resumen Breve de ${engineName}`,
       detailed: `🚀 Resumen Detallado de ${engineName}`,
-      keypoints: `🚀 Puntos Clave de ${engineName}`,
       top: 'Top',
       analyzed: 'resultados de búsqueda',
       copy: 'Copiar',
@@ -278,7 +276,6 @@ async function displaySummary(markdown, urls, format, language) {
     French: {
       brief: `🚀 Résumé Bref ${engineName}`,
       detailed: `🚀 Résumé Détaillé ${engineName}`,
-      keypoints: `🚀 Points Clés ${engineName}`,
       top: 'Top',
       analyzed: 'résultats de recherche',
       copy: 'Copier',
@@ -295,7 +292,6 @@ async function displaySummary(markdown, urls, format, language) {
     German: {
       brief: `🚀 ${engineName}-Kurzzusammenfassung`,
       detailed: `🚀 ${engineName}-Detaillierte Zusammenfassung`,
-      keypoints: `🚀 ${engineName}-Kernpunkte`,
       top: 'Top',
       analyzed: 'Suchergebnisse',
       copy: 'Kopieren',
@@ -316,13 +312,6 @@ async function displaySummary(markdown, urls, format, language) {
   const title = document.createElement('h2');
   title.className = 'summary-title';
   title.textContent = t[format] || t.brief;
-  
-  if (urls && urls.length > 0) {
-    const urlsInfo = document.createElement('div');
-    urlsInfo.className = 'summary-sources';
-    urlsInfo.textContent = `${t.top} ${urls.length} ${t.analyzed}`;
-    title.appendChild(urlsInfo);
-  }
   
   const actions = document.createElement('div');
   actions.className = 'summary-actions';
@@ -943,6 +932,9 @@ async function fetchWithTimeout(url, timeout = 2000) {
 async function summarizeResults() {
   if (isProcessing) return;
   
+  const totalStart = Date.now();
+  console.log('[PERF] ========== SUMMARIZE START ==========');
+  
   if (!summarizeBtn) summarizeBtn = document.querySelector('.summarize-btn');
   const btn = summarizeBtn;
   if (!btn) return;
@@ -1012,24 +1004,19 @@ async function summarizeResults() {
     }
     
     const formatInstructions = {
-      detailed: 'Provide a comprehensive summary with detailed explanations, context, examples, and in-depth analysis for each point.',
-      brief: 'Provide a brief, concise summary in 3-5 bullet points.',
-      keypoints: 'List only the key takeaways as short bullet points.'
+      detailed: 'Write 4-6 detailed points.',
+      brief: 'Write 3-5 concise points.'
     };
     
     let maxTokens, wordLimit;
     switch (format) {
       case 'detailed':
-        maxTokens = 15000;
+        maxTokens = 6000;
         wordLimit = 2000;
-        break;
-      case 'keypoints':
-        maxTokens = 2000;
-        wordLimit = 250;
         break;
       case 'brief':
       default:
-        maxTokens = 3000;
+        maxTokens = 2000;
         wordLimit = 500;
     }
     
@@ -1078,8 +1065,11 @@ async function summarizeResults() {
     
     const fetchTime = Date.now() - fetchStart;
     console.log(`[PERF] Total fetch time: ${fetchTime}ms for ${results.length} sources`);
+    const analyzeStart = Date.now();
     btn.innerHTML = `${loading.analyzing}<span class="loading-spinner"></span>`;
     const extractedContent = results;
+    const analyzeTime = Date.now() - analyzeStart;
+    console.log(`[PERF] Content analysis: ${analyzeTime}ms`);
     urls.length = 0;
     urls.push(...usedUrls);
     
@@ -1091,66 +1081,45 @@ async function summarizeResults() {
     btn.innerHTML = `${loading.generating}<span class="loading-spinner"></span>`;
     
     const sources = extractedContent.map((text, i) => `[${i + 1}] ${text}`);
-    const prompt = `Query: "${searchQuery}"
-
-Summarize these sources answering the query. ${formatInstructions[format]}
-
-${sources.join('\n\n')}
-
-Format: # Title\n${format === 'detailed' ? '4-6' : '3-5'} bullets with [1][2] citations\nLanguage: ${language}\nMax ${wordLimit} words`;
+    const prompt = `${searchQuery}\n\n${sources.join('\n\n')}\n\n${formatInstructions[format]} Use [1][2] citations. ${language}. Max ${wordLimit} words.`;
     
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${flashApiKey}`;
-    console.log('API URL:', apiUrl.replace(flashApiKey, 'REDACTED'));
+    const { primaryModel, fallbackModels } = await chrome.storage.local.get(['primaryModel', 'fallbackModels']);
+    const primary = primaryModel || 'models/gemini-2.0-flash-exp';
+    const fallbacks = fallbackModels || ['models/gemini-exp-1206', 'models/gemini-2.5-flash-preview-09-2025'];
     
-    const callAPIWithRetry = async (maxRetries = 3, baseDelay = 2000) => {
-      for (let attempt = 0; attempt < maxRetries; attempt++) {
-        try {
-          const response = await new Promise((resolve, reject) => {
-            chrome.runtime.sendMessage({
-              action: 'callAPI',
-              url: apiUrl,
-              body: {
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                  maxOutputTokens: maxTokens,
-                  temperature: 0.2,
-                  topP: 0.8,
-                  topK: 40
-                }
-              }
-            }, response => {
-              console.log('API Response:', response);
-              if (chrome.runtime.lastError) {
-                console.error('Chrome runtime error:', chrome.runtime.lastError);
-                reject(new Error(chrome.runtime.lastError.message));
-              } else if (response?.success) {
-                console.log('API call successful, data:', response.data);
-                resolve(response.data);
-              } else {
-                console.error('API call failed:', response);
-                reject(new Error(response?.error || 'API request failed'));
-              }
-            });
-          });
-          return response;
-        } catch (error) {
-          const isOverloaded = error.message.includes('overloaded');
-          const isLastAttempt = attempt === maxRetries - 1;
-          
-          if (isOverloaded && !isLastAttempt) {
-            const delay = baseDelay * Math.pow(2, attempt);
-            console.log(`API overloaded, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-            btn.innerHTML = `⏳ Retrying in ${Math.ceil(delay/1000)}s<span class="loading-spinner"></span>`;
-            await new Promise(resolve => setTimeout(resolve, delay));
-            btn.innerHTML = `${loading.generating}<span class="loading-spinner"></span>`;
-          } else {
-            throw error;
-          }
+    console.log('[PERF] Using primary model:', primary);
+    const apiStart = Date.now();
+    
+    const callModel = (modelName) => new Promise((resolve, reject) => {
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${flashApiKey}`;
+      chrome.runtime.sendMessage({
+        action: 'callAPI',
+        url: apiUrl,
+        body: {
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.2, topP: 0.8, topK: 40 }
         }
-      }
-    };
+      }, response => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else if (response?.success) {
+          resolve(response.data);
+        } else {
+          reject(new Error(response?.error || 'API failed'));
+        }
+      });
+    });
     
-    const apiResponse = await callAPIWithRetry();
+    let apiResponse;
+    try {
+      apiResponse = await callModel(primary);
+    } catch (error) {
+      console.log('[PERF] Primary failed, using fallbacks');
+      apiResponse = await Promise.race(fallbacks.map(m => callModel(m)));
+    }
+    
+    const apiTime = Date.now() - apiStart;
+    console.log(`[PERF] API call completed in ${apiTime}ms`);
     await updateStats('api');
     
     const data = apiResponse;
@@ -1209,7 +1178,11 @@ Format: # Title\n${format === 'detailed' ? '4-6' : '3-5'} bullets with [1][2] ci
     }
     
     cachedSummary = markdown;
+    console.log('[PERF] Starting display summary...');
+    const displayStart = Date.now();
     await displaySummary(markdown, urls, format, language);
+    const displayTime = Date.now() - displayStart;
+    console.log(`[PERF] Display completed in ${displayTime}ms`);
     
   } catch (error) {
     console.error('Summarization error:', error);
@@ -1221,6 +1194,8 @@ Format: # Title\n${format === 'detailed' ? '4-6' : '3-5'} bullets with [1][2] ci
     btn.textContent = originalText;
     btn.setAttribute('aria-busy', 'false');
     isProcessing = false;
+    const totalTime = Date.now() - totalStart;
+    console.log(`[PERF] ========== TOTAL TIME: ${totalTime}ms ==========`);
   }
 }
 

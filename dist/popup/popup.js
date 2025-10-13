@@ -11,8 +11,7 @@ const translations = {
     language: '🌐 Language',
     format: '📝 Summary Format',
     brief: '🎯 Brief Summary, Fast',
-    detailed: '📄 Detailed Summary, Slowest',
-    keypoints: '⚡ Key Points, Fastest',
+    detailed: '📄 Detailed Summary, Slower',
     multiSearch: '🔍 Multi-Search',
     multiSearchTooltip: 'Google + Bing + DuckDuckGo',
     autoSummarize: '⚡ Auto-Summarize',
@@ -39,7 +38,6 @@ const translations = {
     format: '📝 Formato de Resumen',
     brief: '🎯 Resumen Breve, Rápido',
     detailed: '📄 Resumen Detallado, Más Lento',
-    keypoints: '⚡ Puntos Clave, Más Rápido',
     multiSearch: '🔍 Búsqueda Múltiple',
     multiSearchTooltip: 'Google + Bing + DuckDuckGo',
     autoSummarize: '⚡ Auto-Resumir',
@@ -66,7 +64,6 @@ const translations = {
     format: '📝 Format de Résumé',
     brief: '🎯 Résumé Bref, Rapide',
     detailed: '📄 Résumé Détaillé, Plus Lent',
-    keypoints: '⚡ Points Clés, Plus Rapide',
     multiSearch: '🔍 Recherche Multiple',
     multiSearchTooltip: 'Google + Bing + DuckDuckGo',
     autoSummarize: '⚡ Résumé Auto',
@@ -92,8 +89,7 @@ const translations = {
     language: '🌐 Sprache',
     format: '📝 Zusammenfassungsformat',
     brief: '🎯 Kurze Zusammenfassung, Schnell',
-    detailed: '📄 Detaillierte Zusammenfassung, Langsam',
-    keypoints: '⚡ Kernpunkte, Am Schnellsten',
+    detailed: '📄 Detaillierte Zusammenfassung, Langsamer',
     multiSearch: '🔍 Multi-Suche',
     multiSearchTooltip: 'Google + Bing + DuckDuckGo',
     autoSummarize: '⚡ Auto-Zusammenfassung',
@@ -118,12 +114,10 @@ function updateUILanguage(lang) {
   const t = translations[lang] || translations.English;
   document.getElementById('settingsTitle').textContent = t.title;
   document.getElementById('apiKeyLabel').textContent = t.apiKey;
-  document.getElementById('modelLabel').textContent = t.model;
   document.getElementById('languageLabel').textContent = t.language;
   document.getElementById('formatLabel').textContent = t.format;
   document.getElementById('briefOption').textContent = t.brief;
   document.getElementById('detailedOption').textContent = t.detailed;
-  document.getElementById('keypointsOption').textContent = t.keypoints;
   const multiSearchLabel = document.getElementById('multiSearchLabel');
   multiSearchLabel.textContent = t.multiSearch;
   multiSearchLabel.setAttribute('data-tooltip', t.multiSearchTooltip);
@@ -149,7 +143,6 @@ function getElements() {
   if (!elements) {
     elements = {
       apiKey: document.getElementById('apiKey'),
-      modelSelect: document.getElementById('modelSelect'),
       languageSelect: document.getElementById('languageSelect'),
       formatSelect: document.getElementById('formatSelect'),
       multiSearch: document.getElementById('multiSearch'),
@@ -176,11 +169,9 @@ async function loadModels(apiKey) {
     return cachedModels;
   }
   
-  const { modelSelect: select, statusMsg } = getElements();
-  if (!select) return [];
+  const { statusMsg } = getElements();
   
   try {
-    select.disabled = true;
     if (statusMsg) {
       statusMsg.textContent = 'Loading models...';
       statusMsg.className = 'status-msg';
@@ -203,47 +194,37 @@ async function loadModels(apiKey) {
     
     const models = data.models?.filter(m => {
       if (!m.supportedGenerationMethods?.includes('generateContent')) return false;
-      const name = m.displayName.toLowerCase();
+      const displayName = m.displayName.toLowerCase();
+      const modelName = m.name.toLowerCase();
       const desc = (m.description || '').toLowerCase();
-      return name.includes('flash') && 
-             !name.includes('lite') &&
-             !name.includes('image') && !name.includes('tts') && 
-             !name.includes('vision') && !name.includes('robotics') && 
-             !name.includes('computer use') && !name.includes('banana') &&
+      return displayName.includes('flash') && 
+             !displayName.includes('lite') &&
+             !displayName.includes('image') && !displayName.includes('tts') && 
+             !displayName.includes('vision') && !displayName.includes('robotics') && 
+             !displayName.includes('computer use') && !displayName.includes('banana') &&
              !desc.includes('image generation') && !desc.includes('image');
     }).sort((a, b) => {
-      const versionA = parseFloat(a.name.match(VERSION_REGEX)?.[1] || 0);
-      const versionB = parseFloat(b.name.match(VERSION_REGEX)?.[1] || 0);
-      if (versionB !== versionA) return versionB - versionA;
-      return (b.version || '').localeCompare(a.version || '');
-    }).slice(0, 3) || [];
+      const aHasPreview = a.name.toLowerCase().includes('preview');
+      const bHasPreview = b.name.toLowerCase().includes('preview');
+      if (aHasPreview !== bHasPreview) return aHasPreview ? 1 : -1;
+      return a.name.length - b.name.length;
+    }) || [];
     
-    const fragment = document.createDocumentFragment();
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = models.length ? 'Select a model' : 'No models available';
-    fragment.appendChild(placeholder);
-    
-    if (models.length) {
-      models.forEach(m => {
-        const option = document.createElement('option');
-        option.value = m.name;
-        option.textContent = m.displayName.split('(')[0].trim();
-        option.dataset.modelId = m.name;
-        fragment.appendChild(option);
-        console.log('Model loaded:', m.name, '->', m.displayName);
-      });
-    }
-    
-    select.innerHTML = '';
-    select.appendChild(fragment);
+    const primary = models[0]?.name;
+    const fallbacks = models.slice(1, 3).map(m => m.name);
     
     cachedModels = models;
     cachedApiKey = apiKey;
     
+    await chrome.storage.local.set({ 
+      primaryModel: primary,
+      fallbackModels: fallbacks
+    });
+    console.log('Primary model:', primary, 'Fallbacks:', fallbacks);
+    
     if (statusMsg) {
-      statusMsg.textContent = models.length ? `✓ ${models.length} models loaded` : '⚠️ No models found';
-      statusMsg.className = models.length ? 'status-msg success' : 'status-msg error';
+      statusMsg.textContent = primary ? `✓ Model loaded` : '⚠️ No models found';
+      statusMsg.className = primary ? 'status-msg success' : 'status-msg error';
       setTimeout(() => {
         statusMsg.textContent = '';
         statusMsg.className = 'status-msg';
@@ -253,10 +234,6 @@ async function loadModels(apiKey) {
     return models;
   } catch (error) {
     console.error('Failed to load models:', error);
-    
-    if (select) {
-      select.innerHTML = '<option value="">Select a model</option>';
-    }
     
     if (statusMsg) {
       const isAbort = error.name === 'AbortError';
@@ -269,8 +246,6 @@ async function loadModels(apiKey) {
     }
     
     return [];
-  } finally {
-    if (select) select.disabled = false;
   }
 }
 
@@ -284,11 +259,10 @@ document.getElementById('darkMode')?.addEventListener('change', (e) => {
 });
 
 document.getElementById('saveKey')?.addEventListener('click', async () => {
-  const { apiKey, modelSelect, languageSelect, formatSelect, multiSearch, autoSummarize, statusMsg } = getElements();
+  const { apiKey, languageSelect, formatSelect, multiSearch, autoSummarize, statusMsg } = getElements();
   if (!apiKey || !statusMsg) return;
   
   const key = apiKey.value.trim();
-  const model = modelSelect.value.trim();
   const language = languageSelect.value.trim();
   const format = formatSelect.value.trim();
   const isMultiSearch = multiSearch.checked;
@@ -304,18 +278,6 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
     setTimeout(() => {
       statusMsg.textContent = '';
       statusMsg.className = 'status-msg';
-    }, 3000);
-    return;
-  }
-  
-  if (!model) {
-    statusMsg.textContent = '⚠️ Please select a model';
-    statusMsg.className = 'status-msg error';
-    modelSelect.style.borderColor = '#c5221f';
-    setTimeout(() => {
-      statusMsg.textContent = '';
-      statusMsg.className = 'status-msg';
-      modelSelect.style.borderColor = '';
     }, 3000);
     return;
   }
@@ -345,12 +307,11 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
     statusMsg.textContent = 'Saving...';
     statusMsg.className = 'status-msg';
     
-    console.log('Saving model:', modelSelect.value);
     await chrome.storage.local.set({ 
       flashApiKey: key, 
-      selectedModel: modelSelect.value, 
+      selectedModel: 'models/gemini-2.0-flash-exp', 
       selectedLanguage: languageSelect.value, 
-      summaryFormat: formatSelect.value,
+      summaryFormat: formatSelect.value || 'brief',
       multiSearchEnabled: isMultiSearch,
       autoSummarizeEnabled: isAutoSummarize,
       darkMode: isDarkMode
@@ -393,6 +354,8 @@ document.getElementById('apiKey')?.addEventListener('blur', async (e) => {
   }
 });
 
+
+
 async function loadStats() {
   const today = new Date().toDateString();
   const data = await chrome.storage.local.get(['usageStats']);
@@ -416,15 +379,15 @@ async function loadStats() {
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', async () => {
     try {
-      const data = await chrome.storage.local.get(['flashApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled', 'autoSummarizeEnabled', 'darkMode']);
-      const { flashApiKey, selectedModel, selectedLanguage, summaryFormat, multiSearchEnabled, autoSummarizeEnabled, darkMode } = data;
-      const { apiKey, modelSelect, languageSelect, formatSelect, multiSearch, autoSummarize } = getElements();
+      const data = await chrome.storage.local.get(['flashApiKey', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled', 'autoSummarizeEnabled', 'darkMode']);
+      const { flashApiKey, selectedLanguage, summaryFormat, multiSearchEnabled, autoSummarizeEnabled, darkMode } = data;
+      const { apiKey, languageSelect, formatSelect, multiSearch, autoSummarize } = getElements();
       
       if (languageSelect && selectedLanguage) {
         languageSelect.value = selectedLanguage;
         updateUILanguage(selectedLanguage);
       }
-      if (formatSelect && summaryFormat) formatSelect.value = summaryFormat;
+      if (formatSelect) formatSelect.value = summaryFormat || 'brief';
       if (multiSearch) multiSearch.checked = multiSearchEnabled || false;
       if (autoSummarize) autoSummarize.checked = autoSummarizeEnabled || false;
       
@@ -437,12 +400,7 @@ if (typeof document !== 'undefined') {
       if (flashApiKey && apiKey) {
         apiKey.value = flashApiKey;
         apiKey.classList.add('valid');
-        if (modelSelect) {
-          const models = await loadModels(flashApiKey);
-          if (models.length && selectedModel) {
-            modelSelect.value = selectedModel;
-          }
-        }
+        await loadModels(flashApiKey);
       }
       
       await loadStats();

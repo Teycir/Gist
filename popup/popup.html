@@ -442,12 +442,7 @@
     <label for="apiKey" id="apiKeyLabel">🔑 API Key</label>
     <input type="password" id="apiKey" placeholder="Enter your Google AI API Key" aria-required="true" aria-describedby="apiKeyHelp" autocomplete="off"/>
   </div>
-  <div class="form-group">
-    <label for="modelSelect" id="modelLabel">🤖 AI Model</label>
-    <select id="modelSelect" aria-label="Select AI model" required>
-      <option value="">Select a model</option>
-    </select>
-  </div>
+
   <div class="form-group">
     <label for="languageSelect" id="languageLabel">🌐 Language</label>
     <select id="languageSelect" aria-label="Select summary language">
@@ -461,8 +456,7 @@
     <label for="formatSelect" id="formatLabel">📝 Summary Format</label>
     <select id="formatSelect" aria-label="Select summary format">
       <option value="brief" id="briefOption">🎯 Brief Summary, Fast</option>
-      <option value="detailed" id="detailedOption">📄 Detailed Summary, Slowest</option>
-      <option value="keypoints" id="keypointsOption">⚡ Key Points Only, Fastest</option>
+      <option value="detailed" id="detailedOption">📄 Detailed Summary, Slower</option>
     </select>
   </div>
   <div class="form-group" style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
