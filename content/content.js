@@ -991,7 +991,7 @@ async function displaySummary(markdown, urls, format, language) {
     iframeDoc.body.appendChild(overlayBg);
     console.log('[iframe.onload] Overlay appended successfully');
     
-    // Simple markdown to HTML converter
+    // Web Worker markdown converter with fallback
     const convertMarkdown = () => {
       const iframeBody = iframeDoc.querySelector('.summary-body');
       const md = iframeBody?.getAttribute('data-markdown');
@@ -1001,8 +1001,26 @@ async function displaySummary(markdown, urls, format, language) {
         return;
       }
       
-      iframeBody.innerHTML = convertMarkdownToHtml(md);
-      resolve();
+      // Try Web Worker first
+      try {
+        const worker = new Worker(chrome.runtime.getURL('workers/markdown-worker.js'));
+        worker.postMessage({ markdown: md });
+        worker.onmessage = (e) => {
+          iframeBody.innerHTML = e.data.html;
+          worker.terminate();
+          resolve();
+        };
+        worker.onerror = () => {
+          worker.terminate();
+          // Fallback to main thread
+          iframeBody.innerHTML = convertMarkdownToHtml(md);
+          resolve();
+        };
+      } catch (err) {
+        // Fallback if Worker fails
+        iframeBody.innerHTML = convertMarkdownToHtml(md);
+        resolve();
+      }
     };
     
     setTimeout(convertMarkdown, 10);
