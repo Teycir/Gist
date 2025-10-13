@@ -85,6 +85,12 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       });
     });
   }
+  
+  if (msg.action === 'openDetailedSearch') {
+    chrome.tabs.create({ url: msg.url }, tab => {
+      chrome.storage.local.set({ [`autoSummarize_${tab.id}`]: true });
+    });
+  }
 });
 
 function cleanHtml(html) {

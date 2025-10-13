@@ -466,6 +466,30 @@ async function displaySummary(markdown, urls, format, language) {
   historyBtn.innerHTML = '📚';
   historyBtn.setAttribute('data-tooltip', t.history);
   
+  const detailedBtn = document.createElement('button');
+  detailedBtn.className = 'close-btn';
+  detailedBtn.innerHTML = '📄';
+  const detailedTooltips = {
+    English: 'Detailed Search',
+    Spanish: 'Búsqueda Detallada',
+    French: 'Recherche Détaillée',
+    German: 'Detaillierte Suche'
+  };
+  detailedBtn.setAttribute('data-tooltip', detailedTooltips[language] || detailedTooltips.English);
+  detailedBtn.style.display = format === 'brief' ? 'flex' : 'none';
+  detailedBtn.onclick = async () => {
+    const query = extractSearchQuery();
+    const engine = detectSearchEngine();
+    const engineUrls = {
+      google: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+      bing: `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
+      duckduckgo: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`
+    };
+    const searchUrl = engineUrls[engine] || engineUrls.google;
+    await chrome.storage.local.set({ summaryFormat: 'detailed' });
+    chrome.runtime.sendMessage({ action: 'openDetailedSearch', url: searchUrl });
+  };
+  
   const refreshBtn = document.createElement('button');
   refreshBtn.className = 'close-btn';
   refreshBtn.innerHTML = '🔄';
@@ -592,6 +616,7 @@ async function displaySummary(markdown, urls, format, language) {
   closeBtn.onclick = () => overlay.remove();
   
   actions.appendChild(historyBtn);
+  actions.appendChild(detailedBtn);
   actions.appendChild(refreshBtn);
   actions.appendChild(starBtn);
   actions.appendChild(copyBtn);
@@ -722,10 +747,11 @@ async function displaySummary(markdown, urls, format, language) {
             item.className = 'history-item';
             const titleText = md.split('\n')[0].replace(/^#\s*/, '').slice(0, 60);
             const date = new Date(timestamp).toLocaleDateString();
+            const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const favIcon = isFav ? '⭐ ' : '';
             const queryText = query ? `<div class="history-item-query">🔍 ${sanitizeText(query)}</div>` : '';
             const tagsHtml = tags && tags.length > 0 ? `<div class="history-item-tags">${tags.map(t => `<span class="history-tag-badge">${sanitizeText(t)}</span>`).join('')}</div>` : '';
-            item.innerHTML = `<div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}${tagsHtml}<div class="history-item-date">${date}</div>`;
+            item.innerHTML = `<div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}${tagsHtml}<div class="history-item-date">${date} ${time}</div>`;
             item.onclick = () => {
               body.innerHTML = convertMarkdownToHtml(md);
               body.querySelectorAll('a').forEach(link => {
@@ -1334,7 +1360,7 @@ async function summarizeResults() {
     }
     
     const decodedMarkdown = markdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-    const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now() };
+    const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now(), format };
     summaryCache.set(cacheKey, cacheData);
     
     cachedSummary = markdown;
@@ -1350,11 +1376,11 @@ async function summarizeResults() {
           const size = await getStorageSize();
           const MAX_STORAGE = 10 * 1024 * 1024;
           if (size > MAX_STORAGE) await clearOldCaches();
-          await chrome.storage.local.set({ [storageKey]: cacheData });
+          await chrome.storage.local.set({ [storageKey]: { ...cacheData, query: searchQuery } });
         } catch (error) {
           if (error.message?.includes('quota')) {
             await clearOldCaches();
-            try { await chrome.storage.local.set({ [storageKey]: cacheData }); } catch (e) {}
+            try { await chrome.storage.local.set({ [storageKey]: { ...cacheData, query: searchQuery } }); } catch (e) {}
           }
         }
       })(),
