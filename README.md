@@ -1,5 +1,7 @@
 # Gist 🚀
 
+[![Gist Demo](https://img.youtube.com/vi/QSYSyI-Zo2o/maxresdefault.jpg)](https://youtu.be/QSYSyI-Zo2o)
+
 ## What is Gist?
 
 **Gist** saves you time when searching online. Instead of opening 10 different websites and reading long articles, Gist reads them for you and gives you a short summary in seconds.
