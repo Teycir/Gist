@@ -84,9 +84,10 @@ function selectBestGeminiModels(models) {
   };
 }
 
+// Support both CommonJS and ES6 modules
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { selectBestModels, selectBestGeminiModels };
-} else {
+} else if (typeof window !== 'undefined') {
   window.selectBestModels = selectBestModels;
   window.selectBestGeminiModels = selectBestGeminiModels;
 }

@@ -34,7 +34,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["content/content.min.css", "workers/markdown-worker.js"],
+      "resources": ["content/content.min.css", "workers/markdown-worker.js", "lib/model-selector.js"],
       "matches": ["https://*/*"]
     }
   ]

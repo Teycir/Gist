@@ -359,10 +359,23 @@ async function displaySummary(markdown, urls, format, language) {
       const tag = tagInput.value.trim();
       if (!tag) return;
       const stored = await chrome.storage.local.get(summaryKey);
-      const currentTags = stored[summaryKey]?.tags || [];
+      const existingData = stored[summaryKey] || {};
+      const currentTags = existingData.tags || [];
       if (!currentTags.includes(tag)) {
         currentTags.push(tag);
-        await chrome.storage.local.set({ [summaryKey]: { ...stored[summaryKey], tags: currentTags, markdown, urls, timestamp: Date.now() } });
+        await chrome.storage.local.set({ 
+          [summaryKey]: { 
+            ...existingData, 
+            tags: currentTags, 
+            markdown, 
+            urls, 
+            timestamp: existingData.timestamp || Date.now(),
+            format: existingData.format || format,
+            language: existingData.language || language,
+            model: existingData.model,
+            query: existingData.query || extractSearchQuery()
+          } 
+        });
       }
       tagInput.value = '';
       dropdown.style.display = 'none';
@@ -1200,16 +1213,21 @@ async function summarizeResults() {
     const cached = summaryCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
       await updateStats('cache');
-      await displaySummary(cached.markdown, cached.urls, format, language);
+      await displaySummary(cached.markdown, cached.urls, cached.format || format, cached.language || language);
       return;
     }
     
     const storageKey = `summary_${simpleHash(cacheKey)}`;
     const stored = await chrome.storage.local.get(storageKey);
     if (stored[storageKey] && (Date.now() - stored[storageKey].timestamp) < CACHE_DURATION) {
-      summaryCache.set(cacheKey, stored[storageKey]);
+      const storedData = stored[storageKey];
+      // Ensure metadata is present
+      if (!storedData.format) storedData.format = format;
+      if (!storedData.language) storedData.language = language;
+      if (!storedData.query) storedData.query = searchQuery;
+      summaryCache.set(cacheKey, storedData);
       await updateStats('cache');
-      await displaySummary(stored[storageKey].markdown, stored[storageKey].urls, format, language);
+      await displaySummary(storedData.markdown, storedData.urls, storedData.format, storedData.language);
       return;
     }
     
@@ -1411,7 +1429,7 @@ async function summarizeResults() {
     }
     
     const decodedMarkdown = markdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-    const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now(), format, language, model: successfulModel };
+    const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now(), format, language, model: successfulModel, query: searchQuery };
     summaryCache.set(cacheKey, cacheData);
     
     cachedSummary = markdown;
@@ -1427,11 +1445,11 @@ async function summarizeResults() {
           const size = await getStorageSize();
           const MAX_STORAGE = 10 * 1024 * 1024;
           if (size > MAX_STORAGE) await clearOldCaches();
-          await chrome.storage.local.set({ [storageKey]: { ...cacheData, query: searchQuery, format, language, model: successfulModel } });
+          await chrome.storage.local.set({ [storageKey]: cacheData });
         } catch (error) {
           if (error.message?.includes('quota')) {
             await clearOldCaches();
-            try { await chrome.storage.local.set({ [storageKey]: { ...cacheData, query: searchQuery, format, language, model: successfulModel } }); } catch (e) {}
+            try { await chrome.storage.local.set({ [storageKey]: cacheData }); } catch (e) {}
           }
         }
       })(),
