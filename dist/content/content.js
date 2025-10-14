@@ -767,7 +767,7 @@ async function displaySummary(markdown, urls, format, language) {
         
         batchDOMUpdates(() => {
           const fragment = document.createDocumentFragment();
-          filtered.forEach(({ markdown: md, urls: u, timestamp, query, isFav, tags, format, language, model }) => {
+          filtered.forEach(({ markdown: md, urls: u, timestamp, query, isFav, tags, format, language, model, engine }) => {
             const item = document.createElement('div');
             item.className = 'history-item';
             const titleText = md.split('\n')[0].replace(/^#\s*/, '').slice(0, 60);
@@ -778,8 +778,10 @@ async function displaySummary(markdown, urls, format, language) {
             const tagsHtml = tags && tags.length > 0 ? `<div class="history-item-tags">${tags.map(t => `<span class="history-tag-badge">${sanitizeText(t)}</span>`).join('')}</div>` : '';
             const formatBadge = format ? `<span class="history-meta-badge ${format}">${format === 'detailed' ? '📄 Detailed' : '📝 Brief'}</span>` : '';
             const langBadge = language ? `<span class="history-meta-badge">🌐 ${sanitizeText(language)}</span>` : '';
+            const engineEmoji = engine === 'google' ? '🔍' : engine === 'bing' ? '🅱️' : engine === 'duckduckgo' ? '🦆' : '🔍';
+            const engineBadge = engine ? `<span class="history-meta-badge">${engineEmoji} ${sanitizeText(engine.charAt(0).toUpperCase() + engine.slice(1))}</span>` : '';
             const modelBadge = model ? `<span class="history-meta-badge">🤖 ${sanitizeText(model.split('/').pop())}</span>` : '';
-            const metaHtml = (formatBadge || langBadge || modelBadge) ? `<div class="history-item-meta">${formatBadge}${langBadge}${modelBadge}</div>` : '';
+            const metaHtml = (formatBadge || langBadge || engineBadge || modelBadge) ? `<div class="history-item-meta">${formatBadge}${langBadge}${engineBadge}${modelBadge}</div>` : '';
             item.innerHTML = `<div class="history-item-date">${date} ${time}</div><div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}${tagsHtml}${metaHtml}`;
             item.onclick = () => {
               body.innerHTML = convertMarkdownToHtml(md);
@@ -1448,7 +1450,7 @@ async function summarizeResults() {
     }
     
     const decodedMarkdown = markdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-    const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now(), format, language, model: successfulModel, query: searchQuery };
+    const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now(), format, language, model: successfulModel, engine, query: searchQuery };
     summaryCache.set(cacheKey, cacheData);
     
     cachedSummary = markdown;
