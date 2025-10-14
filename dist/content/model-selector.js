@@ -1,4 +1,4 @@
-function selectBestModels(models, preferredFamily = 'llama') {
+export function selectBestModels(models, preferredFamily = 'llama') {
   const freeModels = models.filter(m => {
     const id = m.id.toLowerCase();
     const isFree = id.includes('free') || m.pricing?.prompt === '0' || m.pricing?.prompt === 0;
@@ -56,7 +56,7 @@ function selectBestModels(models, preferredFamily = 'llama') {
   };
 }
 
-function selectBestGeminiModels(models) {
+export function selectBestGeminiModels(models) {
   const flashModels = models.filter(m => {
     if (!m.supportedGenerationMethods?.includes('generateContent')) return false;
     const displayName = m.displayName.toLowerCase();
@@ -82,11 +82,4 @@ function selectBestGeminiModels(models) {
     primary: latestStable?.name || latestPreview?.name || prevVersion?.name,
     fallbacks: [latestPreview?.name, prevVersion?.name].filter(Boolean).filter(m => m !== (latestStable?.name || latestPreview?.name || prevVersion?.name)).slice(0, 2)
   };
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { selectBestModels, selectBestGeminiModels };
-} else {
-  window.selectBestModels = selectBestModels;
-  window.selectBestGeminiModels = selectBestGeminiModels;
 }

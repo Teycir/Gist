@@ -194,54 +194,26 @@ async function loadOpenRouterModels(apiKey) {
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     const data = await response.json();
     
-    const allModels = data.data?.filter(m => {
-      const id = m.id.toLowerCase();
-      return id.includes('llama') && id.includes('free') && !id.includes('scout');
-    }).sort((a, b) => {
-      const aId = a.id.toLowerCase();
-      const bId = b.id.toLowerCase();
-      const aVer = parseFloat((aId.match(/llama[\/-]?([\d.]+)/) || aId.match(/llama\s+([\d.]+)/))?.[1] || '0');
-      const bVer = parseFloat((bId.match(/llama[\/-]?([\d.]+)/) || bId.match(/llama\s+([\d.]+)/))?.[1] || '0');
-      if (aVer !== bVer) return bVer - aVer;
-      const aSize = parseInt((aId.match(/(\d+)b/)?.[1] || '0'));
-      const bSize = parseInt((bId.match(/(\d+)b/)?.[1] || '0'));
-      if (aSize !== bSize) return bSize - aSize;
-      const aInstruct = aId.includes('instruct');
-      const bInstruct = bId.includes('instruct');
-      if (aInstruct !== bInstruct) return aInstruct ? -1 : 1;
-      return a.id.length - b.id.length;
-    }) || [];
+    const { selectBestModels } = await import(chrome.runtime.getURL('lib/model-selector.js'));
+    const selected = selectBestModels(data.data, 'llama');
     
-    const latestVersion = allModels[0] ? parseFloat((allModels[0].id.toLowerCase().match(/llama[\/-]?([\d.]+)/) || allModels[0].id.toLowerCase().match(/llama\s+([\d.]+)/))?.[1] || '0') : 0;
-    const latestLargest = allModels.find(m => {
-      const id = m.id.toLowerCase();
-      const ver = parseFloat((id.match(/llama[\/-]?([\d.]+)/) || id.match(/llama\s+([\d.]+)/))?.[1] || '0');
-      return ver === latestVersion;
-    });
-    const prevVersion = allModels.find(m => {
-      const id = m.id.toLowerCase();
-      const ver = parseFloat((id.match(/llama[\/-]?([\d.]+)/) || id.match(/llama\s+([\d.]+)/))?.[1] || '0');
-      return ver < latestVersion;
-    });
-    
-    const primary = latestLargest?.id;
-    const fallbacks = [prevVersion?.id].filter(Boolean);
+    if (!selected.primary) throw new Error('No free Llama models found');
     
     await chrome.storage.local.set({ 
-      openrouterPrimaryModel: primary,
-      openrouterFallbackModels: fallbacks
+      openrouterPrimaryModel: selected.primary,
+      openrouterFallbackModels: selected.fallbacks
     });
     
     if (statusMsg) {
-      statusMsg.textContent = primary ? `✓ Model: ${primary.split('/').pop()}` : '⚠️ No models found';
-      statusMsg.className = primary ? 'status-msg success' : 'status-msg error';
+      statusMsg.textContent = `✓ Model: ${selected.primary.split('/').pop()}`;
+      statusMsg.className = 'status-msg success';
       setTimeout(() => {
         statusMsg.textContent = '';
         statusMsg.className = 'status-msg';
       }, 2000);
     }
     
-    return allModels;
+    return data.data;
   } catch (error) {
     console.error('Failed to load OpenRouter models:', error);
     if (statusMsg) {
@@ -426,33 +398,19 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
     statusMsg.textContent = 'Saving...';
     statusMsg.className = 'status-msg';
     
-    // Force clear ALL model-related cache including old models
-    const allKeys = await chrome.storage.local.get(null);
-    const modelKeys = Object.keys(allKeys).filter(k => 
-      k.includes('Model') || k.includes('model') || k === 'selectedModel'
-    );
+    // Clear model cache on settings save
+    await chrome.storage.local.remove(['primaryModel', 'fallbackModels', 'openrouterPrimaryModel', 'openrouterFallbackModels']);
+    console.log('Cleared model cache');
     
-    // Also check for old models in values and clear them
-    const oldModelKeys = Object.entries(allKeys)
-      .filter(([k, v]) => typeof v === 'string' && v.includes('scout'))
-      .map(([k]) => k);
-    
-    const keysToRemove = [...new Set([...modelKeys, ...oldModelKeys])];
-    await chrome.storage.local.remove(keysToRemove);
-    console.log('Cleared cache keys:', keysToRemove);
-    
-    // Clear tooltips
-    document.getElementById('googleModelTooltip').textContent = '';
-    document.getElementById('openrouterModelTooltip').textContent = '';
-    
+    // Load fresh models with updated sorting
     let primary, fallbacks;
     if (provider === 'google') {
-      const models = await loadModels(googleKey);
+      await loadModels(googleKey);
       const { primaryModel, fallbackModels } = await chrome.storage.local.get(['primaryModel', 'fallbackModels']);
       primary = primaryModel;
       fallbacks = fallbackModels;
     } else {
-      const models = await loadOpenRouterModels(openrouterKey);
+      await loadOpenRouterModels(openrouterKey);
       const { openrouterPrimaryModel, openrouterFallbackModels } = await chrome.storage.local.get(['openrouterPrimaryModel', 'openrouterFallbackModels']);
       primary = openrouterPrimaryModel;
       fallbacks = openrouterFallbackModels;
@@ -560,14 +518,6 @@ async function loadStats() {
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', async () => {
     try {
-      // Auto-migrate: Clear old models (DeepSeek, Qwen, Distill)
-      const migrationData = await chrome.storage.local.get(['openrouterPrimaryModel']);
-      const oldModel = migrationData.openrouterPrimaryModel || '';
-      if (oldModel.includes('scout')) {
-        console.log('Migrating: Clearing old models:', oldModel);
-        await chrome.storage.local.remove(['openrouterPrimaryModel', 'openrouterFallbackModels']);
-        document.getElementById('openrouterModelTooltip').textContent = '';
-      }
       const data = await chrome.storage.local.get(['aiProvider', 'googleApiKey', 'openrouterApiKey', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled', 'autoSummarizeEnabled', 'darkMode']);
       const { aiProvider, googleApiKey, openrouterApiKey, selectedLanguage, summaryFormat, multiSearchEnabled, autoSummarizeEnabled, darkMode } = data;
       const { providerSelect, googleApiKey: googleKeyInput, openrouterApiKey: openrouterKeyInput, languageSelect, formatSelect, multiSearch, autoSummarize } = getElements();

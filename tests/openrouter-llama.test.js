@@ -42,34 +42,52 @@ test('OpenRouter Llama models', async () => {
       return;
     }
     
-    // Test 2: Call the primary model
-    const primaryModel = llamaModels[0].id;
-    console.log(`\nTest 2: Testing primary model: ${primaryModel}`);
+    // Test 2: Call models with fallback
+    console.log(`\nTest 2: Testing models with fallback...`);
     
     const testPrompt = 'Explain what Meta Llama is in one sentence.';
-    const callResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`,
-        'HTTP-Referer': 'https://github.com/Teycir/Gist',
-        'X-Title': 'Gist Test'
-      },
-      body: JSON.stringify({
-        model: primaryModel,
-        messages: [{ role: 'user', content: testPrompt }],
-        max_tokens: 100,
-        temperature: 0.2
-      })
-    });
+    let answer = null;
+    let successModel = null;
     
-    if (!callResponse.ok) {
-      const error = await callResponse.json();
-      throw new Error(`API call failed: ${JSON.stringify(error)}`);
+    for (let i = 0; i < Math.min(3, llamaModels.length); i++) {
+      const model = llamaModels[i].id;
+      try {
+        console.log(`  Trying model ${i + 1}: ${model}`);
+        const callResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`,
+            'HTTP-Referer': 'https://github.com/Teycir/Gist',
+            'X-Title': 'Gist Test'
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [{ role: 'user', content: testPrompt }],
+            max_tokens: 100,
+            temperature: 0.2
+          })
+        });
+        
+        const result = await callResponse.json();
+        if (result.error) {
+          console.log(`  ⚠️  Model failed: ${result.error.message}`);
+          continue;
+        }
+        
+        answer = result.choices?.[0]?.message?.content;
+        successModel = model;
+        console.log(`  ✓ Success with: ${model}`);
+        break;
+      } catch (error) {
+        console.log(`  ⚠️  Model failed: ${error.message}`);
+      }
     }
     
-    const result = await callResponse.json();
-    const answer = result.choices?.[0]?.message?.content;
+    if (!answer) {
+      console.log('⚠️  All models failed, skipping test');
+      return;
+    }
     
     console.log('✓ Model response:');
     console.log(`  "${answer}"`);

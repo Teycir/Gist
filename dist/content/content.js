@@ -1266,15 +1266,7 @@ async function summarizeResults() {
     let models = [];
     
     if (provider === 'openrouter') {
-      let { openrouterPrimaryModel, openrouterFallbackModels } = await chrome.storage.local.get(['openrouterPrimaryModel', 'openrouterFallbackModels']);
-      
-      // Auto-migrate: Clear old models
-      if (openrouterPrimaryModel && openrouterPrimaryModel.includes('scout')) {
-        console.log('[MIGRATION] Clearing old model:', openrouterPrimaryModel);
-        await chrome.storage.local.remove(['openrouterPrimaryModel', 'openrouterFallbackModels']);
-        openrouterPrimaryModel = null;
-        openrouterFallbackModels = null;
-      }
+      const { openrouterPrimaryModel, openrouterFallbackModels } = await chrome.storage.local.get(['openrouterPrimaryModel', 'openrouterFallbackModels']);
       
       if (!openrouterPrimaryModel) {
         const response = await fetch('https://openrouter.ai/api/v1/models', {
@@ -1360,10 +1352,13 @@ async function summarizeResults() {
     });
     
     let apiResponse;
+    let successfulModel;
     for (let i = 0; i < models.length; i++) {
       try {
         console.log(`[PERF] Trying model ${i + 1}/${models.length}: ${models[i]}`);
         apiResponse = await callModel(models[i]);
+        if (apiResponse.error) throw new Error(apiResponse.error.message || 'API error');
+        successfulModel = models[i];
         console.log(`[PERF] Success with model: ${models[i]}`);
         break;
       } catch (error) {
@@ -1416,7 +1411,7 @@ async function summarizeResults() {
     }
     
     const decodedMarkdown = markdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-    const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now(), format, language, model: models[0] };
+    const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now(), format, language, model: successfulModel };
     summaryCache.set(cacheKey, cacheData);
     
     cachedSummary = markdown;
@@ -1432,11 +1427,11 @@ async function summarizeResults() {
           const size = await getStorageSize();
           const MAX_STORAGE = 10 * 1024 * 1024;
           if (size > MAX_STORAGE) await clearOldCaches();
-          await chrome.storage.local.set({ [storageKey]: { ...cacheData, query: searchQuery, format, language, model: models[0] } });
+          await chrome.storage.local.set({ [storageKey]: { ...cacheData, query: searchQuery, format, language, model: successfulModel } });
         } catch (error) {
           if (error.message?.includes('quota')) {
             await clearOldCaches();
-            try { await chrome.storage.local.set({ [storageKey]: { ...cacheData, query: searchQuery, format, language, model: models[0] } }); } catch (e) {}
+            try { await chrome.storage.local.set({ [storageKey]: { ...cacheData, query: searchQuery, format, language, model: successfulModel } }); } catch (e) {}
           }
         }
       })(),
