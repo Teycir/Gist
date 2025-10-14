@@ -11,7 +11,6 @@ describe('Summary Format Options Tests', () => {
     document.body.innerHTML = '<button class="summarize-btn">Summarize</button><div id="search"><a href="http://test1.com">Test 1</a><a href="http://test2.com">Test 2</a><a href="http://test3.com">Test 3</a></div>';
     chrome.storage.local.get.mockClear();
     chrome.storage.local.set.mockClear();
-    fetch.mockClear();
     global.alert = jest.fn();
     global.window = { open: jest.fn(), location: { search: '?q=test+query' } };
   });

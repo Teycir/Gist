@@ -196,12 +196,12 @@ async function loadOpenRouterModels(apiKey) {
     
     const allModels = data.data?.filter(m => {
       const id = m.id.toLowerCase();
-      return id.includes('qwen') && id.includes('free');
+      return id.includes('llama') && id.includes('free') && !id.includes('scout');
     }).sort((a, b) => {
       const aId = a.id.toLowerCase();
       const bId = b.id.toLowerCase();
-      const aVer = parseFloat((aId.match(/qwen[\/-]?([\d.]+)/) || aId.match(/qwen\s+([\d.]+)/))?.[1] || '0');
-      const bVer = parseFloat((bId.match(/qwen[\/-]?([\d.]+)/) || bId.match(/qwen\s+([\d.]+)/))?.[1] || '0');
+      const aVer = parseFloat((aId.match(/llama[\/-]?([\d.]+)/) || aId.match(/llama\s+([\d.]+)/))?.[1] || '0');
+      const bVer = parseFloat((bId.match(/llama[\/-]?([\d.]+)/) || bId.match(/llama\s+([\d.]+)/))?.[1] || '0');
       if (aVer !== bVer) return bVer - aVer;
       const aSize = parseInt((aId.match(/(\d+)b/)?.[1] || '0'));
       const bSize = parseInt((bId.match(/(\d+)b/)?.[1] || '0'));
@@ -212,15 +212,15 @@ async function loadOpenRouterModels(apiKey) {
       return a.id.length - b.id.length;
     }) || [];
     
-    const latestVersion = allModels[0] ? parseFloat((allModels[0].id.toLowerCase().match(/qwen[\/-]?([\d.]+)/) || allModels[0].id.toLowerCase().match(/qwen\s+([\d.]+)/))?.[1] || '0') : 0;
+    const latestVersion = allModels[0] ? parseFloat((allModels[0].id.toLowerCase().match(/llama[\/-]?([\d.]+)/) || allModels[0].id.toLowerCase().match(/llama\s+([\d.]+)/))?.[1] || '0') : 0;
     const latestLargest = allModels.find(m => {
       const id = m.id.toLowerCase();
-      const ver = parseFloat((id.match(/qwen[\/-]?([\d.]+)/) || id.match(/qwen\s+([\d.]+)/))?.[1] || '0');
+      const ver = parseFloat((id.match(/llama[\/-]?([\d.]+)/) || id.match(/llama\s+([\d.]+)/))?.[1] || '0');
       return ver === latestVersion;
     });
     const prevVersion = allModels.find(m => {
       const id = m.id.toLowerCase();
-      const ver = parseFloat((id.match(/qwen[\/-]?([\d.]+)/) || id.match(/qwen\s+([\d.]+)/))?.[1] || '0');
+      const ver = parseFloat((id.match(/llama[\/-]?([\d.]+)/) || id.match(/llama\s+([\d.]+)/))?.[1] || '0');
       return ver < latestVersion;
     });
     
@@ -241,7 +241,7 @@ async function loadOpenRouterModels(apiKey) {
       }, 2000);
     }
     
-    return models;
+    return allModels;
   } catch (error) {
     console.error('Failed to load OpenRouter models:', error);
     if (statusMsg) {
@@ -426,15 +426,39 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
     statusMsg.textContent = 'Saving...';
     statusMsg.className = 'status-msg';
     
-    await chrome.storage.local.remove(['primaryModel', 'fallbackModels', 'openrouterPrimaryModel', 'openrouterFallbackModels']);
+    // Force clear ALL model-related cache including old models
+    const allKeys = await chrome.storage.local.get(null);
+    const modelKeys = Object.keys(allKeys).filter(k => 
+      k.includes('Model') || k.includes('model') || k === 'selectedModel'
+    );
     
+    // Also check for old models in values and clear them
+    const oldModelKeys = Object.entries(allKeys)
+      .filter(([k, v]) => typeof v === 'string' && v.includes('scout'))
+      .map(([k]) => k);
+    
+    const keysToRemove = [...new Set([...modelKeys, ...oldModelKeys])];
+    await chrome.storage.local.remove(keysToRemove);
+    console.log('Cleared cache keys:', keysToRemove);
+    
+    // Clear tooltips
+    document.getElementById('googleModelTooltip').textContent = '';
+    document.getElementById('openrouterModelTooltip').textContent = '';
+    
+    let primary, fallbacks;
     if (provider === 'google') {
-      await loadModels(googleKey);
+      const models = await loadModels(googleKey);
+      const { primaryModel, fallbackModels } = await chrome.storage.local.get(['primaryModel', 'fallbackModels']);
+      primary = primaryModel;
+      fallbacks = fallbackModels;
     } else {
-      await loadOpenRouterModels(openrouterKey);
+      const models = await loadOpenRouterModels(openrouterKey);
+      const { openrouterPrimaryModel, openrouterFallbackModels } = await chrome.storage.local.get(['openrouterPrimaryModel', 'openrouterFallbackModels']);
+      primary = openrouterPrimaryModel;
+      fallbacks = openrouterFallbackModels;
     }
     
-    await chrome.storage.local.set({ 
+    const storageData = { 
       aiProvider: provider,
       googleApiKey: googleKey,
       openrouterApiKey: openrouterKey,
@@ -444,7 +468,28 @@ document.getElementById('saveKey')?.addEventListener('click', async () => {
       multiSearchEnabled: isMultiSearch,
       autoSummarizeEnabled: isAutoSummarize,
       darkMode: isDarkMode
-    });
+    };
+    
+    if (provider === 'google') {
+      storageData.primaryModel = primary;
+      storageData.fallbackModels = fallbacks;
+    } else {
+      storageData.openrouterPrimaryModel = primary;
+      storageData.openrouterFallbackModels = fallbacks;
+    }
+    
+    await chrome.storage.local.set(storageData);
+    
+    // Update tooltips with loaded models
+    if (provider === 'google' && primary) {
+      const modelName = primary.split('/').pop();
+      document.getElementById('googleModelTooltip').textContent = `🤖 ${modelName}`;
+    } else if (provider === 'openrouter' && primary) {
+      const modelName = primary.split('/').pop();
+      document.getElementById('openrouterModelTooltip').textContent = `🤖 ${modelName}`;
+    }
+    
+    console.log('Saved models:', { primary, fallbacks });
     
     const t = translations[languageSelect.value] || translations.English;
     statusMsg.textContent = `✓ ${t.saved}`;
@@ -515,6 +560,14 @@ async function loadStats() {
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', async () => {
     try {
+      // Auto-migrate: Clear old models (DeepSeek, Qwen, Distill)
+      const migrationData = await chrome.storage.local.get(['openrouterPrimaryModel']);
+      const oldModel = migrationData.openrouterPrimaryModel || '';
+      if (oldModel.includes('scout')) {
+        console.log('Migrating: Clearing old models:', oldModel);
+        await chrome.storage.local.remove(['openrouterPrimaryModel', 'openrouterFallbackModels']);
+        document.getElementById('openrouterModelTooltip').textContent = '';
+      }
       const data = await chrome.storage.local.get(['aiProvider', 'googleApiKey', 'openrouterApiKey', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled', 'autoSummarizeEnabled', 'darkMode']);
       const { aiProvider, googleApiKey, openrouterApiKey, selectedLanguage, summaryFormat, multiSearchEnabled, autoSummarizeEnabled, darkMode } = data;
       const { providerSelect, googleApiKey: googleKeyInput, openrouterApiKey: openrouterKeyInput, languageSelect, formatSelect, multiSearch, autoSummarize } = getElements();
@@ -553,6 +606,19 @@ if (typeof document !== 'undefined') {
       }
       
       await loadStats();
+      
+      // Load and display models in tooltips
+      const { primaryModel, openrouterPrimaryModel } = await chrome.storage.local.get(['primaryModel', 'openrouterPrimaryModel']);
+      
+      if (primaryModel) {
+        const modelName = primaryModel.split('/').pop();
+        document.getElementById('googleModelTooltip').textContent = `🤖 ${modelName}`;
+      }
+      
+      if (openrouterPrimaryModel &&  !openrouterPrimaryModel.includes('scout')) {
+        const modelName = openrouterPrimaryModel.split('/').pop();
+        document.getElementById('openrouterModelTooltip').textContent = `🤖 ${modelName}`;
+      }
     } catch (error) {
       console.error('DOMContentLoaded error:', error);
     }

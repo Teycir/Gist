@@ -1266,58 +1266,33 @@ async function summarizeResults() {
     let models = [];
     
     if (provider === 'openrouter') {
-      const { openrouterPrimaryModel, openrouterFallbackModels } = await chrome.storage.local.get(['openrouterPrimaryModel', 'openrouterFallbackModels']);
+      let { openrouterPrimaryModel, openrouterFallbackModels } = await chrome.storage.local.get(['openrouterPrimaryModel', 'openrouterFallbackModels']);
+      
+      // Auto-migrate: Clear old models
+      if (openrouterPrimaryModel && openrouterPrimaryModel.includes('scout')) {
+        console.log('[MIGRATION] Clearing old model:', openrouterPrimaryModel);
+        await chrome.storage.local.remove(['openrouterPrimaryModel', 'openrouterFallbackModels']);
+        openrouterPrimaryModel = null;
+        openrouterFallbackModels = null;
+      }
       
       if (!openrouterPrimaryModel) {
         const response = await fetch('https://openrouter.ai/api/v1/models', {
           headers: { 'Authorization': `Bearer ${flashApiKey}` }
         });
         const data = await response.json();
+        const { selectBestModels } = await import(chrome.runtime.getURL('lib/model-selector.js'));
+        const selected = selectBestModels(data.data, 'llama');
         
-        const allModels = data.data?.filter(m => {
-          const id = m.id.toLowerCase();
-          return id.includes('qwen') && id.includes('free');
-        }).sort((a, b) => {
-          const aId = a.id.toLowerCase();
-          const bId = b.id.toLowerCase();
-          const aMatch = aId.match(/qwen[\/-]?([\d.]+)/) || aId.match(/qwen\s+([\d.]+)/);
-          const bMatch = bId.match(/qwen[\/-]?([\d.]+)/) || bId.match(/qwen\s+([\d.]+)/);
-          const aVer = parseFloat(aMatch?.[1] || '0');
-          const bVer = parseFloat(bMatch?.[1] || '0');
-          if (aVer !== bVer) return bVer - aVer;
-          const aSize = parseInt((aId.match(/(\d+)b/)?.[1] || '0'));
-          const bSize = parseInt((bId.match(/(\d+)b/)?.[1] || '0'));
-          if (aSize !== bSize) return bSize - aSize;
-          const aInstruct = aId.includes('instruct');
-          const bInstruct = bId.includes('instruct');
-          if (aInstruct !== bInstruct) return aInstruct ? -1 : 1;
-          return a.id.length - b.id.length;
-        }) || [];
-        
-        const latestVersion = allModels[0] ? parseFloat((allModels[0].id.toLowerCase().match(/qwen[\/-]?([\d.]+)/) || allModels[0].id.toLowerCase().match(/qwen\s+([\d.]+)/))?.[1] || '0') : 0;
-        const latestLargest = allModels.find(m => {
-          const id = m.id.toLowerCase();
-          const ver = parseFloat((id.match(/qwen[\/-]?([\d.]+)/) || id.match(/qwen\s+([\d.]+)/))?.[1] || '0');
-          return ver === latestVersion;
-        });
-        const prevVersion = allModels.find(m => {
-          const id = m.id.toLowerCase();
-          const ver = parseFloat((id.match(/qwen[\/-]?([\d.]+)/) || id.match(/qwen\s+([\d.]+)/))?.[1] || '0');
-          return ver < latestVersion;
-        });
-        
-        models = [latestLargest?.id, prevVersion?.id].filter(Boolean).slice(0, 3);
-        if (models.length === 0) throw new Error('No free Qwen models found');
-        
-        console.log('[OpenRouter] Latest version:', latestVersion, 'Primary:', latestLargest?.id, 'Fallback:', prevVersion?.id);
+        if (!selected.primary) throw new Error('No free Llama models found');
         
         await chrome.storage.local.set({ 
-          openrouterPrimaryModel: models[0],
-          openrouterFallbackModels: models.slice(1)
+          openrouterPrimaryModel: selected.primary,
+          openrouterFallbackModels: selected.fallbacks
         });
+        models = [selected.primary, ...selected.fallbacks];
       } else {
         models = [openrouterPrimaryModel, ...(openrouterFallbackModels || [])].filter(Boolean);
-        console.log('[OpenRouter] Using cached models:', models);
       }
     } else {
       const { primaryModel, fallbackModels } = await chrome.storage.local.get(['primaryModel', 'fallbackModels']);
@@ -1327,33 +1302,13 @@ async function summarizeResults() {
         url.searchParams.set('key', flashApiKey);
         const response = await fetch(url.toString());
         const data = await response.json();
-      
-        const allModels = data.models?.filter(m => {
-          if (!m.supportedGenerationMethods?.includes('generateContent')) return false;
-          const displayName = m.displayName.toLowerCase();
-          return displayName.includes('flash') && !displayName.includes('lite');
-        }).sort((a, b) => {
-          const aName = a.name.toLowerCase();
-          const bName = b.name.toLowerCase();
-          const aVersion = parseFloat((aName.match(/(\d+\.\d+)/) || ['0'])[0]);
-          const bVersion = parseFloat((bName.match(/(\d+\.\d+)/) || ['0'])[0]);
-          if (aVersion !== bVersion) return bVersion - aVersion;
-          const aHasPreview = aName.includes('preview');
-          const bHasPreview = bName.includes('preview');
-          if (aHasPreview !== bHasPreview) return aHasPreview ? 1 : -1;
-          return a.name.length - b.name.length;
-        }) || [];
+        const { selectBestGeminiModels } = await import(chrome.runtime.getURL('lib/model-selector.js'));
+        const selected = selectBestGeminiModels(data.models);
         
-        const latestVersion = allModels[0] ? parseFloat((allModels[0].name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) : 0;
-        const latestStable = allModels.find(m => !m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
-        const latestPreview = allModels.find(m => m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
-        const prevVersion = allModels.find(m => parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) < latestVersion);
+        if (!selected.primary) throw new Error('No compatible Flash models found');
         
-        models = [latestStable?.name, latestPreview?.name, prevVersion?.name].filter(Boolean).slice(0, 3);
-        
-        if (models.length === 0) throw new Error('No compatible Flash models found');
-        
-        await chrome.storage.local.set({ primaryModel: models[0], fallbackModels: models.slice(1) });
+        await chrome.storage.local.set({ primaryModel: selected.primary, fallbackModels: selected.fallbacks });
+        models = [selected.primary, ...selected.fallbacks];
       } else {
         models = [primaryModel, ...(fallbackModels || [])].filter(Boolean);
       }

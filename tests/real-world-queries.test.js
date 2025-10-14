@@ -45,7 +45,6 @@ describe('Real-World Query Performance Tests', () => {
     chrome.storage.local.set.mockClear();
     chrome.runtime.sendMessage.mockClear();
     chrome.runtime.getURL.mockClear();
-    fetch.mockClear();
     global.alert = jest.fn();
     global.confirm = jest.fn();
     global.window = { location: { search: '?q=test' } };

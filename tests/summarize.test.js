@@ -8,7 +8,6 @@ describe('Summarize Results', () => {
     document.body.innerHTML = '<button class="summarize-btn">Summarize</button>';
     chrome.storage.local.get.mockClear();
     chrome.storage.local.set.mockClear();
-    fetch.mockClear();
     global.alert = jest.fn();
     global.confirm = jest.fn();
     global.window.open = jest.fn();

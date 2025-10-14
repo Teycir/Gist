@@ -1,10 +1,11 @@
+global.fetch = require('node-fetch');
+
+// Load .env file
 const fs = require('fs');
 const path = require('path');
-
-function loadEnv() {
-  const envPath = path.join(__dirname, '..', '.env');
+const envPath = path.join(__dirname, '.env');
+if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
-  
   envContent.split('\n').forEach(line => {
     const [key, value] = line.split('=');
     if (key && value) {
@@ -12,10 +13,3 @@ function loadEnv() {
     }
   });
 }
-
-loadEnv();
-
-module.exports = {
-  API_KEY: process.env.GOOGLE_API_KEY,
-  MODEL: 'models/gemini-2.5-flash'
-};

@@ -6,7 +6,6 @@ describe('Performance', () => {
   beforeEach(() => {
     document.body.innerHTML = '<button class="summarize-btn">Summarize</button><div id="search"><a href="http://test1.com">Test 1</a><a href="http://test2.com">Test 2</a></div>';
     chrome.storage.local.get.mockClear();
-    fetch.mockClear();
     global.alert = jest.fn();
     global.confirm = jest.fn();
     global.window = { open: jest.fn(), location: { search: '?q=test+query' } };
@@ -19,7 +18,7 @@ describe('Performance', () => {
     
     chrome.storage.local.get.mockResolvedValue({ 
       flashApiKey: 'test-key',
-      selectedModel: 'models/gemini-1.5-flash',
+      selectedModel: 'models/gemini-2.5-flash',
       selectedLanguage: 'English',
       summaryFormat: 'detailed',
       multiSearchEnabled: false
