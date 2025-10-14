@@ -1223,8 +1223,9 @@ async function summarizeResults() {
     
     const searchQuery = extractSearchQuery();
     const urls = scrapeUrls();
-    console.log(`[DEBUG] Scraped ${urls.length} URLs from ${detectSearchEngine()}:`, urls);
-    const cacheKey = `${searchQuery}-${urls.join(',')}-${language}-${format}`;
+    const engine = detectSearchEngine();
+    console.log(`[DEBUG] Scraped ${urls.length} URLs from ${engine}:`, urls);
+    const cacheKey = `${engine}-${searchQuery}-${urls.join(',')}-${language}-${format}`;
     
     const cached = summaryCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
