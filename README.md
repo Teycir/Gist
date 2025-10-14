@@ -2,412 +2,453 @@
 
 ## What is Gist?
 
-**Gist** is a Chrome extension that transforms how you consume search results by providing instant AI-powered summaries. Instead of clicking through multiple websites and reading lengthy articles, get a comprehensive summary of the top search results in seconds.
+**Gist** saves you time when searching online. Instead of opening 10 different websites and reading long articles, Gist reads them for you and gives you a short summary in seconds.
 
-### ✨ Key Features
+Think of it as your personal reading assistant that lives in your browser. Everything stays on your computer—no tracking, no data collection, no ads. Fully open-source. Save and organize all your summaries for later use.
 
-- 🔑 **Use Your Own AI Key** - Free tier: 1500 requests/day from Google AI
-- 🔒 **100% Private** - No servers, no tracking, no data collection
-- ⚡ **Lightning Fast** - Cached results in <100ms, cold start in 3-5s
-- 🎨 **Clean Interface** - Seamless integration with Google Search
-- 🔍 **Multi-Engine Support** - Works on Google, Bing, and DuckDuckGo
-- 🔄 **Multi-Search Mode** - Search across Google, Bing, and DuckDuckGo simultaneously
-- 🌍 **Multilingual** - Search in one language, summarize in another
-- 📝 **3 Summary Formats** - Brief, Detailed, or Key Points
-- 🔗 **Source References** - Every summary includes clickable citations
-- 💾 **Save as Markdown** - Download summaries to your Downloads folder
-- 📋 **Easy Sharing** - Share to X, LinkedIn, or email with one click
-- ⌨️ **Keyboard Shortcuts** - `Ctrl+Shift+S` to summarize instantly
-- ♿ **Fully Accessible** - Screen reader support and keyboard navigation
+<p align="center">
+  <img src="AdminPanel.png" alt="Gist Settings Panel">
+</p>
 
-### Why Choose Gist Over Google's Native AI Summaries?
+### ✨ What Can Gist Do?
 
-**🎯 More Control & Customization**
-- **Choose Your Summary Style**: Select between Brief (fast scan), Detailed (comprehensive), or Key Points (fastest) formats
-- **Multilingual Flexibility**: Search in one language, get summaries in another (e.g., search in English, summarize in French)
-- **Model Selection**: Pick from the latest Google Gemini Flash models for optimal performance
-- **Your Own API Key**: Use Google's free tier (1500 requests/day) without restrictions
+- 🔑 **Free to Use** - Get 1,500 free summaries every day using Google's AI or OpenRouter free tiers
+- 🔒 **Your Privacy is Safe** - Everything stays on your computer, no tracking
+- ⚡ **Super Fast** - Get brief answers in 3-5 seconds or detailed summaries, expand any brief summary into detailed
+- 🔍 **Works Everywhere** - Google, Bing, and DuckDuckGo
+- 🌍 **Speaks Your Language** - Available in English, Spanish, French, and German
+- 📝 **Choose Your Style** - Quick summary or detailed explanation
+- 🔗 **Shows Sources** - Every summary includes clickable links to the websites used
+- 💾 **Save for Later** - Download summaries as files, saved search history and summaries locally with tags and favorites, history can be reset anytime
+- 📋 **Easy Sharing** - Share on social media or email
+- 💬 **Ask Follow-up Questions** - Chat with the AI about the summary
+- 🔄 **Multi-Search** - Search Google, Bing, and DuckDuckGo simultaneously with automatic summaries for each
+- ⚡ **Auto-Summarize** - Get summaries automatically on every search without clicking
+- ⌨️ **Keyboard Shortcut** - Press `Ctrl+Shift+S` for instant summaries
 
-**🔒 Privacy & Transparency**
-- **100% Open Source**: Full code transparency - see exactly what the extension does
-- **No Data Collection**: Zero telemetry, analytics, or tracking
-- **Local Processing**: Your API key never leaves your browser
-- **No Middleman**: Direct connection to Google AI API
+### Why Use Gist Instead of Google's AI Overviews?
 
-**⚡ Performance & Reliability**
-- **Smart Caching**: Instant results (<100ms) for repeated searches
-- **Offline-Ready**: Cached summaries work without internet
-- **No Rate Limits**: Unlike Google's native summaries, you control your quota
-- **Always Available**: Works on every Google search, not just select queries
+Google now shows AI summaries at the top of some searches. So why use Gist?
 
-### How to Use Gist
+**🎯 You Get More Control**
+- **Choose When:** Gist only summarizes when YOU want it to (not forced on every search)
+- **Choose Your Style:** Pick Brief or Detailed summaries (Google decides for you)
+- **Choose Your Language:** Get summaries in Spanish, French, or German (Google only does English for most searches)
+- **Works Everywhere:** Gist works on Bing and DuckDuckGo too (not just Google)
 
-**Step 1: Install & Configure**
-1. Install the extension from Chrome Web Store or load unpacked
-2. Click the Gist icon in your browser toolbar
-3. Get a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
-4. Paste your API key and select your preferences
-5. Choose your preferred language and summary format
+**💾 You Can Save Everything**
+- **Download Summaries:** Save as files to use in reports or presentations (Google doesn't let you download)
+- **Copy & Paste:** One click to copy the entire summary (Google makes you select and copy manually)
+- **Keep a History:** See all your past summaries in one place (Google doesn't save them for you)
+- **Organize with Tags:** Group summaries by project or topic (Google has no organization)
 
-**Step 2: Summarize Any Search**
-- **Method 1**: Click the vertical button on the right side of any search page
-- **Method 2**: Press `Ctrl+Shift+S` (or `Cmd+Shift+S` on Mac)
-- Wait 3-5 seconds for the AI to analyze the top 3 search results
-- View your summary in a beautiful popup with source references
+**🔗 You Can See Where Information Comes From**
+- **Clickable Sources:** Every summary shows links to the 3 websites it read (Google hides most sources)
+- **Verify Facts:** Click any source link to read the full article yourself (important for research)
+- **Cite Your Work:** Perfect for students who need to cite sources in papers (Google's AI doesn't give you proper citations)
 
-**Step 3: Customize Your Experience**
-- **Change Languages**: Search in English, get summaries in Spanish, French, or German
-- **Switch Formats**: 
-  - 🎯 **Brief** (3-5 bullet points, ~500 words, fastest)
-  - 📄 **Detailed** (comprehensive analysis, ~2000 words, slowest)
-  - ⚡ **Key Points** (essential takeaways only, ~250 words, ultra-fast)
-- **Enable Multi-Search**: Check the Multi-Search option to search across Google, Bing, and DuckDuckGo simultaneously
-- **Save Summaries**: Click the save button (💾) to download as markdown file
-- **Share Results**: Use the share button to post on X (Twitter), LinkedIn, or email
-- **Copy to Clipboard**: One-click copy for pasting into documents
+**⭐ You Can Find Things Later**
+- **Search Your History:** Type "Paris hotels" to find that summary from last month (Google's AI summaries disappear)
+- **Mark Favorites:** Star important summaries to find them instantly (Google has no favorites)
+- **Filter by Tags:** Click "school-project" to see all related summaries (Google can't do this)
 
-### Understanding Summary Formats
+**💬 You Can Ask Questions**
+- **Follow-up Chat:** Ask the AI to explain something in simpler terms (Google's AI doesn't chat with you)
+- **Based on Summary:** Questions are answered using the summary you just read (more accurate)
 
-**🎯 Brief Summary** (Default, Recommended)
-- Perfect for quick research and fact-checking
-- 3-5 concise bullet points with citations
-- ~500 words, generates in 3-5 seconds
-- Best for: News, quick facts, simple questions
+**🔒 Your Privacy is Protected**
+- **No Tracking:** Gist doesn't track what you search or summarize (Google tracks everything)
+- **Your Computer Only:** All summaries stay on your device (Google stores them on their servers)
+- **Open Source:** Anyone can check the code to verify privacy (Google's code is secret)
 
-**📄 Detailed Summary**
-- Comprehensive analysis with context and examples
-- 4-6 detailed sections with in-depth explanations
-- ~2000 words, generates in 8-12 seconds
-- Best for: Research, learning, complex topics
+**Simple Answer:** Google's AI is automatic but limited. Gist gives you control, organization, and privacy.
 
-**⚡ Key Points**
-- Ultra-fast extraction of essential information
-- Short bullet points, no fluff
-- ~250 words, generates in 2-3 seconds
-- Best for: Scanning multiple topics, time-sensitive searches
+### Who Should Use Gist?
 
-### Multilingual Translation Feature
+**🔒 Privacy-Conscious People**
+- All your searches and summaries stay on your computer
+- No tracking or data collection
+- Use OpenRouter with free models for maximum privacy
+- Open source code you can verify yourself
+- You control your own API key
 
-**Search in Any Language, Summarize in Another**
+**👨‍🎓 Students**
+- Research topics quickly without reading dozens of articles
+- Get summaries in your preferred language
+- Save and organize research with tags
+- Ask follow-up questions to understand better
 
-Gist's unique multilingual capability lets you:
-- Search Google in English → Get summary in French
-- Search in Spanish → Get summary in German
-- Search in any language → Get summary in your preferred language
+**💼 Professionals**
+- Stay updated on industry news in minutes
+- Compare information from multiple sources
+- Share findings with colleagues with a button
+- Keep a searchable history of your research
 
-**Supported Languages:**
-- 🇺🇸 English
-- 🇪🇸 Spanish (Español)
-- 🇫🇷 French (Français)
-- 🇩🇪 German (Deutsch)
+**🌍 Language Learners**
+- Search in one language, read summary in another
+- Learn new topics in your native language
+- Practice reading in different languages
 
-**Example Use Cases:**
-- Research foreign topics but read summaries in your native language
-- Learn a new language by comparing search results with translated summaries
-- Share information with international colleagues in their preferred language
+**📰 News Readers**
+- Get the main points from multiple news sources
+- Save time on daily news reading
+- Compare different perspectives on the same story
 
-### Multi-Search Mode
+**🔍 Curious People**
+- Learn about anything quickly
+- Get straight answers without ads and clutter
+- Build a personal knowledge library
 
-**Search Across Multiple Engines Simultaneously**
+**🎓 Anyone Who Wants More Than Google's AI Overviews**
+- You want to save and organize your summaries
+- You need summaries in different languages
+- You want privacy and control over your data
+- You research topics that Google's AI doesn't cover
 
-Gist's Multi-Search feature allows you to:
-- Search Google, Bing, and DuckDuckGo at the same time
-- Compare results from different search engines
-- Get comprehensive coverage of your search query
+### How to Get Started (3 Easy Steps)
 
-**How It Works:**
-1. Enable Multi-Search in the extension settings
-2. Perform a search on any supported search engine
-3. Click the summarize button or press `Ctrl+Shift+S`
-4. Three new tabs open automatically:
-   - Google search results with summary
-   - Bing search results with summary
-   - DuckDuckGo search results with summary
-5. Each tab independently summarizes its search results
+**Step 1: Install Gist (2 minutes)**
+1. Open Chrome and go to `chrome://extensions/`
+2. Turn on "Developer mode" (top right corner)
+3. Click "Load unpacked" and select the `dist` folder
+4. You'll see the Gist icon appear in your browser
 
-**Benefits:**
-- **Comprehensive Results**: Get perspectives from multiple search engines
-- **Time Saving**: No need to manually search on each engine
-- **Parallel Processing**: All three searches happen simultaneously
-- **Independent Summaries**: Each engine's results are summarized separately
+**Step 2: Get Your Free AI Key (1 minute)**
 
-## 🎯 Quick Start (3 Steps)
+**Option A: Google AI (Recommended - Easiest)**
+1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Copy the key (it looks like: AIza...)
+5. Click the Gist icon in Chrome
+6. Paste your key and click "Save Settings"
 
-1. **Install Extension**
-   - Open Chrome → `chrome://extensions/`
-   - Enable "Developer mode" → Click "Load unpacked"
-   - Select the `dist` folder from this project
+**Option B: OpenRouter (Alternative - More Models)**
+1. Visit [OpenRouter](https://openrouter.ai/keys)
+2. Sign up for a free account
+3. Create an API key
+4. Click the Gist icon in Chrome
+5. Select "OpenRouter" from the dropdown
+6. Paste your key and click "Save Settings"
 
-2. **Add Your API Key**
-   - Get a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
-   - Click the Gist icon in Chrome → Enter your key → Save
+**Which one should I choose?**
+- Choose Google AI if you want the simplest setup
+- Choose OpenRouter if you want access to different AI models or maximum privacy
 
-3. **Start Using**
-   - Search on Google → Click the vertical button on the right side
-   - Enjoy instant summaries!
+**Step 3: Start Using Gist**
+1. Go to Google, Bing, or DuckDuckGo
+2. Search for anything (example: "how to learn guitar")
+3. Click the colorful button on the right side of the page
+4. Wait 3-5 seconds
+5. Read your summary!
 
-## 🔒 Privacy & Security
+**Quick Tip**: Press `Ctrl+Shift+S` (or `Cmd+Shift+S` on Mac) to summarize instantly without clicking the button.
 
-- **No Data Collection**: We don't collect, store, or track any of your searches or summaries
-- **Your Data Stays Local**: API key and cached summaries are stored only in your browser
-- **Direct Connection**: Extension connects directly to Google AI - no third-party servers
-- **Minimal Permissions**: Only needs permission to store your settings locally
-- **Open Source**: All code is public - you can verify exactly what the extension does
+### How to Use Gist Features
 
-## ⚠️ Things to Know
+**📝 Choose Your Summary Style**
+- **Brief Summary** (Recommended): Quick 3-5 points, perfect for most searches
+- **Detailed Summary**: Longer explanation with more context
+- **All summaries include:** Clickable source links at the bottom so you can verify information
 
-- **Search Engine Support**: Works on Google, Bing, and DuckDuckGo
-- **API Key Required**: You need your own free Google AI API key to use the extension
-- **Daily Limits**: Google's free tier allows 1500 requests per day
-- **Some Sites May Block**: Certain websites may prevent content extraction
-- **Storage Limit**: Cached summaries limited to ~10MB in your browser
+**🌍 Change Language**
+1. Click the Gist icon
+2. Select your language (English, Spanish, French, or German)
+3. Click "Save Settings"
+4. Now all summaries will be in your language!
+
+**🌙 Dark Mode**
+1. Click the Gist icon
+2. Check the "Dark Mode" box
+3. Click "Save Settings"
+4. All popups now use dark colors (easier on your eyes at night!)
+
+**📋 Copy a Summary**
+- Click the copy button (📋) in the summary popup
+- The entire summary is copied to your clipboard
+- Paste it anywhere: emails, documents, notes, messages
+- Perfect for quick sharing or saving to your own files
+
+**💾 Download a Summary**
+- Click the download button (⬇️) in the summary popup
+- The file saves to your Downloads folder as a .md file
+- Open it with any text editor (Notepad, TextEdit, etc.)
+
+**How to convert .md files to PDF or Word:**
+- **Option 1 (Online - Easiest):** Visit [Markdown to PDF](https://www.markdowntopdf.com/) or [Dillinger](https://dillinger.io/), upload your .md file, and download as PDF or Word
+- **Option 2 (Microsoft Word):** Open Word → File → Open → Select your .md file → Save As → Choose PDF or .docx
+- **Option 3 (Google Docs):** Upload .md file to Google Drive → Open with Google Docs → File → Download → Choose PDF or Word
+
+**Why download summaries?**
+- Create a personal research library
+- Include summaries in reports or presentations
+- Share with people who don't use Gist
+- Keep backups of important research
+
+**⭐ Mark as Favorite**
+- Click the star button (☆) to save important summaries
+- Find them later by clicking the history button (📚)
+- Filter to show only favorites
+
+**When to use favorites:**
+- Save summaries you'll need again (recipes, tutorials, guides)
+- Bookmark important research for your project
+- Keep quick access to frequently needed information
+- Create a personal "best of" collection
+
+**Example:** Favorite a summary about "how to fix a leaky faucet" so you can find it quickly next time you need it
+
+**🏷️ Add Tags to Organize**
+- Type a tag name in the tag box (example: "work", "school", "recipes")
+- Press Enter to add the tag
+- Use tags to find related summaries later
+
+**Why use tags?**
+- Group summaries by project ("thesis", "presentation", "report")
+- Organize by topic ("health", "finance", "travel")
+- Sort by urgency ("urgent", "later", "ideas")
+- Find all summaries about the same subject instantly
+
+**Example:** Tag all your job search summaries with "job-hunt" so you can review them all before an interview
+
+**💬 Ask Follow-up Questions**
+- Type your question in the box at the bottom of the summary
+- Press Enter
+- The AI will answer based on the summary
+- Example: "Can you explain this in simpler terms?"
+
+**📚 View Your History**
+- Click the history button (📚) in any summary
+- See all your past summaries
+- Search by keyword or filter by tag
+- Click any summary to view it again
+- Filter by multiple tags at once to narrow down results
+- Sort by favorites to see your starred summaries first
+
+**Smart ways to use History:**
+- **Search by keyword:** Type "python" to find all programming summaries
+- **Filter by tag:** Click "work" tag to see only work-related summaries
+- **Combine filters:** Select both "recipes" and "healthy" tags to find healthy recipes
+- **Find favorites:** Click the star button to show only your starred summaries
+- **Review research:** Go back to summaries from last week's project
+
+**Example:** You researched "best hotels in Paris" last month. Just search "Paris" in history to find it again!
+
+**📋 Share a Summary**
+- Click the share button in the summary
+- Choose: X (Twitter), LinkedIn, or Email
+- The summary text is automatically added
+
+**🔄 Search Multiple Engines at Once**
+1. Click the Gist icon
+2. Check "Multi-Search"
+3. Click "Save Settings"
+4. Now when you search, Gist opens Google, Bing, and DuckDuckGo tabs
+5. Each tab gets its own summary automatically
+
+**When to use Multi-Search:**
+- You want to compare results from different search engines
+- You're researching something important and want complete coverage
+- Different search engines sometimes show different information
+- You want to see multiple perspectives on a topic
+
+**Example:** Search "best investment strategies 2024" and get summaries from all 3 engines to compare advice
+
+**⚡ Auto-Summarize Every Search**
+1. Click the Gist icon
+2. Check "Auto-Summarize"
+3. Click "Save Settings"
+4. Now summaries appear automatically when you search
+
+**When to use Auto-Summarize:**
+- You do lots of research every day
+- You want instant answers without clicking
+- You're comparing many topics quickly
+- You're reading news throughout the day
+
+### Real-Life Examples
+
+**Example 1: Student Research**
+- Search: "causes of climate change"
+- Gist reads 3 scientific articles
+- You get: Main causes in 5 bullet points
+- **Plus:** Links to all 3 sources at the bottom (click to verify or cite in your paper)
+- Time saved: 15 minutes of reading
+
+**Example 2: Recipe Search**
+- Search: "best chocolate chip cookie recipe"
+- Gist compares 3 popular recipes
+- You get: Key ingredients and tips from all three
+- Time saved: Reading 3 long blog posts
+
+**Example 3: News Update**
+- Search: "latest tech news"
+- Gist summarizes top 3 news articles
+- You get: Main headlines and key points
+- Time saved: 10 minutes of browsing
+
+**Example 4: Learning Something New**
+- Search: "how does bitcoin work"
+- Gist explains from multiple sources
+- You get: Simple explanation with key concepts
+- Ask follow-up: "What is blockchain?"
+- Get instant answer
+
+**Example 5: Shopping Research**
+- Search: "best laptop for students 2024"
+- Gist compares reviews from 3 sites
+- You get: Top recommendations and why
+- Save with tag: "shopping"
+- Come back later to decide
+
+**Example 6: Using Tags for a Project**
+- Working on a school project about renewable energy
+- Search "solar panel efficiency" → Tag: "school-project"
+- Search "wind turbine costs" → Tag: "school-project"
+- Search "renewable energy statistics" → Tag: "school-project"
+- Later: Click history, filter by "school-project" tag
+- See all your research in one place!
+
+**Example 7: Multi-Search for Important Decisions**
+- Deciding which car to buy
+- Enable Multi-Search
+- Search "Toyota Camry 2024 review"
+- Get summaries from Google, Bing, AND DuckDuckGo
+- Compare all three to make the best decision
+- Each search engine might show different reviews!
+
+**Example 8: Auto-Summarize for Daily News**
+- Enable Auto-Summarize
+- Every morning, search "tech news today"
+- Summary appears automatically (no clicking!)
+- Read the main points in 30 seconds
+- Move on with your day
+
+**Example 9: Dark Mode for Night Reading**
+- It's 11 PM and you're researching for tomorrow's meeting
+- Enable Dark Mode
+- Your eyes don't hurt from bright white screens
+- Read summaries comfortably in bed
+
+**Example 10: Favorites for Recipes**
+- Find a great summary for "easy chicken recipes"
+- Click the star to favorite it
+- Next week, can't remember the recipe
+- Open history, click star filter
+- Find your recipe instantly!
+
+### Language Support
+
+Gist works in 4 languages:
+- 🇺🇸 **English**
+- 🇪🇸 **Spanish** (Español)
+- 🇫🇷 **French** (Français)
+- 🇩🇪 **German** (Deutsch)
+
+**Cool Feature**: Search in one language, get summary in another!
+- Search Google in English → Get summary in Spanish
+- Search in French → Get summary in English
+- Perfect for language learners and international research
+
+### Common Questions
+
+**Q: Is Gist really free?**
+A: Yes! Google gives you 1,500 free AI requests per day. That's enough for most people.
+
+**Q: Is my data safe?**
+A: Yes! Everything stays on your computer. Gist doesn't send your data to any servers. It connects directly to Google AI.
+
+**Q: Do I need to know anything technical?**
+A: No! If you can use Google, you can use Gist. Just follow the 3 setup steps above.
+
+**Q: What if I run out of free requests?**
+A: You get 1,500 per day. That resets every 24 hours. Most people use 10-20 per day.
+
+**Q: Can I use Gist on my phone?**
+A: Not yet. Gist only works on Chrome browser on computers right now.
+
+**Q: What happens to my summaries?**
+A: They're saved in your browser. You can view them anytime in the History section.
+
+**Q: Can I delete my history?**
+A: Yes! Click the history button (📚), then click the trash icon (🗑️).
+
+**Q: Does Gist work on all websites?**
+A: Gist works on Google, Bing, and DuckDuckGo search results. It reads the top 3 websites from your search.
+
+**Q: Why do I need my own API key?**
+A: This keeps Gist free and private. You connect directly to Google AI, not through our servers.
+
+### Tips for Best Results
+
+**✅ Do:**
+- Use specific search terms ("best budget laptops 2024" vs "laptops")
+- Try the Brief summary first (it's faster)
+- Add tags to summaries you want to find later
+- Use the follow-up questions feature to learn more
+- Enable Auto-Summarize if you search a lot
+
+**❌ Don't:**
+- Search for very recent news (less than 1 hour old)
+- Expect summaries from paywalled websites
+- Use all 1,500 requests in one day (pace yourself!)
+
+### Your Privacy Matters
+
+**What Gist Does NOT Do:**
+- ❌ Collect your search history
+- ❌ Track what you summarize
+- ❌ Send your data to our servers (we don't have any!)
+- ❌ Sell your information
+- ❌ Show you ads
+
+**What Gist DOES Do:**
+- ✅ Stores your API key only in your browser
+- ✅ Saves summaries only on your computer
+- ✅ Connects directly to Google AI or OpenRouter for total privacy
+- ✅ Works completely privately
+
+**Open Source**: All our code is public on GitHub. Anyone can check what Gist does.
+
+### Troubleshooting
+
+**Problem: "No API key found"**
+- Solution: Click the Gist icon and add your API key from Google AI Studio
+
+**Problem: "No search results found"**
+- Solution: Make sure you're on a search results page (not the homepage)
+
+**Problem: Summary takes too long**
+- Solution: Try "Brief Summary" instead of "Detailed Summary"
+
+**Problem: "Could not extract content"**
+- Solution: Some websites block automated reading. Try a different search.
+
+**Problem: Button doesn't appear**
+- Solution: Refresh the page. Make sure you're on Google, Bing, or DuckDuckGo.
+
+**Problem: "API error"**
+- Solution: Check your API key is correct. You might have hit the daily limit (1,500 requests).
+
+### Get Help
+
+**Need Help?**
+- Check the [Common Questions](#common-questions) section above
+- Look at [Troubleshooting](#troubleshooting) for solutions
+- Visit our [GitHub page](https://github.com/Teycir/Gist) for more info
+
+**Want to Help Improve Gist?**
+- Report bugs on GitHub
+- Suggest new features
+- Share Gist with friends
+- Leave a review
 
 ---
 
-# For Developers
+**Ready to save time on your searches?** Install Gist today and never read 10 articles again when you only need the main points!
 
-## 🏗️ Architecture
-
-### Core Principles
-
-- **Client-Side Only** - Zero backend infrastructure
-- **Performance First** - Aggressive caching (100ms warm cache, <8s cold start)
-- **Privacy by Design** - No data collection, no tracking
-- **Minimal Permissions** - Only `storage` permission required
-
-### System Flow
-
-```mermaid
-flowchart TD
-    A[🔍 User performs Google search] --> B[📌 Extension injects '✨ Summarize with AI' button]
-    B --> C[👆 User clicks summarize button]
-    C --> D[🔗 Scrape URLs from search results]
-    D --> E[📄 Parallel fetch page content]
-    E --> F[🧹 Clean HTML to text]
-    F --> G{Cache check}
-    G -->|Cache hit| H[⚡ Return cached summary]
-    G -->|Cache miss| I[🤖 Call Google AI API]
-    I --> J[📝 Render markdown response]
-    J --> K[📋 Display summary overlay]
-    H --> K
-```
-
-**Flow Description:**
-1. **User Search** - User performs a Google search as normal
-2. **Button Injection** - Extension automatically adds summarize button to results
-3. **User Click** - User clicks the vertical summarize button
-4. **URL Scraping** - Extension extracts URLs from search result links
-5. **Content Fetching** - Multiple page contents fetched in parallel
-6. **HTML Cleaning** - Raw HTML converted to clean, readable text
-7. **Cache Check** - System checks for existing cached summaries
-8. **API Call** - If not cached, calls Google AI API with cleaned content
-9. **Response Rendering** - AI response converted from markdown to HTML
-10. **Summary Display** - Formatted summary shown in overlay with references
-
-### Performance Optimizations
-
-- **Multi-Level Caching**: Summary cache + page content cache
-- **Parallel Fetching**: Concurrent page requests with Promise.all
-- **Smart Hashing**: Fast cache key generation (< 1ms)
-- **Lazy Loading**: On-demand content fetching
-- **Memory Management**: Automatic cache cleanup for old entries
-
-## 📁 Project Structure
-
-```
-Gist/
-├── dist/                      # Production build (deployment ready)
-├── content/
-│   ├── content.js            # Core logic (summarization, caching, API)
-│   └── content.css           # UI styling
-├── popup/
-│   ├── popup.html            # Settings interface
-│   └── popup.js              # Configuration management
-├── icons/                     # Extension icons (16, 48, 128px)
-├── lib/
-│   └── showdown.min.js       # Markdown renderer
-├── tests/                     # Comprehensive test suite
-│   ├── content.test.js       # Unit tests
-│   ├── e2e.test.js           # End-to-end tests
-│   ├── performance.test.js   # Performance benchmarks
-│   └── browser/              # Playwright browser tests
-├── manifest.json             # Extension configuration
-└── package.json              # Dependencies and scripts
-```
-
-## 🧪 Testing & Quality
-
-### Test Coverage
-
-- **Unit Tests**: 95%+ code coverage
-- **Integration Tests**: Full user flows
-- **E2E Tests**: Real browser automation with Playwright
-- **Performance Tests**: Sub-100ms warm cache, <8s cold start
-- **Accessibility Tests**: WCAG 2.1 AA compliant
-
-### Run Tests
-
-```bash
-npm test                    # Unit tests
-npm run test:coverage       # Coverage report
-npm run test:e2e           # Integration tests
-npm run test:browser       # Playwright browser tests
-```
-
-### CI/CD Pipeline
-
-- GitHub Actions for automated testing
-- Pre-commit hooks with Husky
-- Coverage reporting
-- Browser compatibility checks (Chrome, Firefox, Edge)
-
-## 🔧 Technical Implementation
-
-### Key Technologies
-
-- **Chrome Extension Manifest V3**
-- **Google Gemini Flash API**
-- **Showdown.js** for Markdown rendering
-- **Jest** for testing
-- **Playwright** for E2E tests
-
-### Core Features Implemented
-
-✅ **Smart Caching System**
-- Two-tier cache (summary + page content)
-- 24-hour TTL with automatic cleanup
-- Hash-based cache keys for fast lookups
-
-✅ **Multi-Language Support**
-- English, Spanish, French, German
-- Cross-language summarization (search in one language, summarize in another)
-- Language-aware prompts
-
-✅ **Flexible Summary Formats**
-- Detailed (comprehensive analysis)
-- Bullet Points (quick scan)
-- Concise (TL;DR style)
-
-✅ **Accessibility Features**
-- Full keyboard navigation (Tab, Enter, Escape)
-- ARIA labels and roles
-- Screen reader support
-- High contrast mode compatible
-
-✅ **Error Handling**
-- Network failure recovery
-- API rate limit handling
-- Graceful degradation
-- User-friendly error messages
-
-✅ **Performance Optimizations**
-- Parallel content fetching
-- Debounced API calls
-- Lazy loading
-- Memory-efficient caching
-
-## 🚀 Development Setup
-
-```bash
-# Clone repository
-git clone <repository-url>
-cd Gist
-
-# Install dependencies
-npm install
-
-# Run tests
-npm test
-
-# Build for production
-cp -r content popup icons lib manifest.json dist/
-
-# Load in Chrome
-# 1. Go to chrome://extensions/
-# 2. Enable Developer mode
-# 3. Click "Load unpacked"
-# 4. Select the dist/ folder
-```
-
-## 📚 API Reference
-
-### Core Functions
-
-**content.js:**
-- `summarizeResults()` - Main orchestration function
-- `scrapeGoogleUrls()` - Extracts URLs from search results
-- `fetchPageContent(url)` - Retrieves page content with caching
-- `cleanHtmlToText(html)` - Strips HTML to clean text
-- `generateCacheKey(data)` - Creates hash for cache lookups
-- `getCachedSummary(key)` - Retrieves cached summaries
-- `cacheSummary(key, data)` - Stores summaries with TTL
-- `displaySummary(markdown, urls)` - Renders summary overlay
-
-**popup.js:**
-- `saveSettings()` - Persists user configuration
-- `loadSettings()` - Retrieves saved settings
-- `validateApiKey(key)` - Validates API key format
-
-### Configuration Options
-
-```javascript
-// Stored in chrome.storage.local
-{
-  flashApiKey: string,           // User's Google AI API key
-  selectedLanguage: string,      // Output language (default: 'English')
-  summaryFormat: string,         // 'detailed' | 'bullet' | 'concise'
-  summary_<hash>: {              // Cached summaries
-    markdown: string,
-    urls: string[],
-    timestamp: number
-  },
-  page_<hash>: {                 // Cached page content
-    content: string,
-    timestamp: number
-  }
-}
-```
-
-## 📊 Performance Benchmarks
-
-| Metric | Target | Actual |
-|--------|--------|--------|
-| Cold Start (no cache) | < 8s | ✅ ~5-7s |
-| Warm Cache | < 100ms | ✅ ~50ms |
-| URL Scraping | < 5ms | ✅ ~2ms |
-| HTML Cleaning | < 10ms/page | ✅ ~5ms |
-| Cache Key Generation | < 1ms | ✅ ~0.1ms |
-
-## 🔒 Security & Privacy
-
-- **No Data Collection**: Zero telemetry or analytics
-- **Local Storage Only**: API keys stored in browser's local storage
-- **No External Servers**: Direct API calls to Google AI
-- **Minimal Permissions**: Only `storage` permission required
-- **Open Source**: Full code transparency
-
-## 🐛 Known Limitations
-
-- Requires valid Google AI API key
-- Rate limited by Google AI API quotas (Multi-Search uses 3x the quota)
-- Some websites may block content scraping
-- Cache limited to browser storage quota (~10MB)
-- Multi-Search opens 3 tabs simultaneously
-
-## 🤝 Contributing
-
-Contributions welcome! Areas for improvement:
-
-- Support for additional search engines
-- Enhanced error recovery
-- Custom prompt templates
-- Export summaries to PDF/Markdown
-- Browser sync for settings
-
-## 📄 License
-
-ISC License - Open source and free to use.
+**Made with ❤️ for people who value their time**
 
 ---
 
-**Transform your search experience today!** Install Gist and get instant AI-powered summaries of any Google search.
+*For developers: Technical documentation is available in [docs/architecture.md](docs/architecture.md)*
