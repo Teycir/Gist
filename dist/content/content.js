@@ -253,7 +253,7 @@ const cleanHtmlToText = memoize((html) => {
     .slice(0, 1200);
 }, (html) => simpleHash(html));
 
-async function displaySummary(markdown, urls, format, language) {
+async function displaySummary(markdown, urls, format, language, model = null) {
   loadNonCriticalCSS();
   console.log('displaySummary called', { markdown: markdown.substring(0, 100), urls, format, language });
   const overlay = document.createElement('div');
@@ -372,7 +372,8 @@ async function displaySummary(markdown, urls, format, language) {
             timestamp: existingData.timestamp || Date.now(),
             format: existingData.format || format,
             language: existingData.language || language,
-            model: existingData.model,
+            model: existingData.model || model,
+            engine: existingData.engine || engine,
             query: existingData.query || extractSearchQuery()
           } 
         });
@@ -525,20 +526,29 @@ async function displaySummary(markdown, urls, format, language) {
   
   const starBtn = document.createElement('button');
   starBtn.className = 'close-btn';
-  const favKey = `fav_${simpleHash(markdown)}`;
-  chrome.storage.local.get(favKey, (result) => {
-    starBtn.innerHTML = result[favKey] ? '⭐' : '☆';
+  chrome.storage.local.get(summaryKey, (result) => {
+    starBtn.innerHTML = result[summaryKey]?.isFavorite ? '⭐' : '☆';
   });
   starBtn.setAttribute('data-tooltip', t.favorite);
   starBtn.onclick = async () => {
-    const result = await chrome.storage.local.get(favKey);
-    if (result[favKey]) {
-      await chrome.storage.local.remove(favKey);
-      starBtn.innerHTML = '☆';
-    } else {
-      await chrome.storage.local.set({ [favKey]: { markdown, urls, timestamp: Date.now(), query: extractSearchQuery() } });
-      starBtn.innerHTML = '⭐';
-    }
+    const result = await chrome.storage.local.get(summaryKey);
+    const existingData = result[summaryKey] || {};
+    const isFavorite = !existingData.isFavorite;
+    await chrome.storage.local.set({ 
+      [summaryKey]: { 
+        ...existingData,
+        markdown, 
+        urls, 
+        timestamp: existingData.timestamp || Date.now(), 
+        query: existingData.query || extractSearchQuery(), 
+        format: existingData.format || format, 
+        language: existingData.language || language, 
+        engine: existingData.engine || engine, 
+        model: existingData.model || model,
+        isFavorite
+      } 
+    });
+    starBtn.innerHTML = isFavorite ? '⭐' : '☆';
   };
   
   const copyBtn = document.createElement('button');
@@ -653,18 +663,14 @@ async function displaySummary(markdown, urls, format, language) {
     title.textContent = historyVisible ? t.history : (t[format] || t.brief);
     if (historyVisible) {
       const items = await chrome.storage.local.get(null);
-      const allSummaries = Object.entries(items)
+      const summaries = Object.entries(items)
         .filter(([k]) => k.startsWith('summary_'))
-        .map(([k, v]) => ({ key: k, ...v, isFav: false }))
-        .sort((a, b) => b.timestamp - a.timestamp)
-        .slice(0, 20);
-      
-      const favorites = Object.entries(items)
-        .filter(([k]) => k.startsWith('fav_'))
-        .map(([k, v]) => ({ key: k, ...v, isFav: true }))
-        .sort((a, b) => b.timestamp - a.timestamp);
-      
-      const summaries = [...favorites, ...allSummaries];
+        .map(([k, v]) => ({ key: k, ...v }))
+        .sort((a, b) => {
+          if (a.isFavorite && !b.isFavorite) return -1;
+          if (!a.isFavorite && b.isFavorite) return 1;
+          return b.timestamp - a.timestamp;
+        });
       historyPanel.innerHTML = '';
       tagSection.style.display = 'none';
       
@@ -723,7 +729,6 @@ async function displaySummary(markdown, urls, format, language) {
       const filterBtn = document.createElement('button');
       filterBtn.className = 'history-filter-btn';
       filterBtn.innerHTML = '⭐';
-      filterBtn.setAttribute('data-tooltip', t.favorites);
       let showOnlyFavorites = false;
       historyPanel.appendChild(filterBtn);
       
@@ -749,31 +754,58 @@ async function displaySummary(markdown, urls, format, language) {
       bottomBtn.className = 'history-scroll-btn';
       bottomBtn.innerHTML = '⇊';
       bottomBtn.onclick = () => itemsContainer.scrollTo({ top: itemsContainer.scrollHeight, behavior: 'smooth' });
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'history-clear-btn';
+      clearBtn.innerHTML = '🗑️';
+      const clearTooltips = {
+        English: 'Clear History',
+        Spanish: 'Borrar Historial',
+        French: 'Effacer l\'historique',
+        German: 'Verlauf löschen'
+      };
+      clearBtn.setAttribute('data-tooltip', clearTooltips[language] || clearTooltips.English);
+      clearBtn.onclick = async () => {
+        const confirmMsg = {
+          English: 'Are you sure you want to clear all history?',
+          Spanish: '¿Estás seguro de que quieres borrar todo el historial?',
+          French: 'Êtes-vous sûr de vouloir effacer tout l\'historique?',
+          German: 'Möchten Sie wirklich den gesamten Verlauf löschen?'
+        };
+        if (confirm(confirmMsg[language] || confirmMsg.English)) {
+          const items = await chrome.storage.local.get(null);
+          const keysToRemove = Object.keys(items).filter(k => k.startsWith('summary_'));
+          if (keysToRemove.length > 0) {
+            await chrome.storage.local.remove(keysToRemove);
+            renderItems('', showOnlyFavorites);
+          }
+        }
+      };
       scrollBtns.appendChild(topBtn);
       scrollBtns.appendChild(upBtn);
       scrollBtns.appendChild(downBtn);
       scrollBtns.appendChild(bottomBtn);
+      scrollBtns.appendChild(clearBtn);
       historyPanel.appendChild(scrollBtns);
       
       const renderItems = (filter = '', onlyFavorites = false) => {
-        const filtered = summaries.filter(({ markdown: md, query, isFav, tags }) => {
+        const filtered = summaries.filter(({ markdown: md, query, isFavorite, tags }) => {
           const title = md.split('\n')[0].replace(/^#\s*/, '').toLowerCase();
           const q = (query || '').toLowerCase();
           const f = filter.toLowerCase();
           const matchesSearch = title.includes(f) || q.includes(f);
           const matchesTags = selectedTags.size === 0 || (tags && Array.from(selectedTags).every(st => tags.includes(st)));
-          return onlyFavorites ? (isFav && matchesSearch && matchesTags) : (matchesSearch && matchesTags);
+          return onlyFavorites ? (isFavorite && matchesSearch && matchesTags) : (matchesSearch && matchesTags);
         });
         
         batchDOMUpdates(() => {
           const fragment = document.createDocumentFragment();
-          filtered.forEach(({ markdown: md, urls: u, timestamp, query, isFav, tags, format, language, model, engine }) => {
+          filtered.forEach(({ markdown: md, urls: u, timestamp, query, isFavorite, tags, format, language, model, engine }) => {
             const item = document.createElement('div');
             item.className = 'history-item';
             const titleText = md.split('\n')[0].replace(/^#\s*/, '').slice(0, 60);
             const date = new Date(timestamp).toLocaleDateString();
             const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const favIcon = isFav ? '⭐ ' : '';
+            const favIcon = isFavorite ? '⭐ ' : '';
             const queryText = query ? `<div class="history-item-query">🔍 ${sanitizeText(query)}</div>` : '';
             const tagsHtml = tags && tags.length > 0 ? `<div class="history-item-tags">${tags.map(t => `<span class="history-tag-badge">${sanitizeText(t)}</span>`).join('')}</div>` : '';
             const formatBadge = format ? `<span class="history-meta-badge ${format}">${format === 'detailed' ? '📄 Detailed' : '📝 Brief'}</span>` : '';
@@ -1014,14 +1046,18 @@ async function displaySummary(markdown, urls, format, language) {
         body.dark .filter-tag-badge.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-color: #667eea; }
         body.dark .history-tag-badge { background: #3a3a4e; color: #b0b0b0; }
         .history-panel-inline { display: flex; flex-direction: column; gap: 10px; max-height: 50vh; margin-bottom: 20px; position: relative; }
-        .history-search { width: calc(100% - 90px); padding: 10px 14px; border: 2px solid #e8eaed; border-radius: 8px; font-size: 14px; outline: none; transition: all 0.2s; margin-bottom: 10px; }
-        .history-filter-btn { position: absolute; top: 0; right: 45px; background: #f8f9fa; border: none; font-size: 20px; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; opacity: 0.5; }
+        .history-search { width: calc(100% - 45px); padding: 10px 14px; border: 2px solid #e8eaed; border-radius: 8px; font-size: 14px; outline: none; transition: all 0.2s; margin-bottom: 10px; }
+        .history-filter-btn { position: absolute; top: 0; right: 0; background: #f8f9fa; border: none; font-size: 20px; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; opacity: 0.5; }
         .history-filter-btn:hover { background: #e8eaed; transform: scale(1.1); opacity: 1; }
         body.dark .history-filter-btn { background: #2a2a3e; color: #e0e0e0; }
         body.dark .history-filter-btn:hover { background: #3a3a4e; }
+        .history-clear-btn { background: #f8f9fa; border: none; font-size: 16px; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; position: relative; }
+        .history-clear-btn:hover { background: #fce8e6; color: #c5221f; transform: scale(1.1); }
+        body.dark .history-clear-btn { background: #2a2a3e; color: #e0e0e0; }
+        body.dark .history-clear-btn:hover { background: #4a2a2e; color: #ff6b6b; }
         .history-search:focus { border-color: #667eea; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2); }
-        .history-filter-btn[data-tooltip]:hover::after { content: attr(data-tooltip); position: absolute; bottom: -32px; left: 50%; transform: translateX(-50%); background: white; color: #202124; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: 1px solid #e8eaed; }
-        body.dark .history-filter-btn[data-tooltip]:hover::after { background: #2a2a3e; color: #e0e0e0; border-color: #3a3a4e; }
+        .history-clear-btn[data-tooltip]:hover::after { content: attr(data-tooltip); position: absolute; bottom: 50%; left: -120px; transform: translateY(50%); background: white; color: #202124; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: 1px solid #e8eaed; }
+        body.dark .history-clear-btn[data-tooltip]:hover::after { background: #2a2a3e; color: #e0e0e0; border-color: #3a3a4e; }
         .history-items-container { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow-y: hidden; }
         .history-scroll-btns { position: absolute; right: 0; top: 50px; display: flex; flex-direction: column; gap: 8px; }
         .history-scroll-btn { background: #f8f9fa; border: none; font-size: 18px; color: #5f6368; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
@@ -1232,7 +1268,7 @@ async function summarizeResults() {
     const cached = summaryCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
       await updateStats('cache');
-      await displaySummary(cached.markdown, cached.urls, cached.format || format, cached.language || language);
+      await displaySummary(cached.markdown, cached.urls, cached.format || format, cached.language || language, cached.model);
       return;
     }
     
@@ -1244,9 +1280,12 @@ async function summarizeResults() {
       if (!storedData.format) storedData.format = format;
       if (!storedData.language) storedData.language = language;
       if (!storedData.query) storedData.query = searchQuery;
+      if (!storedData.engine) storedData.engine = engine;
+      if (!storedData.model) storedData.model = model;
       summaryCache.set(cacheKey, storedData);
+      await chrome.storage.local.set({ [storageKey]: storedData });
       await updateStats('cache');
-      await displaySummary(storedData.markdown, storedData.urls, storedData.format, storedData.language);
+      await displaySummary(storedData.markdown, storedData.urls, storedData.format, storedData.language, storedData.model);
       return;
     }
     
@@ -1456,7 +1495,7 @@ async function summarizeResults() {
     cachedSummary = markdown;
     console.log('[PERF] Starting display summary...');
     const displayStart = Date.now();
-    await displaySummary(markdown, urls, format, language);
+    await displaySummary(markdown, urls, format, language, successfulModel);
     const displayTime = Date.now() - displayStart;
     console.log(`[PERF] Display completed in ${displayTime}ms`);
     
