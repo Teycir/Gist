@@ -28,7 +28,7 @@
         "https://www.bing.com/search*",
         "https://duckduckgo.com/*"
       ],
-      "js": ["content/content.js"],
+      "js": ["lib/model-selector.js", "content/content.js"],
       "css": ["content/content-critical.css"]
     }
   ],

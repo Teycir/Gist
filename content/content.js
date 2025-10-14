@@ -1159,8 +1159,23 @@ async function summarizeResults() {
   console.log('[PERF] ========== SUMMARIZE START ==========');
   
   if (!summarizeBtn) summarizeBtn = document.querySelector('.summarize-btn');
+  
+  // Wait for button if not found (for auto-triggered tabs)
+  if (!summarizeBtn) {
+    console.log('[DEBUG] Button not found, waiting...');
+    let attempts = 0;
+    while (!summarizeBtn && attempts < 20) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      summarizeBtn = document.querySelector('.summarize-btn');
+      attempts++;
+    }
+  }
+  
   const btn = summarizeBtn;
-  if (!btn) return;
+  if (!btn) {
+    console.error('[DEBUG] Button not found after waiting - stopping');
+    return;
+  }
   const originalText = btn.textContent;
   
   try {
@@ -1207,7 +1222,8 @@ async function summarizeResults() {
     const loading = loadingTranslations[language] || loadingTranslations.English;
     
     const searchQuery = extractSearchQuery();
-    const urls = scrapeGoogleUrls();
+    const urls = scrapeUrls();
+    console.log(`[DEBUG] Scraped ${urls.length} URLs from ${detectSearchEngine()}:`, urls);
     const cacheKey = `${searchQuery}-${urls.join(',')}-${language}-${format}`;
     
     const cached = summaryCache.get(cacheKey);
@@ -1254,9 +1270,11 @@ async function summarizeResults() {
     console.log('References:', decodedUrls);
     
     if (urls.length === 0) {
+      console.error('[DEBUG] No URLs scraped - stopping');
       alert('No search results found to summarize.');
       return;
     }
+    console.log('[DEBUG] Proceeding with', urls.length, 'URLs');
     
     btn.innerHTML = `${loading.fetching}<span class="loading-spinner"></span>`;
     
@@ -1272,9 +1290,11 @@ async function summarizeResults() {
     urls.push(...usedUrls);
     
     if (extractedContent.length === 0) {
+      console.error('[DEBUG] No content extracted - stopping');
       alert('Could not extract content from search results.');
       return;
     }
+    console.log('[DEBUG] Extracted content from', extractedContent.length, 'pages');
     
     btn.innerHTML = `${loading.generating}<span class="loading-spinner"></span>`;
     
@@ -1291,8 +1311,7 @@ async function summarizeResults() {
           headers: { 'Authorization': `Bearer ${flashApiKey}` }
         });
         const data = await response.json();
-        const { selectBestModels } = await import(chrome.runtime.getURL('lib/model-selector.js'));
-        const selected = selectBestModels(data.data, 'llama');
+        const selected = window.selectBestModels(data.data, 'llama');
         
         if (!selected.primary) throw new Error('No free Llama models found');
         
@@ -1312,8 +1331,7 @@ async function summarizeResults() {
         url.searchParams.set('key', flashApiKey);
         const response = await fetch(url.toString());
         const data = await response.json();
-        const { selectBestGeminiModels } = await import(chrome.runtime.getURL('lib/model-selector.js'));
-        const selected = selectBestGeminiModels(data.models);
+        const selected = window.selectBestGeminiModels(data.models);
         
         if (!selected.primary) throw new Error('No compatible Flash models found');
         
