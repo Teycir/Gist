@@ -57,30 +57,9 @@ function selectBestModels(models, preferredFamily = 'llama') {
 }
 
 function selectBestGeminiModels(models) {
-  const flashModels = models.filter(m => {
-    if (!m.supportedGenerationMethods?.includes('generateContent')) return false;
-    const displayName = m.displayName.toLowerCase();
-    return displayName.includes('flash') && !displayName.includes('lite');
-  }).sort((a, b) => {
-    const aName = a.name.toLowerCase();
-    const bName = b.name.toLowerCase();
-    const aVersion = parseFloat((aName.match(/(\d+\.\d+)/) || ['0'])[0]);
-    const bVersion = parseFloat((bName.match(/(\d+\.\d+)/) || ['0'])[0]);
-    if (aVersion !== bVersion) return bVersion - aVersion;
-    const aHasPreview = aName.includes('preview');
-    const bHasPreview = bName.includes('preview');
-    if (aHasPreview !== bHasPreview) return aHasPreview ? 1 : -1;
-    return a.name.length - b.name.length;
-  });
-  
-  const latestVersion = flashModels[0] ? parseFloat((flashModels[0].name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) : 0;
-  const latestStable = flashModels.find(m => !m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
-  const latestPreview = flashModels.find(m => m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
-  const prevVersion = flashModels.find(m => parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) < latestVersion);
-  
   return {
-    primary: latestStable?.name || latestPreview?.name || prevVersion?.name,
-    fallbacks: [latestPreview?.name, prevVersion?.name].filter(Boolean).filter(m => m !== (latestStable?.name || latestPreview?.name || prevVersion?.name)).slice(0, 2)
+    primary: 'models/gemini-2.5-flash',
+    fallbacks: []
   };
 }
 

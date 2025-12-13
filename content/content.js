@@ -1366,22 +1366,7 @@ async function summarizeResults() {
         models = [openrouterPrimaryModel, ...(openrouterFallbackModels || [])].filter(Boolean);
       }
     } else {
-      const { primaryModel, fallbackModels } = await chrome.storage.local.get(['primaryModel', 'fallbackModels']);
-      
-      if (!primaryModel) {
-        const url = new URL('https://generativelanguage.googleapis.com/v1beta/models');
-        url.searchParams.set('key', flashApiKey);
-        const response = await fetch(url.toString());
-        const data = await response.json();
-        const selected = window.selectBestGeminiModels(data.models);
-        
-        if (!selected.primary) throw new Error('No compatible Flash models found');
-        
-        await chrome.storage.local.set({ primaryModel: selected.primary, fallbackModels: selected.fallbacks });
-        models = [selected.primary, ...selected.fallbacks];
-      } else {
-        models = [primaryModel, ...(fallbackModels || [])].filter(Boolean);
-      }
+      models = ['models/gemini-2.5-flash'];
     }
     
     console.log('[PERF] Models ready:', models);

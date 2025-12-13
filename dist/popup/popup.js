@@ -230,9 +230,6 @@ async function loadOpenRouterModels(apiKey) {
 
 async function loadModels(apiKey) {
   if (!apiKey || typeof apiKey !== 'string' || apiKey.length < 39) return [];
-  if (cachedModels && constantTimeCompare(cachedApiKey, apiKey)) {
-    return cachedModels;
-  }
   
   const { statusMsg } = getElements();
   
@@ -242,54 +239,8 @@ async function loadModels(apiKey) {
       statusMsg.className = 'status-msg';
     }
     
-    const url = new URL('https://generativelanguage.googleapis.com/v1beta/models');
-    url.searchParams.set('key', apiKey);
-    
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-    
-    const response = await fetch(url.toString(), { signal: controller.signal });
-    clearTimeout(timeout);
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `API error: ${response.status}`);
-    }
-    const data = await response.json();
-    
-    const models = data.models?.filter(m => {
-      if (!m.supportedGenerationMethods?.includes('generateContent')) return false;
-      const displayName = m.displayName.toLowerCase();
-      const modelName = m.name.toLowerCase();
-      const desc = (m.description || '').toLowerCase();
-      return displayName.includes('flash') && 
-             !displayName.includes('lite') &&
-             !displayName.includes('image') && !displayName.includes('tts') && 
-             !displayName.includes('vision') && !displayName.includes('robotics') && 
-             !displayName.includes('computer use') && !displayName.includes('banana') &&
-             !desc.includes('image generation') && !desc.includes('image');
-    }).sort((a, b) => {
-      const aName = a.name.toLowerCase();
-      const bName = b.name.toLowerCase();
-      const aHasPreview = aName.includes('preview');
-      const bHasPreview = bName.includes('preview');
-      const aVersion = parseFloat((aName.match(/(\d+\.\d+)/) || ['0'])[0]);
-      const bVersion = parseFloat((bName.match(/(\d+\.\d+)/) || ['0'])[0]);
-      if (aVersion !== bVersion) return bVersion - aVersion;
-      if (aHasPreview !== bHasPreview) return aHasPreview ? 1 : -1;
-      return a.name.length - b.name.length;
-    }) || [];
-    
-    const latestVersion = models[0] ? parseFloat((models[0].name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) : 0;
-    const latestStable = models.find(m => !m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
-    const latestPreview = models.find(m => m.name.toLowerCase().includes('preview') && parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) === latestVersion);
-    const prevVersion = models.find(m => parseFloat((m.name.toLowerCase().match(/(\d+\.\d+)/) || ['0'])[0]) < latestVersion);
-    
-    const primary = latestStable?.name || latestPreview?.name || prevVersion?.name;
-    const fallbacks = [latestPreview?.name, prevVersion?.name].filter(Boolean).filter(m => m !== primary).slice(0, 2);
-    
-    cachedModels = models;
-    cachedApiKey = apiKey;
+    const primary = 'models/gemini-2.5-flash';
+    const fallbacks = [];
     
     await chrome.storage.local.set({ 
       primaryModel: primary,
@@ -298,21 +249,20 @@ async function loadModels(apiKey) {
     console.log('Primary model:', primary, 'Fallbacks:', fallbacks);
     
     if (statusMsg) {
-      statusMsg.textContent = primary ? `✓ Model loaded` : '⚠️ No models found';
-      statusMsg.className = primary ? 'status-msg success' : 'status-msg error';
+      statusMsg.textContent = '✓ Model loaded';
+      statusMsg.className = 'status-msg success';
       setTimeout(() => {
         statusMsg.textContent = '';
         statusMsg.className = 'status-msg';
       }, 2000);
     }
     
-    return models;
+    return [];
   } catch (error) {
     console.error('Failed to load models:', error);
     
     if (statusMsg) {
-      const isAbort = error.name === 'AbortError';
-      statusMsg.textContent = isAbort ? '⚠️ Request timeout' : `⚠️ ${error.message}`;
+      statusMsg.textContent = `⚠️ ${error.message}`;
       statusMsg.className = 'status-msg error';
       setTimeout(() => {
         statusMsg.textContent = '';
