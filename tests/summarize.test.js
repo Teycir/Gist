@@ -42,7 +42,7 @@ describe('Summarize Results', () => {
   });
 
   test('should handle no search results', async () => {
-    chrome.storage.local.get.mockResolvedValue({ flashApiKey: 'test-key', selectedModel: 'models/gemini-1.5-flash' });
+    chrome.storage.local.get.mockResolvedValue({ flashApiKey: 'test-key', selectedModel: 'models/gemini-2.0-pro' });
     chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
       if (msg.action === 'getTabId') callback({ tabId: 123 });
     });
@@ -56,7 +56,7 @@ describe('Summarize Results', () => {
 
   test('should use default settings', async () => {
     chrome.storage.local.get.mockImplementation((keys, callback) => {
-      const data = { flashApiKey: 'AIzaSyDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', selectedModel: 'models/gemini-1.5-flash' };
+      const data = { flashApiKey: 'AIzaSyDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', selectedModel: 'models/gemini-2.0-pro' };
       if (callback) callback(data);
       return Promise.resolve(data);
     });

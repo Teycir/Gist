@@ -9,6 +9,13 @@ const domParser = new DOMParser();
 const memoCache = new Map();
 let isProcessing = false;
 
+// Storage key helpers
+const storageKeys = {
+  summary: (key) => `summary_${simpleHash(key)}`,
+  autoSummarize: (tabId) => `autoSummarize_${tabId}`,
+  wasAuto: (tabId) => `wasAuto_${tabId}`
+};
+
 function memoize(fn, keyFn) {
   return function(...args) {
     const key = keyFn ? keyFn(...args) : args[0];
@@ -78,22 +85,22 @@ async function clearOldCaches() {
 
 function cleanupCaches() {
   const now = Date.now();
-  
+
   for (const [key, value] of summaryCache.entries()) {
     if (now - value.timestamp > CACHE_DURATION) summaryCache.delete(key);
   }
-  
+
   for (const [key, value] of pageCache.entries()) {
     if (now - value.timestamp > PAGE_CACHE_DURATION) pageCache.delete(key);
   }
-  
+
   if (summaryCache.size > MAX_CACHE_SIZE) {
     const oldest = Array.from(summaryCache.entries())
       .sort((a, b) => a[1].timestamp - b[1].timestamp)
       .slice(0, Math.ceil(MAX_CACHE_SIZE / 3));
     oldest.forEach(([key]) => summaryCache.delete(key));
   }
-  
+
   if (pageCache.size > MAX_PAGE_CACHE_SIZE) {
     const oldest = Array.from(pageCache.entries())
       .sort((a, b) => a[1].timestamp - b[1].timestamp)
@@ -104,7 +111,7 @@ function cleanupCaches() {
 
 function addSummarizeButton() {
   if (document.querySelector('.summarize-btn')) return;
-  
+
   batchDOMUpdates(() => {
     const btn = document.createElement('button');
     btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="32" height="32"><rect x="28" y="20" width="72" height="88" rx="8" fill="#fff"/><rect x="40" y="40" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="52" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="64" width="32" height="4" rx="2" fill="#667eea" opacity="0.9"/><path d="M88 76 L92 80 L88 84 M84 80 L92 80" stroke="#ffd700" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="78" cy="72" r="2" fill="#ffd700"/><circle cx="94" cy="72" r="1.5" fill="#ffd700"/><circle cx="94" cy="88" r="1.5" fill="#ffd700"/></svg>';
@@ -146,48 +153,150 @@ function scrapeUrls() {
   const engine = detectSearchEngine();
   const urls = [];
   const seen = new Set();
-  
-  if (engine === 'bing') {
-    const links = document.querySelectorAll('#b_results li.b_algo h2 a');
-    for (const link of links) {
-      if (urls.length >= 9) break;
-      let href = link.getAttribute('href');
-      if (href && href.includes('/ck/a')) {
-        href = href.replace(/&amp;/g, '&');
-        const match = href.match(/[?&]u=a1([^&]+)/);
+  console.log(`[scrapeUrls] Engine detected: ${engine}`);
+
+  const extractUrl = (href) => {
+    if (!href) return null;
+    const originalHref = href;
+    href = href.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    let finalUrl = null;
+
+    // Method 1: Encoded/redirect URL extraction
+    if (href.includes('/url?') || href.includes('/ck/a') || href.includes('uddg=')) {
+      const patterns = [
+        /[?&]u=a1([^&]+)/, // Bing a1 format
+        /[?&]u=([^&]+)/, // Bing u format
+        /[?&]url=([^&]+)/, // Google url format
+        /[?&]q=([^&]+)/, // Alternative q format
+        /uddg=([^&]+)/ // DuckDuckGo redirect
+      ];
+      for (const pattern of patterns) {
+        const match = href.match(pattern);
         if (match) {
           try {
-            const url = atob(decodeURIComponent(match[1]));
-            if (url && url.startsWith('http') && !YOUTUBE_REGEX.test(url) && !seen.has(url)) {
-              seen.add(url);
-              urls.push(url);
-            }
-          } catch (e) {}
+            finalUrl = pattern.source.includes('a1') ? atob(decodeURIComponent(match[1])) : decodeURIComponent(match[1]);
+            if (finalUrl && finalUrl.startsWith('http')) break;
+          } catch (e) {
+            try {
+              finalUrl = decodeURIComponent(match[1]);
+              if (finalUrl && finalUrl.startsWith('http')) break;
+            } catch (e2) {}
+          }
         }
       }
     }
-  } else if (engine === 'duckduckgo') {
-    const links = document.querySelectorAll('article[data-testid="result"] a[href^="http"]');
-    for (const link of links) {
-      if (urls.length >= 9) break;
-      const url = link.href;
-      if (url && !YOUTUBE_REGEX.test(url) && !seen.has(url)) {
-        seen.add(url);
-        urls.push(url);
+
+    // Method 2: Direct HTTP URL (clean version)
+    if (!finalUrl && href.startsWith('http')) {
+      // Remove Bing tracking parameters
+      finalUrl = href.replace(/[?&](rdr|rdrig|PC|form|FORM|qs|cvid|pq|sc|sp|sk)=[^&]*/g, '').split(/[?&#]/)[0];
+    }
+
+    // Method 3: Protocol-relative URL
+    if (!finalUrl && href.startsWith('//')) {
+      finalUrl = 'https:' + href.split(/[?&#]/)[0];
+    }
+
+    // Filter out Bing internal URLs
+    if (finalUrl && (finalUrl.includes('bing.com') || finalUrl.includes('microsoft.com/bing'))) {
+      return null;
+    }
+
+    return finalUrl && finalUrl.startsWith('http') && !YOUTUBE_REGEX.test(finalUrl) ? finalUrl : null;
+  };
+
+  if (engine === 'bing') {
+    const selectors = [
+      '#b_results li.b_algo h2 a',
+      '#b_results .b_algo h2 a', 
+      'li.b_algo h2 a',
+      '.b_algo h2 a',
+      '#b_results li h2 a',
+      '#b_results .b_title a',
+      '.b_title h2 a',
+      '#b_results cite ~ a',
+      '#b_results li a:not([href*="bing.com"])',
+      '#b_results a[href^="http"]:not([href*="bing.com"])',
+      'main a[href^="http"]:not([href*="bing.com"])',
+      '[role="main"] a[href^="http"]:not([href*="bing.com"])'
+    ];
+    for (const selector of selectors) {
+      try {
+        const links = document.querySelectorAll(selector);
+        console.log(`[scrapeUrls] Bing selector "${selector}" found ${links.length} links`);
+        for (const link of links) {
+          if (urls.length >= 9) break;
+          const href = link.getAttribute('href') || link.href;
+          console.log(`[scrapeUrls] Processing href: ${href?.substring(0, 100)}`);
+          const url = extractUrl(href);
+          if (url && !seen.has(url)) {
+            console.log(`[scrapeUrls] ✓ Extracted URL: ${url}`);
+            seen.add(url);
+            urls.push(url);
+          }
+        }
+        if (urls.length >= 3) break;
+      } catch (e) {
+        console.error(`[scrapeUrls] Error with selector "${selector}":`, e);
       }
+    }
+    console.log(`[scrapeUrls] Total Bing URLs found: ${urls.length}`);
+  } else if (engine === 'duckduckgo') {
+    const selectors = [
+      'article[data-testid="result"] a[href^="http"]',
+      'article a[href^="http"]',
+      '.result a[href^="http"]',
+      'a[data-testid="result-title-a"]',
+      '[data-testid="result"] h2 a',
+      '.result__a',
+      '.result__url',
+      'a.result__a',
+      'ol.react-results--main a[href^="http"]',
+      'main a[href^="http"]'
+    ];
+    for (const selector of selectors) {
+      try {
+        const links = document.querySelectorAll(selector);
+        for (const link of links) {
+          if (urls.length >= 9) break;
+          const url = extractUrl(link.getAttribute('href') || link.href);
+          if (url && !seen.has(url)) {
+            seen.add(url);
+            urls.push(url);
+          }
+        }
+        if (urls.length >= 3) break;
+      } catch (e) {}
     }
   } else {
-    const links = document.querySelectorAll('div#search a[href^="http"]:not([href*="google.com"])');
-    for (const link of links) {
-      if (urls.length >= 9) break;
-      const url = link.href;
-      if (url && !YOUTUBE_REGEX.test(url) && !seen.has(url)) {
-        seen.add(url);
-        urls.push(url);
-      }
+    const selectors = [
+      'div#search a[href^="http"]:not([href*="google.com"])',
+      '#rso a[href^="http"]:not([href*="google.com"])',
+      '.g a[href^="http"]:not([href*="google.com"])',
+      'a[jsname][href^="http"]:not([href*="google.com"])',
+      '[data-sokoban-container] a[href^="http"]:not([href*="google.com"])',
+      '.yuRUbf a[href^="http"]',
+      'h3 a[href^="http"]:not([href*="google.com"])',
+      'div[data-hveid] a[href^="http"]:not([href*="google.com"])',
+      'main a[href^="http"]:not([href*="google.com"])',
+      '[role="main"] a[href^="http"]:not([href*="google.com"])'
+    ];
+    for (const selector of selectors) {
+      try {
+        const links = document.querySelectorAll(selector);
+        for (const link of links) {
+          if (urls.length >= 9) break;
+          const url = extractUrl(link.getAttribute('href') || link.href);
+          if (url && !seen.has(url)) {
+            seen.add(url);
+            urls.push(url);
+          }
+        }
+        if (urls.length >= 3) break;
+      } catch (e) {}
     }
   }
-  
+
   return urls;
 }
 
@@ -258,32 +367,32 @@ async function displaySummary(markdown, urls, format, language, model = null) {
   console.log('displaySummary called', { markdown: markdown.substring(0, 100), urls, format, language });
   const overlay = document.createElement('div');
   overlay.className = 'summary-overlay';
-  
+
   chrome.storage.local.get(['darkMode'], (data) => {
     if (data.darkMode) document.body.classList.add('dark');
   });
-  
+
   const content = document.createElement('div');
   content.className = 'summary-content';
-  
+
   const header = document.createElement('div');
   header.className = 'summary-header';
-  
+
   // Tag input section
   const tagSection = document.createElement('div');
   tagSection.className = 'tag-section';
-  
+
   const searchQuery = extractSearchQuery();
-  const summaryKey = `summary_${simpleHash(searchQuery + markdown.substring(0, 100))}`;
-  
+  const summaryKey = storageKeys.summary(searchQuery + markdown.substring(0, 100));
+
   const tagInput = document.createElement('input');
   tagInput.type = 'text';
   tagInput.className = 'tag-input';
   tagInput.placeholder = language === 'Spanish' ? '🏷️ Agregar etiqueta y presionar Enter' : language === 'French' ? '🏷️ Ajouter une étiquette et appuyer sur Entrée' : language === 'German' ? '🏷️ Tag hinzufügen und Enter drücken' : '🏷️ Add a tag for categorization - then press Enter';
-  
+
   const tagsDisplay = document.createElement('div');
   tagsDisplay.className = 'tags-display';
-  
+
   // Load existing tags
   const loadTags = async () => {
     const stored = await chrome.storage.local.get(summaryKey);
@@ -307,7 +416,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       tagsDisplay.appendChild(tagBadge);
     });
   };
-  
+
   // Get all existing tags for autocomplete
   const getAllTags = async () => {
     const items = await chrome.storage.local.get(null);
@@ -317,12 +426,12 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     });
     return Array.from(allTags);
   };
-  
+
   // Autocomplete dropdown
   const dropdown = document.createElement('div');
   dropdown.className = 'tag-dropdown';
   dropdown.style.display = 'none';
-  
+
   let tagInputTimeout;
   tagInput.oninput = async (e) => {
     clearTimeout(tagInputTimeout);
@@ -353,7 +462,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       }
     }, 150);
   };
-  
+
   tagInput.onkeypress = async (e) => {
     if (e.key === 'Enter') {
       const tag = tagInput.value.trim();
@@ -363,19 +472,19 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       const currentTags = existingData.tags || [];
       if (!currentTags.includes(tag)) {
         currentTags.push(tag);
-        await chrome.storage.local.set({ 
-          [summaryKey]: { 
-            ...existingData, 
-            tags: currentTags, 
-            markdown, 
-            urls, 
+        await chrome.storage.local.set({
+          [summaryKey]: {
+            ...existingData,
+            tags: currentTags,
+            markdown,
+            urls,
             timestamp: existingData.timestamp || Date.now(),
             format: existingData.format || format,
             language: existingData.language || language,
             model: existingData.model || model,
             engine: existingData.engine || engine,
             query: existingData.query || extractSearchQuery()
-          } 
+          }
         });
       }
       tagInput.value = '';
@@ -383,12 +492,12 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       loadTags();
     }
   };
-  
+
   tagSection.appendChild(tagInput);
   tagSection.appendChild(dropdown);
   tagSection.appendChild(tagsDisplay);
   loadTags();
-  
+
   const engine = detectSearchEngine();
   const engineNames = {
     google: 'Google',
@@ -396,7 +505,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     duckduckgo: 'DuckDuckGo'
   };
   const engineName = engineNames[engine] || 'AI';
-  
+
   const translations = {
     English: {
       brief: `🚀 ${engineName} Brief Summary`,
@@ -463,23 +572,23 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       favorite: 'Favorit'
     }
   };
-  
+
   const t = translations[language] || translations.English;
-  
+
   let historyVisible = false;
-  
+
   const title = document.createElement('h2');
   title.className = 'summary-title';
   title.textContent = t[format] || t.brief;
-  
+
   const actions = document.createElement('div');
   actions.className = 'summary-actions';
-  
+
   const historyBtn = document.createElement('button');
   historyBtn.className = 'close-btn';
   historyBtn.innerHTML = '📚';
   historyBtn.setAttribute('data-tooltip', t.history);
-  
+
   const detailedBtn = document.createElement('button');
   detailedBtn.className = 'close-btn';
   detailedBtn.innerHTML = '📄';
@@ -503,7 +612,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     const { selectedLanguage, selectedModel } = await chrome.storage.local.get(['selectedLanguage', 'selectedModel']);
     chrome.runtime.sendMessage({ action: 'openDetailedSearch', url: searchUrl, language: selectedLanguage, model: selectedModel });
   };
-  
+
   const refreshBtn = document.createElement('button');
   refreshBtn.className = 'close-btn';
   refreshBtn.innerHTML = '🔄';
@@ -523,7 +632,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     await chrome.storage.local.remove(storageKey);
     await summarizeResults();
   };
-  
+
   const starBtn = document.createElement('button');
   starBtn.className = 'close-btn';
   chrome.storage.local.get(summaryKey, (result) => {
@@ -534,23 +643,23 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     const result = await chrome.storage.local.get(summaryKey);
     const existingData = result[summaryKey] || {};
     const isFavorite = !existingData.isFavorite;
-    await chrome.storage.local.set({ 
-      [summaryKey]: { 
+    await chrome.storage.local.set({
+      [summaryKey]: {
         ...existingData,
-        markdown, 
-        urls, 
-        timestamp: existingData.timestamp || Date.now(), 
-        query: existingData.query || extractSearchQuery(), 
-        format: existingData.format || format, 
-        language: existingData.language || language, 
-        engine: existingData.engine || engine, 
+        markdown,
+        urls,
+        timestamp: existingData.timestamp || Date.now(),
+        query: existingData.query || extractSearchQuery(),
+        format: existingData.format || format,
+        language: existingData.language || language,
+        engine: existingData.engine || engine,
         model: existingData.model || model,
         isFavorite
-      } 
+      }
     });
     starBtn.innerHTML = isFavorite ? '⭐' : '☆';
   };
-  
+
   const copyBtn = document.createElement('button');
   copyBtn.className = 'close-btn';
   copyBtn.innerHTML = '📋';
@@ -560,7 +669,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     copyBtn.innerHTML = '✓';
     setTimeout(() => copyBtn.innerHTML = '📋', 2000);
   };
-  
+
   const downloadBtn = document.createElement('button');
   downloadBtn.className = 'close-btn';
   downloadBtn.innerHTML = '⬇️';
@@ -580,7 +689,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     downloadBtn.innerHTML = '✓';
     setTimeout(() => downloadBtn.innerHTML = '⬇️', 2000);
   };
-  
+
   const shareBtn = document.createElement('button');
   shareBtn.className = 'close-btn share-btn';
   shareBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M15.5 6.5L8.5 10.5M8.5 13.5L15.5 17.5" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
@@ -589,7 +698,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     e.stopPropagation();
     const menu = document.createElement('div');
     menu.className = 'share-menu';
-    
+
     const xBtn = document.createElement('button');
     xBtn.className = 'share-option';
     xBtn.innerHTML = `𝕏 ${t.shareX}`;
@@ -598,7 +707,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
       menu.remove();
     };
-    
+
     const linkedinBtn = document.createElement('button');
     linkedinBtn.className = 'share-option';
     linkedinBtn.innerHTML = `in ${t.shareLinkedIn}`;
@@ -607,7 +716,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodeURIComponent(text)}`, '_blank');
       menu.remove();
     };
-    
+
     const emailBtn = document.createElement('button');
     emailBtn.className = 'share-option';
     emailBtn.innerHTML = `✉️ ${t.shareEmail}`;
@@ -617,12 +726,12 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
       menu.remove();
     };
-    
+
     menu.appendChild(xBtn);
     menu.appendChild(linkedinBtn);
     menu.appendChild(emailBtn);
     shareBtn.appendChild(menu);
-    
+
     const closeMenu = (ev) => {
       if (!shareBtn.contains(ev.target)) {
         menu.remove();
@@ -631,13 +740,13 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     };
     setTimeout(() => document.addEventListener('click', closeMenu), 0);
   };
-  
+
   const closeBtn = document.createElement('button');
   closeBtn.className = 'close-btn';
   closeBtn.innerHTML = '×';
   closeBtn.setAttribute('data-tooltip', t.close);
   closeBtn.onclick = () => overlay.remove();
-  
+
   actions.appendChild(historyBtn);
   actions.appendChild(detailedBtn);
   actions.appendChild(refreshBtn);
@@ -650,14 +759,14 @@ async function displaySummary(markdown, urls, format, language, model = null) {
   header.appendChild(actions);
   content.appendChild(header);
   content.appendChild(tagSection);
-  
+
   const body = document.createElement('div');
   body.className = 'summary-body';
-  
+
   const historyPanel = document.createElement('div');
   historyPanel.className = 'history-panel-inline';
   historyPanel.style.display = 'none';
-  
+
   historyBtn.onclick = async () => {
     historyVisible = !historyVisible;
     title.textContent = historyVisible ? t.history : (t[format] || t.brief);
@@ -673,7 +782,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
         });
       historyPanel.innerHTML = '';
       tagSection.style.display = 'none';
-      
+
       const style = document.createElement('style');
       style.textContent = `
         .history-item-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; margin-bottom: 8px; }
@@ -685,23 +794,23 @@ async function displaySummary(markdown, urls, format, language, model = null) {
         body.dark .history-meta-badge.brief { background: #34a853; color: white; }
       `;
       historyPanel.appendChild(style);
-      
+
       const searchInput = document.createElement('input');
       searchInput.type = 'text';
       searchInput.className = 'history-search';
       searchInput.placeholder = language === 'Spanish' ? '🔍 Buscar en historial...' : language === 'French' ? '🔍 Rechercher dans l\'historique...' : language === 'German' ? '🔍 Im Verlauf suchen...' : '🔍 Search history...';
       historyPanel.appendChild(searchInput);
-      
+
       // Tag filter badges
       const allHistoryTags = new Set();
       summaries.forEach(s => {
         if (s.tags) s.tags.forEach(t => allHistoryTags.add(t));
       });
-      
+
       const selectedTags = new Set();
       const tagFilterContainer = document.createElement('div');
       tagFilterContainer.className = 'tag-filter-badges';
-      
+
       const renderTagBadges = () => {
         tagFilterContainer.innerHTML = '';
         Array.from(allHistoryTags).forEach(tag => {
@@ -720,22 +829,22 @@ async function displaySummary(markdown, urls, format, language, model = null) {
           tagFilterContainer.appendChild(badge);
         });
       };
-      
+
       if (allHistoryTags.size > 0) {
         renderTagBadges();
         historyPanel.appendChild(tagFilterContainer);
       }
-      
+
       const filterBtn = document.createElement('button');
       filterBtn.className = 'history-filter-btn';
       filterBtn.innerHTML = '⭐';
       let showOnlyFavorites = false;
       historyPanel.appendChild(filterBtn);
-      
+
       const itemsContainer = document.createElement('div');
       itemsContainer.className = 'history-items-container';
       historyPanel.appendChild(itemsContainer);
-      
+
       const scrollBtns = document.createElement('div');
       scrollBtns.className = 'history-scroll-btns';
       const topBtn = document.createElement('button');
@@ -786,7 +895,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       scrollBtns.appendChild(bottomBtn);
       scrollBtns.appendChild(clearBtn);
       historyPanel.appendChild(scrollBtns);
-      
+
       const renderItems = (filter = '', onlyFavorites = false) => {
         const filtered = summaries.filter(({ markdown: md, query, isFavorite, tags }) => {
           const title = md.split('\n')[0].replace(/^#\s*/, '').toLowerCase();
@@ -796,7 +905,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
           const matchesTags = selectedTags.size === 0 || (tags && Array.from(selectedTags).every(st => tags.includes(st)));
           return onlyFavorites ? (isFavorite && matchesSearch && matchesTags) : (matchesSearch && matchesTags);
         });
-        
+
         batchDOMUpdates(() => {
           const fragment = document.createDocumentFragment();
           filtered.forEach(({ markdown: md, urls: u, timestamp, query, isFavorite, tags, format, language, model, engine }) => {
@@ -837,20 +946,20 @@ async function displaySummary(markdown, urls, format, language, model = null) {
           itemsContainer.appendChild(fragment);
         });
       };
-      
+
       filterBtn.onclick = () => {
         showOnlyFavorites = !showOnlyFavorites;
         filterBtn.style.opacity = showOnlyFavorites ? '1' : '0.5';
         renderItems(searchInput.value, showOnlyFavorites);
       };
-      
+
       let searchTimeout;
       searchInput.oninput = (e) => {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => renderItems(e.target.value, showOnlyFavorites), 150);
       };
       renderItems();
-      
+
       body.style.display = 'none';
       followUpSection.style.display = 'none';
       historyPanel.style.display = 'block';
@@ -861,64 +970,66 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       tagSection.style.display = 'block';
     }
   };
-  
+
   // Store markdown for later conversion in iframe
   console.log('[displaySummary] Storing markdown in body attribute');
   console.log('[displaySummary] Markdown length:', markdown.length);
   body.setAttribute('data-markdown', markdown);
   body.textContent = 'Loading...';
-  
+
   content.appendChild(historyPanel);
   content.appendChild(body);
-  
+
   // Follow-up question section
   const followUpSection = document.createElement('div');
   followUpSection.className = 'followup-section';
-  
+
   const followUpInput = document.createElement('input');
   followUpInput.type = 'text';
   followUpInput.className = 'followup-input';
   followUpInput.placeholder = language === 'Spanish' ? 'Hacer una pregunta - luego presione Enter' : language === 'French' ? 'Poser une question - puis appuyez sur Entrée' : language === 'German' ? 'Eine Frage stellen - dann Enter drücken' : 'Ask a follow-up question - then push Enter';
-  
+
   const conversationDiv = document.createElement('div');
   conversationDiv.className = 'conversation-history';
-  
+
   const handleFollowUp = async () => {
     const question = followUpInput.value.trim();
     if (!question) return;
-    
+
     followUpInput.disabled = true;
-    
+
     const questionBubble = document.createElement('div');
     questionBubble.className = 'chat-bubble user';
     questionBubble.textContent = question;
     conversationDiv.appendChild(questionBubble);
     conversationDiv.scrollTop = conversationDiv.scrollHeight;
-    
+
     try {
-      const { flashApiKey, selectedModel } = await chrome.storage.local.get(['flashApiKey', 'selectedModel']);
+      const { openrouterApiKey, openrouterPrimaryModel } = await chrome.storage.local.get(['openrouterApiKey', 'openrouterPrimaryModel']);
       const prompt = `Based on this summary:\n\n${markdown}\n\nUser question: ${question}\n\nProvide a concise answer in ${language}.`;
-      
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${flashApiKey}`;
+
       const response = await new Promise((resolve, reject) => {
         chrome.runtime.sendMessage({
-          action: 'callAPI',
-          url: apiUrl,
+          action: 'callOpenRouter',
+          url: 'https://openrouter.ai/api/v1/chat/completions',
+          apiKey: openrouterApiKey,
           body: {
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: 2000, temperature: 0.3 }
+            model: openrouterPrimaryModel,
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 2000,
+            temperature: 0.3
           }
         }, res => chrome.runtime.lastError ? reject(new Error(chrome.runtime.lastError.message)) : res?.success ? resolve(res.data) : reject(new Error(res?.error || 'API failed')));
       });
-      
-      const answer = response.candidates?.[0]?.content?.parts?.[0]?.text || 'No answer generated.';
-      
+
+      const answer = response.choices?.[0]?.message?.content || 'No answer generated.';
+
       const answerBubble = document.createElement('div');
       answerBubble.className = 'chat-bubble ai';
       answerBubble.innerHTML = convertMarkdownToHtml(answer);
       conversationDiv.appendChild(answerBubble);
       conversationDiv.scrollTop = conversationDiv.scrollHeight;
-      
+
       conversationHistory.push({ question, answer });
     } catch (error) {
       const errorBubble = document.createElement('div');
@@ -931,7 +1042,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       followUpInput.focus();
     }
   };
-  
+
   let followUpTimeout;
   followUpInput.onkeypress = (e) => {
     if (e.key === 'Enter') {
@@ -939,28 +1050,28 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       followUpTimeout = setTimeout(handleFollowUp, 100);
     }
   };
-  
+
   followUpSection.appendChild(conversationDiv);
   followUpSection.appendChild(followUpInput);
   content.appendChild(followUpSection);
-  
+
   overlay.appendChild(content);
-  
+
   overlay.onclick = (e) => {
     if (e.target === overlay) overlay.remove();
   };
-  
+
   // Create iframe to isolate from Bing's DOM manipulation
   const iframe = document.createElement('iframe');
   iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:2147483647';
   document.documentElement.appendChild(iframe);
-  
+
   const iframeDoc = iframe.contentDocument;
   iframeDoc.open();
   chrome.storage.local.get(['darkMode'], (data) => {
     if (data.darkMode) iframeDoc.body.classList.add('dark');
   });
-  
+
   const iframeHTML = `
     <!DOCTYPE html>
     <html>
@@ -999,8 +1110,8 @@ async function displaySummary(markdown, urls, format, language, model = null) {
         .close-btn { background: #f8f9fa; border: none; font-size: 20px; color: #5f6368; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; transition: all 0.2s; }
         .close-btn:hover { background: #e8eaed; transform: scale(1.1); }
         .close-btn[data-tooltip]:hover::after { content: attr(data-tooltip); position: absolute; bottom: -32px; left: 50%; transform: translateX(-50%); background: white; color: #202124; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: 1px solid #e8eaed; }
-        .share-btn { position: relative; }
-        .share-menu { position: absolute; top: 45px; right: 0; background: white; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); padding: 8px; min-width: 180px; z-index: 1001; }
+        .share-btn { position: relative; z-index: 10001; }
+        .share-menu { position: absolute; top: 45px; right: 0; background: white; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); padding: 8px; min-width: 180px; z-index: 10002; }
         .share-option { display: block; width: 100%; padding: 10px 14px; border: none; background: none; text-align: left; cursor: pointer; border-radius: 6px; font-size: 14px; color: #202124; transition: background 0.2s; }
         .share-option:hover { background: #f8f9fa; }
         .summary-body { font-size: 16px; line-height: 1.7; color: #3c4043; margin-bottom: 24px; }
@@ -1021,10 +1132,10 @@ async function displaySummary(markdown, urls, format, language, model = null) {
         .followup-input { width: 100%; padding: 14px 20px; border: 3px solid #667eea; border-radius: 12px; font-size: 14px; outline: none; transition: all 0.2s ease; font-family: inherit; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15); }
         .followup-input:focus { border-color: #764ba2; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
         .followup-input:disabled { background: #f8f9fa; cursor: not-allowed; opacity: 0.6; }
-        .tag-section { margin: 16px 0; padding: 12px 0; border-bottom: 1px solid #e8eaed; position: relative; }
-        .tag-input { width: 100%; padding: 10px 14px; border: 2px solid #e8eaed; border-radius: 8px; font-size: 13px; outline: none; transition: all 0.2s; font-family: inherit; }
+        .tag-section { margin: 16px 0; padding: 12px 0; border-bottom: 1px solid #e8eaed; position: relative; z-index: 1; }
+        .tag-input { width: 100%; padding: 10px 14px; border: 2px solid #e8eaed; border-radius: 8px; font-size: 13px; outline: none; transition: all 0.2s; font-family: inherit; position: relative; z-index: 1; }
         .tag-input:focus { border-color: #667eea; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2); }
-        .tag-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e8eaed; border-radius: 6px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); max-height: 150px; overflow-y: auto; z-index: 1000; margin-top: 4px; }
+        .tag-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e8eaed; border-radius: 6px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); max-height: 150px; overflow-y: auto; z-index: 2; margin-top: 4px; }
         .tag-option { padding: 8px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s; }
         .tag-option:hover { background: #f1f3f4; }
         .tags-display { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -1074,17 +1185,17 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     <body></body>
     </html>
   `;
-  
+
   console.log('[displaySummary] Writing HTML to iframe');
   iframeDoc.write(iframeHTML);
   iframeDoc.close();
   console.log('[displaySummary] iframe document closed');
-  
+
   // Wait for iframe to be ready
   const iframeLoadPromise = new Promise(resolve => {
     iframe.onload = () => {
     console.log('[iframe.onload] Iframe loaded');
-    
+
     console.log('[iframe.onload] Creating overlay background');
     const overlayBg = iframeDoc.createElement('div');
     overlayBg.className = 'overlay-bg';
@@ -1094,17 +1205,17 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     console.log('[iframe.onload] Appending overlayBg to iframe body');
     iframeDoc.body.appendChild(overlayBg);
     console.log('[iframe.onload] Overlay appended successfully');
-    
+
     // Web Worker markdown converter with fallback
     const convertMarkdown = () => {
       const iframeBody = iframeDoc.querySelector('.summary-body');
       const md = iframeBody?.getAttribute('data-markdown');
-      
+
       if (!md) {
         resolve();
         return;
       }
-      
+
       // Reuse worker if available
       if (!markdownWorker) {
         try {
@@ -1115,7 +1226,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
           return;
         }
       }
-      
+
       markdownWorker.postMessage({ markdown: md });
       markdownWorker.onmessage = (e) => {
         iframeBody.innerHTML = e.data.html;
@@ -1126,13 +1237,13 @@ async function displaySummary(markdown, urls, format, language, model = null) {
         resolve();
       };
     };
-    
+
     setTimeout(convertMarkdown, 10);
     };
   });
-  
+
   await iframeLoadPromise;
-  
+
   // Update remove function
   const originalRemove = overlay.remove.bind(overlay);
   overlay.remove = () => iframe.remove();
@@ -1141,14 +1252,14 @@ async function displaySummary(markdown, urls, format, language, model = null) {
 function extractSearchQuery() {
   const engine = detectSearchEngine();
   const urlParams = new URLSearchParams(window.location.search);
-  
+
   if (engine === 'google' || engine === 'bing') {
     return urlParams.get('q') || document.querySelector('input[name="q"]')?.value || '';
   }
   if (engine === 'duckduckgo') {
     return urlParams.get('q') || document.querySelector('input[name="q"]')?.value || '';
   }
-  
+
   return urlParams.get('q') || '';
 }
 
@@ -1156,13 +1267,13 @@ async function updateStats(type) {
   const today = new Date().toDateString();
   const data = await chrome.storage.local.get(['usageStats']);
   const stats = data.usageStats || { apiCalls: 0, cacheHits: 0, totalSummaries: 0, lastReset: today };
-  
+
   if (stats.lastReset !== today) {
     stats.apiCalls = 0;
     stats.cacheHits = 0;
     stats.lastReset = today;
   }
-  
+
   if (type === 'api') {
     stats.apiCalls++;
     stats.totalSummaries++;
@@ -1170,7 +1281,7 @@ async function updateStats(type) {
     stats.cacheHits++;
     stats.totalSummaries++;
   }
-  
+
   await chrome.storage.local.set({ usageStats: stats });
 }
 
@@ -1192,12 +1303,12 @@ async function fetchAndProcessPages(urls) {
 async function summarizeResults() {
   if (isProcessing) return;
   isProcessing = true;
-  
+
   const totalStart = Date.now();
   console.log('[PERF] ========== SUMMARIZE START ==========');
-  
+
   if (!summarizeBtn) summarizeBtn = document.querySelector('.summarize-btn');
-  
+
   // Wait for button if not found (for auto-triggered tabs)
   if (!summarizeBtn) {
     console.log('[DEBUG] Button not found, waiting...');
@@ -1208,32 +1319,30 @@ async function summarizeResults() {
       attempts++;
     }
   }
-  
+
   const btn = summarizeBtn;
   if (!btn) {
     console.error('[DEBUG] Button not found after waiting - stopping');
     return;
   }
   const originalText = btn.textContent;
-  
+
   try {
     btn.setAttribute('aria-busy', 'true');
-    const { flashApiKey, aiProvider, selectedModel, selectedLanguage, summaryFormat, multiSearchEnabled } = await chrome.storage.local.get(['flashApiKey', 'aiProvider', 'selectedModel', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled']).catch(error => {
+    const { openrouterApiKey, selectedModel, selectedLanguage, summaryFormat, multiSearchEnabled } = await chrome.storage.local.get(['openrouterApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled']).catch(error => {
       console.error('Storage error:', error);
       return {};
     });
-    
-    if (!flashApiKey) {
+
+    if (!openrouterApiKey) {
       chrome.runtime.sendMessage({ action: 'openPopup' });
       return;
     }
-    
-    const provider = aiProvider || 'google';
-    
+
     const tabIdResponse = await new Promise(resolve => chrome.runtime.sendMessage({ action: 'getTabId' }, resolve));
-    const wasAutoKey = tabIdResponse?.tabId ? `wasAuto_${tabIdResponse.tabId}` : null;
+    const wasAutoKey = tabIdResponse?.tabId ? storageKeys.wasAuto(tabIdResponse.tabId) : null;
     const wasAuto = wasAutoKey ? (await chrome.storage.local.get([wasAutoKey]))[wasAutoKey] : false;
-    
+
     if (wasAuto && wasAutoKey) {
       await chrome.storage.local.remove([wasAutoKey]);
     } else if (multiSearchEnabled && !wasAuto) {
@@ -1245,12 +1354,12 @@ async function summarizeResults() {
       chrome.runtime.sendMessage({ action: 'multiSearch', query });
       return;
     }
-    
+
     console.log('Selected model:', selectedModel);
     const model = selectedModel;
     const language = selectedLanguage || 'English';
     const format = summaryFormat || 'brief';
-    
+
     const loadingTranslations = {
       English: { finding: 'Finding', fetching: 'Fetching', analyzing: 'Analyzing', generating: 'Summarizing' },
       Spanish: { finding: 'Buscando', fetching: 'Obteniendo', analyzing: 'Analizando', generating: 'Resumiendo' },
@@ -1258,21 +1367,21 @@ async function summarizeResults() {
       German: { finding: 'Suchen', fetching: 'Abrufen', analyzing: 'Analysieren', generating: 'Zusammenfassen' }
     };
     const loading = loadingTranslations[language] || loadingTranslations.English;
-    
+
     const searchQuery = extractSearchQuery();
     const urls = scrapeUrls();
     const engine = detectSearchEngine();
     console.log(`[DEBUG] Scraped ${urls.length} URLs from ${engine}:`, urls);
     const cacheKey = `${engine}-${searchQuery}-${urls.join(',')}-${language}-${format}`;
-    
+
     const cached = summaryCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
       await updateStats('cache');
       await displaySummary(cached.markdown, cached.urls, cached.format || format, cached.language || language, cached.model);
       return;
     }
-    
-    const storageKey = `summary_${simpleHash(cacheKey)}`;
+
+    const storageKey = storageKeys.summary(cacheKey);
     const stored = await chrome.storage.local.get(storageKey);
     if (stored[storageKey] && (Date.now() - stored[storageKey].timestamp) < CACHE_DURATION) {
       const storedData = stored[storageKey];
@@ -1288,12 +1397,12 @@ async function summarizeResults() {
       await displaySummary(storedData.markdown, storedData.urls, storedData.format, storedData.language, storedData.model);
       return;
     }
-    
+
     const formatInstructions = {
       detailed: 'Write 4-6 detailed points.',
       brief: 'Write 3-5 concise points.'
     };
-    
+
     let maxTokens, wordLimit;
     switch (format) {
       case 'detailed':
@@ -1305,115 +1414,92 @@ async function summarizeResults() {
         maxTokens = 2000;
         wordLimit = 500;
     }
-    
+
     btn.disabled = true;
     btn.innerHTML = `${loading.finding}<span class="loading-spinner"></span>`;
     const decodedUrls = urls.map(url => url.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&'));
     console.log('References:', decodedUrls);
-    
+
     if (urls.length === 0) {
       console.error('[DEBUG] No URLs scraped - stopping');
       alert('No search results found to summarize.');
       return;
     }
     console.log('[DEBUG] Proceeding with', urls.length, 'URLs');
-    
+
     btn.innerHTML = `${loading.fetching}<span class="loading-spinner"></span>`;
-    
+
     console.log(`[PERF] Starting parallel fetch of ${urls.length} URLs`);
     const fetchStart = Date.now();
     const { results, usedUrls } = await fetchAndProcessPages(urls);
     const fetchTime = Date.now() - fetchStart;
     console.log(`[PERF] Total fetch time: ${fetchTime}ms for ${results.length} sources`);
-    
+
     btn.innerHTML = `${loading.analyzing}<span class="loading-spinner"></span>`;
     const extractedContent = results;
     urls.length = 0;
     urls.push(...usedUrls);
-    
+
     if (extractedContent.length === 0) {
       console.error('[DEBUG] No content extracted - stopping');
       alert('Could not extract content from search results.');
       return;
     }
     console.log('[DEBUG] Extracted content from', extractedContent.length, 'pages');
-    
+
     btn.innerHTML = `${loading.generating}<span class="loading-spinner"></span>`;
-    
+
     const sources = extractedContent.map((text, i) => `[${i + 1}] ${text}`);
     const prompt = `${searchQuery}\n\n${sources.join('\n\n')}\n\n${formatInstructions[format]} Use [1][2] citations. ${language}. Max ${wordLimit} words.`;
-    
+
     let models = [];
-    
-    if (provider === 'openrouter') {
-      const { openrouterPrimaryModel, openrouterFallbackModels } = await chrome.storage.local.get(['openrouterPrimaryModel', 'openrouterFallbackModels']);
-      
-      if (!openrouterPrimaryModel) {
-        const response = await fetch('https://openrouter.ai/api/v1/models', {
-          headers: { 'Authorization': `Bearer ${flashApiKey}` }
-        });
-        const data = await response.json();
-        const selected = window.selectBestModels(data.data, 'llama');
-        
-        if (!selected.primary) throw new Error('No free Llama models found');
-        
-        await chrome.storage.local.set({ 
-          openrouterPrimaryModel: selected.primary,
-          openrouterFallbackModels: selected.fallbacks
-        });
-        models = [selected.primary, ...selected.fallbacks];
-      } else {
-        models = [openrouterPrimaryModel, ...(openrouterFallbackModels || [])].filter(Boolean);
-      }
+
+    const { openrouterPrimaryModel, openrouterFallbackModels } = await chrome.storage.local.get(['openrouterPrimaryModel', 'openrouterFallbackModels']);
+
+    if (!openrouterPrimaryModel) {
+      const response = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: { 'Authorization': `Bearer ${openrouterApiKey}` }
+      });
+      const data = await response.json();
+      const selectBestModels = window.selectBestModels;
+      const selected = selectBestModels(data.data, 'llama');
+
+      if (!selected.primary) throw new Error('No free Llama models found');
+
+      await chrome.storage.local.set({
+        openrouterPrimaryModel: selected.primary,
+        openrouterFallbackModels: selected.fallbacks
+      });
+      models = [selected.primary, ...selected.fallbacks];
     } else {
-      models = ['models/gemini-2.5-flash'];
+      models = [openrouterPrimaryModel, ...(openrouterFallbackModels || [])].filter(Boolean);
     }
-    
+
     console.log('[PERF] Models ready:', models);
     const apiStart = Date.now();
-    
+
     const callModel = (modelName) => new Promise((resolve, reject) => {
-      if (provider === 'openrouter') {
-        chrome.runtime.sendMessage({
-          action: 'callOpenRouter',
-          url: 'https://openrouter.ai/api/v1/chat/completions',
-          apiKey: flashApiKey,
-          body: {
-            model: modelName,
-            messages: [{ role: 'user', content: prompt }],
-            max_tokens: maxTokens,
-            temperature: 0.2
-          }
-        }, response => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-          } else if (response?.success) {
-            resolve(response.data);
-          } else {
-            reject(new Error(response?.error || 'API failed'));
-          }
-        });
-      } else {
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${flashApiKey}`;
-        chrome.runtime.sendMessage({
-          action: 'callAPI',
-          url: apiUrl,
-          body: {
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: maxTokens, temperature: 0.2, topP: 0.8, topK: 40 }
-          }
-        }, response => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-          } else if (response?.success) {
-            resolve(response.data);
-          } else {
-            reject(new Error(response?.error || 'API failed'));
-          }
-        });
-      }
+      chrome.runtime.sendMessage({
+        action: 'callOpenRouter',
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        apiKey: openrouterApiKey,
+        body: {
+          model: modelName,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: maxTokens,
+          temperature: 0.2
+        }
+      }, response => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else if (response?.success) {
+          resolve(response.data);
+        } else {
+          reject(new Error(response?.error || 'API failed'));
+        }
+      });
     });
-    
+
     let apiResponse;
     let successfulModel;
     for (let i = 0; i < models.length; i++) {
@@ -1429,37 +1515,24 @@ async function summarizeResults() {
         if (i === models.length - 1) throw error;
       }
     }
-    
+
     const apiTime = Date.now() - apiStart;
     console.log(`[PERF] API call completed in ${apiTime}ms`);
     await updateStats('api');
-    
+
     const data = apiResponse;
     console.log('API response data:', data);
-    
-    let markdown;
-    if (provider === 'openrouter') {
-      markdown = data.choices?.[0]?.message?.content;
-    } else {
-      console.log('Candidates:', data.candidates);
-      const finishReason = data.candidates?.[0]?.finishReason;
-      markdown = data.candidates?.[0]?.content?.parts?.[0]?.text || 
-                 data.candidates?.[0]?.text ||
-                 data.text;
-      
-      if (!markdown && finishReason === 'MAX_TOKENS') {
-        throw new Error('Response too long. Try using "Brief Summary" format.');
-      }
-    }
-    
+
+    const markdown = data.choices?.[0]?.message?.content;
+
     console.log('Extracted markdown:', markdown);
-    
+
     if (!markdown) {
       console.error('No markdown extracted from response');
       console.error('Full response structure:', JSON.stringify(data, null, 2));
       throw new Error('No summary generated');
     }
-    
+
     const refTranslations = {
       English: 'References',
       Spanish: 'Referencias',
@@ -1467,23 +1540,24 @@ async function summarizeResults() {
       German: 'Referenzen'
     };
     const refTitle = refTranslations[language] || 'References';
-    
+
+    let finalMarkdown = markdown;
     if (!markdown.toLowerCase().includes('## references') && !markdown.toLowerCase().includes('## referencias') && !markdown.toLowerCase().includes('## références') && !markdown.toLowerCase().includes('## referenzen')) {
       const references = urls.map((url, i) => `**${i + 1}.** [${url}](${url})`).join('\n\n');
-      markdown += `\n\n## ${refTitle}\n\n${references}`;
+      finalMarkdown += `\n\n## ${refTitle}\n\n${references}`;
     }
-    
-    const decodedMarkdown = markdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+
+    const decodedMarkdown = finalMarkdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
     const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now(), format, language, model: successfulModel, engine, query: searchQuery };
     summaryCache.set(cacheKey, cacheData);
-    
-    cachedSummary = markdown;
+
+    cachedSummary = finalMarkdown;
     console.log('[PERF] Starting display summary...');
     const displayStart = Date.now();
-    await displaySummary(markdown, urls, format, language, successfulModel);
+    await displaySummary(finalMarkdown, urls, format, language, successfulModel);
     const displayTime = Date.now() - displayStart;
     console.log(`[PERF] Display completed in ${displayTime}ms`);
-    
+
     Promise.all([
       (async () => {
         try {
@@ -1500,7 +1574,7 @@ async function summarizeResults() {
       })(),
       updateStats('api')
     ]);
-    
+
   } catch (error) {
     console.error('Summarization error:', error);
     console.error('Error details:', { name: error.name, message: error.message, stack: error.stack });
@@ -1521,7 +1595,7 @@ let nonCriticalCSSLoaded = false;
 function loadNonCriticalCSS() {
   if (nonCriticalCSSLoaded) return;
   nonCriticalCSSLoaded = true;
-  
+
   requestIdleCallback(() => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -1533,7 +1607,7 @@ function loadNonCriticalCSS() {
 if (typeof document !== 'undefined') {
   let lastKeydownTime = 0;
   const DEBOUNCE_DELAY = 300;
-  
+
   if (chrome?.storage?.onChanged) {
     chrome.storage.onChanged.addListener((changes) => {
       if (changes.selectedLanguage) {
@@ -1541,26 +1615,26 @@ if (typeof document !== 'undefined') {
       }
     });
   }
-  
+
   chrome.runtime.sendMessage({ action: 'getTabId' }, (response) => {
     if (chrome.runtime.lastError || !response?.tabId) return;
-    const tabKey = `autoSummarize_${response.tabId}`;
-    chrome.storage.local.get([tabKey, 'autoSummarizeEnabled', 'multiSearchEnabled'], (result) => {
-      const shouldAutoSummarize = result[tabKey] || result.autoSummarizeEnabled;
+    const tabKey = storageKeys.autoSummarize(response.tabId);
+    chrome.storage.local.get([tabKey, 'multiSearchEnabled'], (result) => {
+      const shouldAutoSummarize = result[tabKey];
       if (shouldAutoSummarize) {
         if (result[tabKey]) chrome.storage.local.remove([tabKey]);
-        
+
         const autoTrigger = () => {
           if (isProcessing) return;
           if (result.multiSearchEnabled && !result[tabKey]) {
             const query = extractSearchQuery();
             if (query) chrome.runtime.sendMessage({ action: 'multiSearch', query });
           } else {
-            chrome.storage.local.set({ [`wasAuto_${response.tabId}`]: true });
+            chrome.storage.local.set({ [storageKeys.wasAuto(response.tabId)]: true });
             summarizeResults();
           }
         };
-        
+
         if (document.readyState === 'complete') {
           setTimeout(autoTrigger, 2500);
         } else {
@@ -1569,7 +1643,7 @@ if (typeof document !== 'undefined') {
       }
     });
   });
-  
+
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey && e.key === 'S') {
       e.preventDefault();
@@ -1588,16 +1662,16 @@ if (typeof document !== 'undefined') {
   } else {
     requestIdleCallback(addSummarizeButton, { timeout: 1000 });
   }
-  
+
   requestIdleCallback(() => {
     setInterval(cleanupCaches, 5 * 60 * 1000);
   }, { timeout: 5000 });
-  
+
   window.addEventListener('beforeunload', () => {
     summaryCache.clear();
     pageCache.clear();
   });
-  
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       requestIdleCallback(cleanupCaches, { timeout: 2000 });

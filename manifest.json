@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Gist",
-  "version": "1.1",
+  "version": "1.2",
   "description": "Summarizes search results from Google, Bing, and DuckDuckGo using your Google API key.",
   "permissions": ["storage", "tabs"],
   "host_permissions": ["https://*/*", "https://www.google.com/*", "https://www.bing.com/*", "https://duckduckgo.com/*"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "icons": {
     "16": "icons/icon16.png",
@@ -26,7 +27,8 @@
       "matches": [
         "https://www.google.com/search*",
         "https://www.bing.com/search*",
-        "https://duckduckgo.com/*"
+        "https://duckduckgo.com/*",
+        "https://duckduckgo.com/?*"
       ],
       "js": ["lib/model-selector.js", "content/content.js"],
       "css": ["content/content-critical.css"]
@@ -34,7 +36,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["content/content.min.css", "workers/markdown-worker.js", "lib/model-selector.js"],
+      "resources": ["content/content.min.css", "workers/markdown-worker.js", "lib/model-selector.js", "lib/html-cleaner.js"],
       "matches": ["https://*/*"]
     }
   ]

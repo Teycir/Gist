@@ -61,7 +61,7 @@ describe('Google AI API Integration', () => {
 describe('Model Filtering', () => {
   test('should filter Flash models correctly', () => {
     const models = [
-      { name: 'gemini-2.5-flash', displayName: 'Gemini 2.5 Flash', supportedGenerationMethods: ['generateContent'], description: 'Text model' },
+      { name: 'gemini-2.0-pro', displayName: 'Gemini 2.5 Flash', supportedGenerationMethods: ['generateContent'], description: 'Text model' },
       { name: 'gemini-image', displayName: 'Gemini Image', supportedGenerationMethods: ['generateContent'], description: 'Image generation' },
       { name: 'gemini-pro', displayName: 'Gemini Pro', supportedGenerationMethods: ['generateContent'], description: 'Pro model' }
     ];

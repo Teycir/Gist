@@ -39,7 +39,7 @@ describe('Real-World E2E Performance Tests', () => {
           local: {
             get: (keys) => Promise.resolve({
               flashApiKey: 'test-key',
-              selectedModel: 'models/gemini-1.5-flash',
+              selectedModel: 'models/gemini-2.0-pro',
               selectedLanguage: 'English',
               summaryFormat: 'detailed'
             }),

@@ -1,7 +1,17 @@
+import { cleanHtml } from './lib/html-cleaner.js';
+
 // Open settings page on icon click
 chrome.action.onClicked.addListener(() => {
   chrome.tabs.create({ url: chrome.runtime.getURL('popup/popup.html') });
 });
+
+// Fetch helper with timeout
+const fetchWithTimeout = (url, timeout = 2000, headers = {}) => {
+  return fetch(url, {
+    signal: AbortSignal.timeout(timeout),
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', ...headers }
+  });
+};
 
 // API proxy
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
@@ -16,7 +26,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       .catch(err => reply({ success: false, error: err.message }));
     return true;
   }
-  
+
   if (msg.action === 'callOpenRouter') {
     fetch(msg.url, {
       method: 'POST',
@@ -33,31 +43,25 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       .catch(err => reply({ success: false, error: err.message }));
     return true;
   }
-  
+
   if (msg.action === 'fetchPage') {
-    fetch(msg.url, { 
-      signal: AbortSignal.timeout(2000),
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
-    })
+    fetchWithTimeout(msg.url)
       .then(r => r.text())
       .then(html => reply({ success: true, html }))
       .catch(err => reply({ success: false, error: err.message }));
     return true;
   }
-  
+
   if (msg.action === 'fetchAndProcessPages') {
     (async () => {
       const { urls } = msg;
       const results = [];
       const usedUrls = [];
       let completed = 0;
-      
+
       await new Promise((resolve) => {
         urls.forEach((url) => {
-          fetch(url, { 
-            signal: AbortSignal.timeout(1000),
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
-          })
+          fetchWithTimeout(url, 1000)
             .then(r => r.text())
             .then(html => {
               completed++;
@@ -75,20 +79,22 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
             });
         });
       });
-      
+
       reply({ success: true, results, usedUrls });
     })();
     return true;
   }
-  
+
   if (msg.action === 'getTabId') {
     reply({ tabId: sender.tab?.id });
+    return true;
   }
-  
+
   if (msg.action === 'openPopup') {
     chrome.tabs.create({ url: chrome.runtime.getURL('popup/popup.html') });
+    return true;
   }
-  
+
   if (msg.action === 'multiSearch') {
     const { query } = msg;
     const engines = [
@@ -101,54 +107,18 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         chrome.storage.local.set({ [`autoSummarize_${tab.id}`]: true });
       });
     });
+    return true;
   }
-  
+
   if (msg.action === 'openDetailedSearch') {
     chrome.tabs.create({ url: msg.url }, tab => {
-      chrome.storage.local.set({ 
+      chrome.storage.local.set({
         [`autoSummarize_${tab.id}`]: true,
         summaryFormat: 'detailed',
         selectedLanguage: msg.language,
         selectedModel: msg.model
       });
     });
+    return true;
   }
 });
-
-function cleanHtml(html) {
-  let text = html
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
-    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
-    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
-    .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
-    .replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '')
-    .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '')
-    .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '')
-    .replace(/<div[^>]*class="[^"]*\bad[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
-    .replace(/<div[^>]*id="[^"]*\bad[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
-
-  const contentPatterns = [
-    /<article[^>]*>([\s\S]*?)<\/article>/i,
-    /<main[^>]*>([\s\S]*?)<\/main>/i,
-    /<div[^>]*class="[^"]*content[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
-    /<div[^>]*id="main-content"[^>]*>([\s\S]*?)<\/div>/i
-  ];
-
-  for (const pattern of contentPatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      text = match[1];
-      break;
-    }
-  }
-
-  return text
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&[a-z]+;/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 1200);
-}

@@ -17,5 +17,5 @@ loadEnv();
 
 module.exports = {
   API_KEY: process.env.GOOGLE_API_KEY,
-  MODEL: 'models/gemini-2.5-flash'
+  MODEL: 'models/gemini-2.0-pro'
 };

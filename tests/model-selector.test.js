@@ -92,10 +92,10 @@ describe('Model Selector', () => {
   describe('selectBestModels (OpenRouter)', () => {
     it('should prioritize flash models first', () => {
       const models = [
-        { id: 'google/gemini-2.0-flash-exp:free', pricing: { prompt: '0' } },
+        { id: 'google/gemini-2.0-pro-exp:free', pricing: { prompt: '0' } },
         { id: 'qwen/qvq-72b-preview:free', pricing: { prompt: '0' } },
         { id: 'meta-llama/llama-3.2-3b-instruct:free', pricing: { prompt: '0' } },
-        { id: 'google/gemini-flash-1.5-8b:free', pricing: { prompt: '0' } }
+        { id: 'google/gemini-pro-1.5-8b:free', pricing: { prompt: '0' } }
       ];
       
       const result = selectBestModels(models);
@@ -106,19 +106,19 @@ describe('Model Selector', () => {
 
     it('should select latest version flash model as primary', () => {
       const models = [
-        { id: 'google/gemini-2.0-flash-exp:free', pricing: { prompt: '0' } },
-        { id: 'google/gemini-flash-1.5-8b:free', pricing: { prompt: '0' } },
+        { id: 'google/gemini-2.0-pro-exp:free', pricing: { prompt: '0' } },
+        { id: 'google/gemini-pro-1.5-8b:free', pricing: { prompt: '0' } },
         { id: 'meta-llama/llama-3.2-3b-instruct:free', pricing: { prompt: '0' } }
       ];
       
       const result = selectBestModels(models);
       
-      expect(result.primary).toBe('google/gemini-2.0-flash-exp:free');
+      expect(result.primary).toBe('google/gemini-2.0-pro-exp:free');
     });
 
     it('should exclude scout models completely', () => {
       const models = [
-        { id: 'google/gemini-2.0-flash-exp:free', pricing: { prompt: '0' } },
+        { id: 'google/gemini-2.0-pro-exp:free', pricing: { prompt: '0' } },
         { id: 'nvidia/llama-3.1-nemotron-70b-instruct:free', pricing: { prompt: '0' } },
         { id: 'meta-llama/llama-3.2-3b-instruct:free', pricing: { prompt: '0' } }
       ];
@@ -131,8 +131,8 @@ describe('Model Selector', () => {
 
     it('should include meta-llama and distill models in fallbacks', () => {
       const models = [
-        { id: 'google/gemini-2.0-flash-exp:free', pricing: { prompt: '0' } },
-        { id: 'google/gemini-flash-1.5-8b:free', pricing: { prompt: '0' } },
+        { id: 'google/gemini-2.0-pro-exp:free', pricing: { prompt: '0' } },
+        { id: 'google/gemini-pro-1.5-8b:free', pricing: { prompt: '0' } },
         { id: 'meta-llama/llama-3.2-3b-instruct:free', pricing: { prompt: '0' } },
         { id: 'meta-llama/llama-3.3-70b-instruct:free', pricing: { prompt: '0' } }
       ];
@@ -157,14 +157,14 @@ describe('Model Selector', () => {
 
     it('should sort by version number correctly', () => {
       const models = [
-        { id: 'google/gemini-flash-1.5-8b:free', pricing: { prompt: '0' } },
-        { id: 'google/gemini-2.0-flash-exp:free', pricing: { prompt: '0' } },
-        { id: 'google/gemini-1.0-flash:free', pricing: { prompt: '0' } }
+        { id: 'google/gemini-pro-1.5-8b:free', pricing: { prompt: '0' } },
+        { id: 'google/gemini-2.0-pro-exp:free', pricing: { prompt: '0' } },
+        { id: 'google/gemini-1.0-pro:free', pricing: { prompt: '0' } }
       ];
       
       const result = selectBestModels(models);
       
-      expect(result.primary).toBe('google/gemini-2.0-flash-exp:free');
+      expect(result.primary).toBe('google/gemini-2.0-pro-exp:free');
     });
 
     it('should prefer larger parameter sizes', () => {
@@ -195,12 +195,12 @@ describe('Model Selector', () => {
     it('should select latest stable flash model', () => {
       const models = [
         { 
-          name: 'models/gemini-2.0-flash',
+          name: 'models/gemini-2.0-pro',
           displayName: 'Gemini 2.0 Flash',
           supportedGenerationMethods: ['generateContent']
         },
         { 
-          name: 'models/gemini-1.5-flash',
+          name: 'models/gemini-2.0-pro',
           displayName: 'Gemini 1.5 Flash',
           supportedGenerationMethods: ['generateContent']
         }
@@ -208,18 +208,18 @@ describe('Model Selector', () => {
       
       const result = selectBestGeminiModels(models);
       
-      expect(result.primary).toBe('models/gemini-2.0-flash');
+      expect(result.primary).toBe('models/gemini-2.0-pro');
     });
 
     it('should exclude lite models', () => {
       const models = [
         { 
-          name: 'models/gemini-2.0-flash',
+          name: 'models/gemini-2.0-pro',
           displayName: 'Gemini 2.0 Flash',
           supportedGenerationMethods: ['generateContent']
         },
         { 
-          name: 'models/gemini-1.5-flash-lite',
+          name: 'models/gemini-2.0-pro-lite',
           displayName: 'Gemini 1.5 Flash Lite',
           supportedGenerationMethods: ['generateContent']
         }
@@ -227,19 +227,19 @@ describe('Model Selector', () => {
       
       const result = selectBestGeminiModels(models);
       
-      expect(result.primary).toBe('models/gemini-2.0-flash');
+      expect(result.primary).toBe('models/gemini-2.0-pro');
       expect(result.fallbacks.every(m => !m.includes('lite'))).toBe(true);
     });
 
     it('should include preview models in fallbacks', () => {
       const models = [
         { 
-          name: 'models/gemini-2.0-flash',
+          name: 'models/gemini-2.0-pro',
           displayName: 'Gemini 2.0 Flash',
           supportedGenerationMethods: ['generateContent']
         },
         { 
-          name: 'models/gemini-2.0-flash-preview',
+          name: 'models/gemini-2.0-pro-preview',
           displayName: 'Gemini 2.0 Flash Preview',
           supportedGenerationMethods: ['generateContent']
         }
@@ -247,7 +247,7 @@ describe('Model Selector', () => {
       
       const result = selectBestGeminiModels(models);
       
-      expect(result.fallbacks).toContain('models/gemini-2.0-flash-preview');
+      expect(result.fallbacks).toContain('models/gemini-2.0-pro-preview');
     });
   });
 });

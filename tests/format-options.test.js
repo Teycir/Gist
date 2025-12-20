@@ -20,7 +20,7 @@ describe('Summary Format Options Tests', () => {
     
     chrome.storage.local.get.mockResolvedValue({ 
       flashApiKey: 'test-key',
-      selectedModel: 'models/gemini-1.5-flash',
+      selectedModel: 'models/gemini-2.0-pro',
       selectedLanguage: 'English',
       summaryFormat: 'detailed'
     });
@@ -53,7 +53,7 @@ describe('Summary Format Options Tests', () => {
     
     chrome.storage.local.get.mockResolvedValue({ 
       flashApiKey: 'test-key',
-      selectedModel: 'models/gemini-1.5-flash',
+      selectedModel: 'models/gemini-2.0-pro',
       selectedLanguage: 'English',
       summaryFormat: 'brief'
     });
@@ -86,7 +86,7 @@ describe('Summary Format Options Tests', () => {
     
     chrome.storage.local.get.mockResolvedValue({ 
       flashApiKey: 'test-key',
-      selectedModel: 'models/gemini-1.5-flash',
+      selectedModel: 'models/gemini-2.0-pro',
       selectedLanguage: 'English',
       summaryFormat: 'keypoints'
     });

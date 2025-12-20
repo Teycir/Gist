@@ -18,7 +18,7 @@ describe('Performance', () => {
     
     chrome.storage.local.get.mockResolvedValue({ 
       flashApiKey: 'test-key',
-      selectedModel: 'models/gemini-2.5-flash',
+      selectedModel: 'models/gemini-2.0-pro',
       selectedLanguage: 'English',
       summaryFormat: 'detailed',
       multiSearchEnabled: false
@@ -51,7 +51,7 @@ describe('Performance', () => {
   test('should use cache for repeated queries', async () => {
     chrome.storage.local.get.mockResolvedValue({ 
       flashApiKey: 'test-key',
-      selectedModel: 'models/gemini-1.5-flash',
+      selectedModel: 'models/gemini-2.0-pro',
       selectedLanguage: 'English',
       summaryFormat: 'detailed'
     });

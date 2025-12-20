@@ -55,7 +55,7 @@ describe('Popup UI', () => {
 
   test('should filter Flash models correctly', () => {
     const models = [
-      { name: 'gemini-2.5-flash', displayName: 'Gemini 2.5 Flash', supportedGenerationMethods: ['generateContent'], description: 'Text' },
+      { name: 'gemini-2.0-pro', displayName: 'Gemini 2.5 Flash', supportedGenerationMethods: ['generateContent'], description: 'Text' },
       { name: 'gemini-image', displayName: 'Gemini Image', supportedGenerationMethods: ['generateContent'], description: 'Image generation' }
     ];
 
@@ -67,14 +67,14 @@ describe('Popup UI', () => {
     });
 
     expect(filtered.length).toBe(1);
-    expect(filtered[0].name).toBe('gemini-2.5-flash');
+    expect(filtered[0].name).toBe('gemini-2.0-pro');
   });
 
   test('should sort models by version', () => {
     const models = [
-      { name: 'gemini-1.5-flash', version: '1.5' },
-      { name: 'gemini-2.5-flash', version: '2.5' },
-      { name: 'gemini-2.0-flash', version: '2.0' }
+      { name: 'gemini-2.0-pro', version: '1.5' },
+      { name: 'gemini-2.0-pro', version: '2.5' },
+      { name: 'gemini-2.0-pro', version: '2.0' }
     ];
 
     const sorted = models.sort((a, b) => parseFloat(b.version) - parseFloat(a.version));

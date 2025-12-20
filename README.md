@@ -25,7 +25,6 @@ Think of it as your personal reading assistant that lives in your browser. Every
 - 📋 **Easy Sharing** - Share on social media or email
 - 💬 **Ask Follow-up Questions** - Chat with the AI about the summary
 - 🔄 **Multi-Search** - Search Google, Bing, and DuckDuckGo simultaneously with automatic summaries for each
-- ⚡ **Auto-Summarize** - Get summaries automatically on every search without clicking
 - ⌨️ **Keyboard Shortcut** - Press `Ctrl+Shift+S` for instant summaries
 
 ### Why Use Gist Instead of Google's AI Overviews?
@@ -256,18 +255,6 @@ Google now shows AI summaries at the top of some searches. So why use Gist?
 
 **Example:** Search "best investment strategies 2024" and get summaries from all 3 engines to compare advice
 
-**⚡ Auto-Summarize Every Search**
-1. Click the Gist icon
-2. Check "Auto-Summarize"
-3. Click "Save Settings"
-4. Now summaries appear automatically when you search
-
-**When to use Auto-Summarize:**
-- You do lots of research every day
-- You want instant answers without clicking
-- You're comparing many topics quickly
-- You're reading news throughout the day
-
 ### Real-Life Examples
 
 **Example 1: Student Research**
@@ -319,20 +306,13 @@ Google now shows AI summaries at the top of some searches. So why use Gist?
 - Compare all three to make the best decision
 - Each search engine might show different reviews!
 
-**Example 8: Auto-Summarize for Daily News**
-- Enable Auto-Summarize
-- Every morning, search "tech news today"
-- Summary appears automatically (no clicking!)
-- Read the main points in 30 seconds
-- Move on with your day
-
-**Example 9: Dark Mode for Night Reading**
+**Example 8: Dark Mode for Night Reading**
 - It's 11 PM and you're researching for tomorrow's meeting
 - Enable Dark Mode
 - Your eyes don't hurt from bright white screens
 - Read summaries comfortably in bed
 
-**Example 10: Favorites for Recipes**
+**Example 9: Favorites for Recipes**
 - Find a great summary for "easy chicken recipes"
 - Click the star to favorite it
 - Next week, can't remember the recipe
@@ -388,7 +368,6 @@ A: This keeps Gist free and private. You connect directly to Google AI, not thro
 - Try the Brief summary first (it's faster)
 - Add tags to summaries you want to find later
 - Use the follow-up questions feature to learn more
-- Enable Auto-Summarize if you search a lot
 
 **❌ Don't:**
 - Search for very recent news (less than 1 hour old)

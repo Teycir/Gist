@@ -27,7 +27,7 @@ describe('Real-world Performance Integration Tests', () => {
     const start = performance.now();
     
     chrome.storage.local.get.mockImplementation((keys, callback) => {
-      const data = { flashApiKey: 'AIzaSyDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', selectedModel: 'models/gemini-1.5-flash', selectedLanguage: 'English', summaryFormat: 'detailed' };
+      const data = { flashApiKey: 'AIzaSyDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', selectedModel: 'models/gemini-2.0-pro', selectedLanguage: 'English', summaryFormat: 'detailed' };
       if (typeof keys === 'function') {
         keys(data);
       } else if (callback) {
@@ -86,7 +86,7 @@ describe('Real-world Performance Integration Tests', () => {
     
     chrome.storage.local.get.mockResolvedValue({
       flashApiKey: 'test-key',
-      selectedModel: 'models/gemini-1.5-flash',
+      selectedModel: 'models/gemini-2.0-pro',
       selectedLanguage: 'English',
       summaryFormat: 'detailed',
       [cacheKey]: {
@@ -111,7 +111,7 @@ describe('Real-world Performance Integration Tests', () => {
     chrome.storage.local.get.mockImplementation((keys, callback) => {
       const data = {
         flashApiKey: 'test-key',
-        selectedModel: 'models/gemini-1.5-flash',
+        selectedModel: 'models/gemini-2.0-pro',
         selectedLanguage: 'English',
         summaryFormat: 'detailed',
         page_test123: {
@@ -220,7 +220,7 @@ describe('Real-world Performance Integration Tests', () => {
     
     chrome.storage.local.get.mockResolvedValue({ 
       flashApiKey: 'test-key',
-      selectedModel: 'models/gemini-1.5-flash',
+      selectedModel: 'models/gemini-2.0-pro',
       selectedLanguage: 'English',
       summaryFormat: 'detailed'
     });
@@ -274,7 +274,7 @@ describe('Real-world Performance Integration Tests', () => {
     
     chrome.storage.local.get.mockResolvedValue({ 
       flashApiKey: 'test-key',
-      selectedModel: 'models/gemini-1.5-flash',
+      selectedModel: 'models/gemini-2.0-pro',
       selectedLanguage: 'English',
       summaryFormat: 'detailed'
     });
