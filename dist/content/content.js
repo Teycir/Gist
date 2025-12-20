@@ -13,11 +13,11 @@ let isProcessing = false;
 const storageKeys = {
   summary: (key) => `summary_${simpleHash(key)}`,
   autoSummarize: (tabId) => `autoSummarize_${tabId}`,
-  wasAuto: (tabId) => `wasAuto_${tabId}`
+  wasAuto: (tabId) => `wasAuto_${tabId}`,
 };
 
 function memoize(fn, keyFn) {
-  return function(...args) {
+  return function (...args) {
     const key = keyFn ? keyFn(...args) : args[0];
     if (memoCache.has(key)) return memoCache.get(key);
     const result = fn.apply(this, args);
@@ -36,28 +36,31 @@ const YOUTUBE_REGEX = /youtube\.com/;
 let conversationHistory = [];
 
 const MD_PATTERNS = [
-  [/^### (.*$)/gim, '<h3>$1</h3>'],
-  [/^## (.*$)/gim, '<h2>$1</h2>'],
-  [/^# (.*$)/gim, '<h1>$1</h1>'],
-  [/\*\*(.+?)\*\*/g, '<strong>$1</strong>'],
-  [/\*(.+?)\*/g, '<em>$1</em>'],
-  [/`(.+?)`/g, '<code>$1</code>'],
-  [/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="summary-link">$1</a>'],
-  [/^\*   (.+)$/gim, '<li>$1</li>'],
-  [/(<li>.*<\/li>)/s, '<ul>$1</ul>'],
-  [/\n\n/g, '</p><p>'],
-  [/^(.+)$/gim, '<p>$1</p>'],
-  [/<\/p><p><h/g, '</p><h'],
-  [/<\/h([123])><\/p>/g, '</h$1>'],
-  [/<p><\/p>/g, ''],
-  [/<p>(<ul>)/g, '$1'],
-  [/(<\/ul>)<\/p>/g, '$1']
+  [/^### (.*$)/gim, "<h3>$1</h3>"],
+  [/^## (.*$)/gim, "<h2>$1</h2>"],
+  [/^# (.*$)/gim, "<h1>$1</h1>"],
+  [/\*\*(.+?)\*\*/g, "<strong>$1</strong>"],
+  [/\*(.+?)\*/g, "<em>$1</em>"],
+  [/`(.+?)`/g, "<code>$1</code>"],
+  [
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer" class="summary-link">$1</a>',
+  ],
+  [/^\*   (.+)$/gim, "<li>$1</li>"],
+  [/(<li>.*<\/li>)/s, "<ul>$1</ul>"],
+  [/\n\n/g, "</p><p>"],
+  [/^(.+)$/gim, "<p>$1</p>"],
+  [/<\/p><p><h/g, "</p><h"],
+  [/<\/h([123])><\/p>/g, "</h$1>"],
+  [/<p><\/p>/g, ""],
+  [/<p>(<ul>)/g, "$1"],
+  [/(<\/ul>)<\/p>/g, "$1"],
 ];
 
 const simpleHash = memoize((str) => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash = (hash << 5) - hash + str.charCodeAt(i);
     hash = hash & hash;
   }
   return Math.abs(hash).toString(36).slice(0, 8);
@@ -76,9 +79,15 @@ async function getStorageSize() {
 async function clearOldCaches() {
   try {
     const items = await chrome.storage.local.get(null);
-    const keys = Object.keys(items).filter(k => k.startsWith('page_') || k.startsWith('summary_'));
-    const sorted = keys.map(k => ({ key: k, time: items[k]?.timestamp || 0 })).sort((a, b) => a.time - b.time);
-    const toRemove = sorted.slice(0, Math.ceil(keys.length / 2)).map(x => x.key);
+    const keys = Object.keys(items).filter(
+      (k) => k.startsWith("page_") || k.startsWith("summary_"),
+    );
+    const sorted = keys
+      .map((k) => ({ key: k, time: items[k]?.timestamp || 0 }))
+      .sort((a, b) => a.time - b.time);
+    const toRemove = sorted
+      .slice(0, Math.ceil(keys.length / 2))
+      .map((x) => x.key);
     if (toRemove.length > 0) await chrome.storage.local.remove(toRemove);
   } catch (e) {}
 }
@@ -110,42 +119,47 @@ function cleanupCaches() {
 }
 
 function addSummarizeButton() {
-  if (document.querySelector('.summarize-btn')) return;
+  console.log("[addSummarizeButton] Called, engine:", detectSearchEngine());
+  if (document.querySelector(".summarize-btn")) {
+    console.log("[addSummarizeButton] Button already exists");
+    return;
+  }
 
   batchDOMUpdates(() => {
-    const btn = document.createElement('button');
-    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="32" height="32"><rect x="28" y="20" width="72" height="88" rx="8" fill="#fff"/><rect x="40" y="40" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="52" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="64" width="32" height="4" rx="2" fill="#667eea" opacity="0.9"/><path d="M88 76 L92 80 L88 84 M84 80 L92 80" stroke="#ffd700" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="78" cy="72" r="2" fill="#ffd700"/><circle cx="94" cy="72" r="1.5" fill="#ffd700"/><circle cx="94" cy="88" r="1.5" fill="#ffd700"/></svg>';
-    btn.className = 'summarize-btn';
-    btn.setAttribute('data-tooltip', 'Summarize');
-    btn.setAttribute('aria-label', 'Summarize search results with AI');
+    const btn = document.createElement("button");
+    btn.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="32" height="32"><rect x="28" y="20" width="72" height="88" rx="8" fill="#fff"/><rect x="40" y="40" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="52" width="48" height="4" rx="2" fill="#667eea" opacity="0.9"/><rect x="40" y="64" width="32" height="4" rx="2" fill="#667eea" opacity="0.9"/><path d="M88 76 L92 80 L88 84 M84 80 L92 80" stroke="#ffd700" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="78" cy="72" r="2" fill="#ffd700"/><circle cx="94" cy="72" r="1.5" fill="#ffd700"/><circle cx="94" cy="88" r="1.5" fill="#ffd700"/></svg>';
+    btn.className = "summarize-btn";
+    btn.setAttribute("data-tooltip", "Summarize");
+    btn.setAttribute("aria-label", "Summarize search results with AI");
     btn.onclick = summarizeResults;
     document.body.appendChild(btn);
     summarizeBtn = btn;
+    console.log("[addSummarizeButton] Button added to page");
     updateButtonLanguage();
   });
 }
 
 function updateButtonLanguage() {
   if (!summarizeBtn) return;
-  chrome.storage.local.get('selectedLanguage', ({ selectedLanguage }) => {
+  chrome.storage.local.get("selectedLanguage", ({ selectedLanguage }) => {
     const translations = {
-      English: 'Summarize',
-      Spanish: 'Resumir',
-      French: 'Résumer',
-      German: 'Zusammenfassen'
+      English: "Summarize",
+      Spanish: "Resumir",
+      French: "Résumer",
+      German: "Zusammenfassen",
     };
-    const tooltipText = translations[selectedLanguage] || 'Summarize';
-    summarizeBtn.setAttribute('data-tooltip', tooltipText);
-    summarizeBtn.removeAttribute('title');
-    summarizeBtn.setAttribute('aria-label', tooltipText);
+    const tooltipText = translations[selectedLanguage] || "Summarize";
+    summarizeBtn.setAttribute("data-tooltip", tooltipText);
+    summarizeBtn.removeAttribute("title");
+    summarizeBtn.setAttribute("aria-label", tooltipText);
   });
 }
 
 function detectSearchEngine() {
   const hostname = window.location.hostname;
-  if (hostname.includes('google.com')) return 'google';
-  if (hostname.includes('bing.com')) return 'bing';
-  if (hostname.includes('duckduckgo.com')) return 'duckduckgo';
+  if (hostname.includes("google.com")) return "google";
+  if (hostname.includes("duckduckgo.com")) return "duckduckgo";
   return null;
 }
 
@@ -158,108 +172,66 @@ function scrapeUrls() {
   const extractUrl = (href) => {
     if (!href) return null;
     const originalHref = href;
-    href = href.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    href = href
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">");
     let finalUrl = null;
 
     // Method 1: Encoded/redirect URL extraction
-    if (href.includes('/url?') || href.includes('/ck/a') || href.includes('uddg=')) {
+    if (href.includes("/url?") || href.includes("uddg=")) {
       const patterns = [
-        /[?&]u=a1([^&]+)/, // Bing a1 format
-        /[?&]u=([^&]+)/, // Bing u format
         /[?&]url=([^&]+)/, // Google url format
         /[?&]q=([^&]+)/, // Alternative q format
-        /uddg=([^&]+)/ // DuckDuckGo redirect
+        /uddg=([^&]+)/, // DuckDuckGo redirect
       ];
       for (const pattern of patterns) {
         const match = href.match(pattern);
         if (match) {
           try {
-            finalUrl = pattern.source.includes('a1') ? atob(decodeURIComponent(match[1])) : decodeURIComponent(match[1]);
-            if (finalUrl && finalUrl.startsWith('http')) break;
-          } catch (e) {
-            try {
-              finalUrl = decodeURIComponent(match[1]);
-              if (finalUrl && finalUrl.startsWith('http')) break;
-            } catch (e2) {}
-          }
+            finalUrl = decodeURIComponent(match[1]);
+            if (finalUrl && finalUrl.startsWith("http")) break;
+          } catch (e) {}
         }
       }
     }
 
-    // Method 2: Direct HTTP URL (clean version)
-    if (!finalUrl && href.startsWith('http')) {
-      // Remove Bing tracking parameters
-      finalUrl = href.replace(/[?&](rdr|rdrig|PC|form|FORM|qs|cvid|pq|sc|sp|sk)=[^&]*/g, '').split(/[?&#]/)[0];
+    // Method 2: Direct HTTP URL
+    if (!finalUrl && href.startsWith("http")) {
+      finalUrl = href.split(/[?&#]/)[0];
     }
 
     // Method 3: Protocol-relative URL
-    if (!finalUrl && href.startsWith('//')) {
-      finalUrl = 'https:' + href.split(/[?&#]/)[0];
+    if (!finalUrl && href.startsWith("//")) {
+      finalUrl = "https:" + href.split(/[?&#]/)[0];
     }
 
-    // Filter out Bing internal URLs
-    if (finalUrl && (finalUrl.includes('bing.com') || finalUrl.includes('microsoft.com/bing'))) {
-      return null;
-    }
-
-    return finalUrl && finalUrl.startsWith('http') && !YOUTUBE_REGEX.test(finalUrl) ? finalUrl : null;
+    return finalUrl &&
+      finalUrl.startsWith("http") &&
+      !YOUTUBE_REGEX.test(finalUrl)
+      ? finalUrl
+      : null;
   };
 
-  if (engine === 'bing') {
-    const selectors = [
-      '#b_results li.b_algo h2 a',
-      '#b_results .b_algo h2 a', 
-      'li.b_algo h2 a',
-      '.b_algo h2 a',
-      '#b_results li h2 a',
-      '#b_results .b_title a',
-      '.b_title h2 a',
-      '#b_results cite ~ a',
-      '#b_results li a:not([href*="bing.com"])',
-      '#b_results a[href^="http"]:not([href*="bing.com"])',
-      'main a[href^="http"]:not([href*="bing.com"])',
-      '[role="main"] a[href^="http"]:not([href*="bing.com"])'
-    ];
-    for (const selector of selectors) {
-      try {
-        const links = document.querySelectorAll(selector);
-        console.log(`[scrapeUrls] Bing selector "${selector}" found ${links.length} links`);
-        for (const link of links) {
-          if (urls.length >= 9) break;
-          const href = link.getAttribute('href') || link.href;
-          console.log(`[scrapeUrls] Processing href: ${href?.substring(0, 100)}`);
-          const url = extractUrl(href);
-          if (url && !seen.has(url)) {
-            console.log(`[scrapeUrls] ✓ Extracted URL: ${url}`);
-            seen.add(url);
-            urls.push(url);
-          }
-        }
-        if (urls.length >= 3) break;
-      } catch (e) {
-        console.error(`[scrapeUrls] Error with selector "${selector}":`, e);
-      }
-    }
-    console.log(`[scrapeUrls] Total Bing URLs found: ${urls.length}`);
-  } else if (engine === 'duckduckgo') {
+  if (engine === "duckduckgo") {
     const selectors = [
       'article[data-testid="result"] a[href^="http"]',
       'article a[href^="http"]',
       '.result a[href^="http"]',
       'a[data-testid="result-title-a"]',
       '[data-testid="result"] h2 a',
-      '.result__a',
-      '.result__url',
-      'a.result__a',
+      ".result__a",
+      ".result__url",
+      "a.result__a",
       'ol.react-results--main a[href^="http"]',
-      'main a[href^="http"]'
+      'main a[href^="http"]',
     ];
     for (const selector of selectors) {
       try {
         const links = document.querySelectorAll(selector);
         for (const link of links) {
           if (urls.length >= 9) break;
-          const url = extractUrl(link.getAttribute('href') || link.href);
+          const url = extractUrl(link.getAttribute("href") || link.href);
           if (url && !seen.has(url)) {
             seen.add(url);
             urls.push(url);
@@ -279,14 +251,14 @@ function scrapeUrls() {
       'h3 a[href^="http"]:not([href*="google.com"])',
       'div[data-hveid] a[href^="http"]:not([href*="google.com"])',
       'main a[href^="http"]:not([href*="google.com"])',
-      '[role="main"] a[href^="http"]:not([href*="google.com"])'
+      '[role="main"] a[href^="http"]:not([href*="google.com"])',
     ];
     for (const selector of selectors) {
       try {
         const links = document.querySelectorAll(selector);
         for (const link of links) {
           if (urls.length >= 9) break;
-          const url = extractUrl(link.getAttribute('href') || link.href);
+          const url = extractUrl(link.getAttribute("href") || link.href);
           if (url && !seen.has(url)) {
             seen.add(url);
             urls.push(url);
@@ -307,109 +279,142 @@ function scrapeGoogleUrls() {
 function isValidUrl(url) {
   try {
     const parsed = new URL(url);
-    return parsed.protocol === 'https:' && !parsed.hostname.match(/^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)/i);
+    return (
+      parsed.protocol === "https:" &&
+      !parsed.hostname.match(
+        /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)/i,
+      )
+    );
   } catch {
     return false;
   }
 }
 
 function sanitizeText(text) {
-  return text.replace(/[<>"'&]/g, char => {
-    const map = {'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '&': '&amp;'};
+  return text.replace(/[<>"'&]/g, (char) => {
+    const map = {
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+      "&": "&amp;",
+    };
     return map[char];
   });
 }
 
 function convertMarkdownToHtml(markdown) {
-  return MD_PATTERNS.reduce((html, [pattern, replacement]) => html.replace(pattern, replacement), markdown);
+  return MD_PATTERNS.reduce(
+    (html, [pattern, replacement]) => html.replace(pattern, replacement),
+    markdown,
+  );
 }
 
-const cleanHtmlToText = memoize((html) => {
-  let text = html
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
-    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
-    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
-    .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
-    .replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '')
-    .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '')
-    .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '')
-    .replace(/<div[^>]*class="[^"]*\bad[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
-    .replace(/<div[^>]*id="[^"]*\bad[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
+const cleanHtmlToText = memoize(
+  (html) => {
+    let text = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, "")
+      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, "")
+      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, "")
+      .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, "")
+      .replace(/<form[^>]*>[\s\S]*?<\/form>/gi, "")
+      .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, "")
+      .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, "")
+      .replace(/<div[^>]*class="[^"]*\bad[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "")
+      .replace(/<div[^>]*id="[^"]*\bad[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
 
-  const contentPatterns = [
-    /<article[^>]*>([\s\S]*?)<\/article>/i,
-    /<main[^>]*>([\s\S]*?)<\/main>/i,
-    /<div[^>]*class="[^"]*content[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
-    /<div[^>]*id="main-content"[^>]*>([\s\S]*?)<\/div>/i
-  ];
+    const contentPatterns = [
+      /<article[^>]*>([\s\S]*?)<\/article>/i,
+      /<main[^>]*>([\s\S]*?)<\/main>/i,
+      /<div[^>]*class="[^"]*content[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+      /<div[^>]*id="main-content"[^>]*>([\s\S]*?)<\/div>/i,
+    ];
 
-  for (const pattern of contentPatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      text = match[1];
-      break;
+    for (const pattern of contentPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        text = match[1];
+        break;
+      }
     }
-  }
 
-  return text
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&[a-z]+;/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 1200);
-}, (html) => simpleHash(html));
+    return text
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&[a-z]+;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 1200);
+  },
+  (html) => simpleHash(html),
+);
 
 async function displaySummary(markdown, urls, format, language, model = null) {
   loadNonCriticalCSS();
-  console.log('displaySummary called', { markdown: markdown.substring(0, 100), urls, format, language });
-  const overlay = document.createElement('div');
-  overlay.className = 'summary-overlay';
+  console.log("displaySummary called", {
+    markdown: markdown.substring(0, 100),
+    urls,
+    format,
+    language,
+  });
+  const overlay = document.createElement("div");
+  overlay.className = "summary-overlay";
 
-  chrome.storage.local.get(['darkMode'], (data) => {
-    if (data.darkMode) document.body.classList.add('dark');
+  chrome.storage.local.get(["darkMode"], (data) => {
+    if (data.darkMode) document.body.classList.add("dark");
   });
 
-  const content = document.createElement('div');
-  content.className = 'summary-content';
+  const content = document.createElement("div");
+  content.className = "summary-content";
 
-  const header = document.createElement('div');
-  header.className = 'summary-header';
+  const header = document.createElement("div");
+  header.className = "summary-header";
 
   // Tag input section
-  const tagSection = document.createElement('div');
-  tagSection.className = 'tag-section';
+  const tagSection = document.createElement("div");
+  tagSection.className = "tag-section";
 
   const searchQuery = extractSearchQuery();
-  const summaryKey = storageKeys.summary(searchQuery + markdown.substring(0, 100));
+  const summaryKey = storageKeys.summary(
+    searchQuery + markdown.substring(0, 100),
+  );
 
-  const tagInput = document.createElement('input');
-  tagInput.type = 'text';
-  tagInput.className = 'tag-input';
-  tagInput.placeholder = language === 'Spanish' ? '🏷️ Agregar etiqueta y presionar Enter' : language === 'French' ? '🏷️ Ajouter une étiquette et appuyer sur Entrée' : language === 'German' ? '🏷️ Tag hinzufügen und Enter drücken' : '🏷️ Add a tag for categorization - then press Enter';
+  const tagInput = document.createElement("input");
+  tagInput.type = "text";
+  tagInput.className = "tag-input";
+  tagInput.placeholder =
+    language === "Spanish"
+      ? "🏷️ Agregar etiqueta y presionar Enter"
+      : language === "French"
+        ? "🏷️ Ajouter une étiquette et appuyer sur Entrée"
+        : language === "German"
+          ? "🏷️ Tag hinzufügen und Enter drücken"
+          : "🏷️ Add a tag for categorization - then press Enter";
 
-  const tagsDisplay = document.createElement('div');
-  tagsDisplay.className = 'tags-display';
+  const tagsDisplay = document.createElement("div");
+  tagsDisplay.className = "tags-display";
 
   // Load existing tags
   const loadTags = async () => {
     const stored = await chrome.storage.local.get(summaryKey);
     const tags = stored[summaryKey]?.tags || [];
-    tagsDisplay.innerHTML = '';
-    tags.forEach(tag => {
-      const tagBadge = document.createElement('span');
-      tagBadge.className = 'tag-badge';
+    tagsDisplay.innerHTML = "";
+    tags.forEach((tag) => {
+      const tagBadge = document.createElement("span");
+      tagBadge.className = "tag-badge";
       tagBadge.textContent = tag;
-      const removeBtn = document.createElement('span');
-      removeBtn.className = 'tag-remove';
-      removeBtn.textContent = '×';
+      const removeBtn = document.createElement("span");
+      removeBtn.className = "tag-remove";
+      removeBtn.textContent = "×";
       removeBtn.onclick = async () => {
         const data = await chrome.storage.local.get(summaryKey);
         const currentTags = data[summaryKey]?.tags || [];
-        const newTags = currentTags.filter(t => t !== tag);
-        await chrome.storage.local.set({ [summaryKey]: { ...data[summaryKey], tags: newTags } });
+        const newTags = currentTags.filter((t) => t !== tag);
+        await chrome.storage.local.set({
+          [summaryKey]: { ...data[summaryKey], tags: newTags },
+        });
         loadTags();
       };
       tagBadge.appendChild(removeBtn);
@@ -421,50 +426,54 @@ async function displaySummary(markdown, urls, format, language, model = null) {
   const getAllTags = async () => {
     const items = await chrome.storage.local.get(null);
     const allTags = new Set();
-    Object.entries(items).filter(([k]) => k.startsWith('summary_')).forEach(([_, v]) => {
-      if (v.tags) v.tags.forEach(t => allTags.add(t));
-    });
+    Object.entries(items)
+      .filter(([k]) => k.startsWith("summary_"))
+      .forEach(([_, v]) => {
+        if (v.tags) v.tags.forEach((t) => allTags.add(t));
+      });
     return Array.from(allTags);
   };
 
   // Autocomplete dropdown
-  const dropdown = document.createElement('div');
-  dropdown.className = 'tag-dropdown';
-  dropdown.style.display = 'none';
+  const dropdown = document.createElement("div");
+  dropdown.className = "tag-dropdown";
+  dropdown.style.display = "none";
 
   let tagInputTimeout;
   tagInput.oninput = async (e) => {
     clearTimeout(tagInputTimeout);
     const val = e.target.value.trim();
     if (!val) {
-      dropdown.style.display = 'none';
+      dropdown.style.display = "none";
       return;
     }
     tagInputTimeout = setTimeout(async () => {
       const allTags = await getAllTags();
-      const matches = allTags.filter(t => t.toLowerCase().includes(val.toLowerCase()));
+      const matches = allTags.filter((t) =>
+        t.toLowerCase().includes(val.toLowerCase()),
+      );
       if (matches.length > 0) {
-        dropdown.innerHTML = '';
-        matches.slice(0, 5).forEach(tag => {
-          const option = document.createElement('div');
-          option.className = 'tag-option';
+        dropdown.innerHTML = "";
+        matches.slice(0, 5).forEach((tag) => {
+          const option = document.createElement("div");
+          option.className = "tag-option";
           option.textContent = tag;
           option.onclick = () => {
             tagInput.value = tag;
-            dropdown.style.display = 'none';
+            dropdown.style.display = "none";
             tagInput.focus();
           };
           dropdown.appendChild(option);
         });
-        dropdown.style.display = 'block';
+        dropdown.style.display = "block";
       } else {
-        dropdown.style.display = 'none';
+        dropdown.style.display = "none";
       }
     }, 150);
   };
 
   tagInput.onkeypress = async (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       const tag = tagInput.value.trim();
       if (!tag) return;
       const stored = await chrome.storage.local.get(summaryKey);
@@ -483,12 +492,12 @@ async function displaySummary(markdown, urls, format, language, model = null) {
             language: existingData.language || language,
             model: existingData.model || model,
             engine: existingData.engine || engine,
-            query: existingData.query || extractSearchQuery()
-          }
+            query: existingData.query || extractSearchQuery(),
+          },
         });
       }
-      tagInput.value = '';
-      dropdown.style.display = 'none';
+      tagInput.value = "";
+      dropdown.style.display = "none";
       loadTags();
     }
   };
@@ -500,145 +509,157 @@ async function displaySummary(markdown, urls, format, language, model = null) {
 
   const engine = detectSearchEngine();
   const engineNames = {
-    google: 'Google',
-    bing: 'Bing',
-    duckduckgo: 'DuckDuckGo'
+    google: "Google",
+    duckduckgo: "DuckDuckGo",
   };
-  const engineName = engineNames[engine] || 'AI';
+  const engineName = engineNames[engine] || "AI";
 
   const translations = {
     English: {
       brief: `🚀 ${engineName} Brief Summary`,
       detailed: `🚀 ${engineName} Detailed Summary`,
-      top: 'Top',
-      analyzed: 'search results',
-      copy: 'Copy',
-      download: 'Download as .md',
-      share: 'Share',
-      close: 'Close',
-      shareX: 'Share on X',
-      shareLinkedIn: 'Share on LinkedIn',
-      shareEmail: 'Share via Email',
-      history: 'History',
-      favorites: 'Favorites',
-      favorite: 'Favorite'
+      top: "Top",
+      analyzed: "search results",
+      copy: "Copy",
+      download: "Download as .md",
+      share: "Share",
+      close: "Close",
+      shareX: "Share on X",
+      shareLinkedIn: "Share on LinkedIn",
+      shareEmail: "Share via Email",
+      history: "History",
+      favorites: "Favorites",
+      favorite: "Favorite",
     },
     Spanish: {
       brief: `🚀 Resumen Breve de ${engineName}`,
       detailed: `🚀 Resumen Detallado de ${engineName}`,
-      top: 'Top',
-      analyzed: 'resultados de búsqueda',
-      copy: 'Copiar',
-      download: 'Descargar como .md',
-      share: 'Compartir',
-      close: 'Cerrar',
-      shareX: 'Compartir en X',
-      shareLinkedIn: 'Compartir en LinkedIn',
-      shareEmail: 'Compartir por correo',
-      history: 'Historial',
-      favorites: 'Favoritos',
-      favorite: 'Favorito'
+      top: "Top",
+      analyzed: "resultados de búsqueda",
+      copy: "Copiar",
+      download: "Descargar como .md",
+      share: "Compartir",
+      close: "Cerrar",
+      shareX: "Compartir en X",
+      shareLinkedIn: "Compartir en LinkedIn",
+      shareEmail: "Compartir por correo",
+      history: "Historial",
+      favorites: "Favoritos",
+      favorite: "Favorito",
     },
     French: {
       brief: `🚀 Résumé Bref ${engineName}`,
       detailed: `🚀 Résumé Détaillé ${engineName}`,
-      top: 'Top',
-      analyzed: 'résultats de recherche',
-      copy: 'Copier',
-      download: 'Télécharger en .md',
-      share: 'Partager',
-      close: 'Fermer',
-      shareX: 'Partager sur X',
-      shareLinkedIn: 'Partager sur LinkedIn',
-      shareEmail: 'Partager par e-mail',
-      history: 'Historique',
-      favorites: 'Favoris',
-      favorite: 'Favori'
+      top: "Top",
+      analyzed: "résultats de recherche",
+      copy: "Copier",
+      download: "Télécharger en .md",
+      share: "Partager",
+      close: "Fermer",
+      shareX: "Partager sur X",
+      shareLinkedIn: "Partager sur LinkedIn",
+      shareEmail: "Partager par e-mail",
+      history: "Historique",
+      favorites: "Favoris",
+      favorite: "Favori",
     },
     German: {
       brief: `🚀 ${engineName}-Kurzzusammenfassung`,
       detailed: `🚀 ${engineName}-Detaillierte Zusammenfassung`,
-      top: 'Top',
-      analyzed: 'Suchergebnisse',
-      copy: 'Kopieren',
-      download: 'Als .md herunterladen',
-      share: 'Teilen',
-      close: 'Schließen',
-      shareX: 'Auf X teilen',
-      shareLinkedIn: 'Auf LinkedIn teilen',
-      shareEmail: 'Per E-Mail teilen',
-      history: 'Verlauf',
-      favorites: 'Favoriten',
-      favorite: 'Favorit'
-    }
+      top: "Top",
+      analyzed: "Suchergebnisse",
+      copy: "Kopieren",
+      download: "Als .md herunterladen",
+      share: "Teilen",
+      close: "Schließen",
+      shareX: "Auf X teilen",
+      shareLinkedIn: "Auf LinkedIn teilen",
+      shareEmail: "Per E-Mail teilen",
+      history: "Verlauf",
+      favorites: "Favoriten",
+      favorite: "Favorit",
+    },
   };
 
   const t = translations[language] || translations.English;
 
   let historyVisible = false;
 
-  const title = document.createElement('h2');
-  title.className = 'summary-title';
+  const title = document.createElement("h2");
+  title.className = "summary-title";
   title.textContent = t[format] || t.brief;
 
-  const actions = document.createElement('div');
-  actions.className = 'summary-actions';
+  const actions = document.createElement("div");
+  actions.className = "summary-actions";
 
-  const historyBtn = document.createElement('button');
-  historyBtn.className = 'close-btn';
-  historyBtn.innerHTML = '📚';
-  historyBtn.setAttribute('data-tooltip', t.history);
+  const historyBtn = document.createElement("button");
+  historyBtn.className = "close-btn";
+  historyBtn.innerHTML = "📚";
+  historyBtn.setAttribute("data-tooltip", t.history);
 
-  const detailedBtn = document.createElement('button');
-  detailedBtn.className = 'close-btn';
-  detailedBtn.innerHTML = '📄';
+  const detailedBtn = document.createElement("button");
+  detailedBtn.className = "close-btn";
+  detailedBtn.innerHTML = "📄";
   const detailedTooltips = {
-    English: 'Detailed Search',
-    Spanish: 'Búsqueda Detallada',
-    French: 'Recherche Détaillée',
-    German: 'Detaillierte Suche'
+    English: "Detailed Search",
+    Spanish: "Búsqueda Detallada",
+    French: "Recherche Détaillée",
+    German: "Detaillierte Suche",
   };
-  detailedBtn.setAttribute('data-tooltip', detailedTooltips[language] || detailedTooltips.English);
-  detailedBtn.style.display = format === 'brief' ? 'flex' : 'none';
+  detailedBtn.setAttribute(
+    "data-tooltip",
+    detailedTooltips[language] || detailedTooltips.English,
+  );
+  detailedBtn.style.display = format === "brief" ? "flex" : "none";
   detailedBtn.onclick = async () => {
     const query = extractSearchQuery();
     const engine = detectSearchEngine();
     const engineUrls = {
       google: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
-      bing: `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
-      duckduckgo: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`
+      duckduckgo: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
     };
     const searchUrl = engineUrls[engine] || engineUrls.google;
-    const { selectedLanguage, selectedModel } = await chrome.storage.local.get(['selectedLanguage', 'selectedModel']);
-    chrome.runtime.sendMessage({ action: 'openDetailedSearch', url: searchUrl, language: selectedLanguage, model: selectedModel });
+    const { selectedLanguage, selectedModel } = await chrome.storage.local.get([
+      "selectedLanguage",
+      "selectedModel",
+    ]);
+    chrome.runtime.sendMessage({
+      action: "openDetailedSearch",
+      url: searchUrl,
+      language: selectedLanguage,
+      model: selectedModel,
+    });
   };
 
-  const refreshBtn = document.createElement('button');
-  refreshBtn.className = 'close-btn';
-  refreshBtn.innerHTML = '🔄';
+  const refreshBtn = document.createElement("button");
+  refreshBtn.className = "close-btn";
+  refreshBtn.innerHTML = "🔄";
   const refreshTooltips = {
-    English: 'Refresh (bypass cache)',
-    Spanish: 'Actualizar (omitir caché)',
-    French: 'Actualiser (ignorer le cache)',
-    German: 'Aktualisieren (Cache umgehen)'
+    English: "Refresh (bypass cache)",
+    Spanish: "Actualizar (omitir caché)",
+    French: "Actualiser (ignorer le cache)",
+    German: "Aktualisieren (Cache umgehen)",
   };
-  refreshBtn.setAttribute('data-tooltip', refreshTooltips[language] || refreshTooltips.English);
+  refreshBtn.setAttribute(
+    "data-tooltip",
+    refreshTooltips[language] || refreshTooltips.English,
+  );
   refreshBtn.onclick = async () => {
     overlay.remove();
     const searchQuery = extractSearchQuery();
-    const cacheKey = `${searchQuery}-${urls.join(',')}-${language}-${format}`;
+    const cacheKey = `${searchQuery}-${urls.join(",")}-${language}-${format}`;
     summaryCache.delete(cacheKey);
     const storageKey = `summary_${simpleHash(cacheKey)}`;
     await chrome.storage.local.remove(storageKey);
     await summarizeResults();
   };
 
-  const starBtn = document.createElement('button');
-  starBtn.className = 'close-btn';
+  const starBtn = document.createElement("button");
+  starBtn.className = "close-btn";
   chrome.storage.local.get(summaryKey, (result) => {
-    starBtn.innerHTML = result[summaryKey]?.isFavorite ? '⭐' : '☆';
+    starBtn.innerHTML = result[summaryKey]?.isFavorite ? "⭐" : "☆";
   });
-  starBtn.setAttribute('data-tooltip', t.favorite);
+  starBtn.setAttribute("data-tooltip", t.favorite);
   starBtn.onclick = async () => {
     const result = await chrome.storage.local.get(summaryKey);
     const existingData = result[summaryKey] || {};
@@ -654,76 +675,110 @@ async function displaySummary(markdown, urls, format, language, model = null) {
         language: existingData.language || language,
         engine: existingData.engine || engine,
         model: existingData.model || model,
-        isFavorite
-      }
+        isFavorite,
+      },
     });
-    starBtn.innerHTML = isFavorite ? '⭐' : '☆';
+    starBtn.innerHTML = isFavorite ? "⭐" : "☆";
   };
 
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'close-btn';
-  copyBtn.innerHTML = '📋';
-  copyBtn.setAttribute('data-tooltip', t.copy);
+  const copyBtn = document.createElement("button");
+  copyBtn.className = "close-btn";
+  copyBtn.innerHTML = "📋";
+  copyBtn.setAttribute("data-tooltip", t.copy);
   copyBtn.onclick = () => {
     navigator.clipboard.writeText(markdown);
-    copyBtn.innerHTML = '✓';
-    setTimeout(() => copyBtn.innerHTML = '📋', 2000);
+    copyBtn.innerHTML = "✓";
+    setTimeout(() => (copyBtn.innerHTML = "📋"), 2000);
   };
 
-  const downloadBtn = document.createElement('button');
-  downloadBtn.className = 'close-btn';
-  downloadBtn.innerHTML = '⬇️';
-  downloadBtn.setAttribute('data-tooltip', t.download);
+  const downloadBtn = document.createElement("button");
+  downloadBtn.className = "close-btn";
+  downloadBtn.innerHTML = "⬇️";
+  downloadBtn.setAttribute("data-tooltip", t.download);
   downloadBtn.onclick = () => {
-    const decodedMarkdown = markdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-    const query = extractSearchQuery().replace(/[^a-z0-9]/gi, '_').slice(0, 50);
-    const timestamp = new Date().toISOString().split('T')[0];
+    const decodedMarkdown = markdown
+      .replace(/&#39;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">");
+    const query = extractSearchQuery()
+      .replace(/[^a-z0-9]/gi, "_")
+      .slice(0, 50);
+    const timestamp = new Date().toISOString().split("T")[0];
     const filename = `gist_${engineName.toLowerCase()}_${query}_${timestamp}.md`;
-    const blob = new Blob([decodedMarkdown], { type: 'text/markdown' });
+    const blob = new Blob([decodedMarkdown], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-    downloadBtn.innerHTML = '✓';
-    setTimeout(() => downloadBtn.innerHTML = '⬇️', 2000);
+    downloadBtn.innerHTML = "✓";
+    setTimeout(() => (downloadBtn.innerHTML = "⬇️"), 2000);
   };
 
-  const shareBtn = document.createElement('button');
-  shareBtn.className = 'close-btn share-btn';
-  shareBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M15.5 6.5L8.5 10.5M8.5 13.5L15.5 17.5" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
-  shareBtn.setAttribute('data-tooltip', t.share);
+  const shareBtn = document.createElement("button");
+  shareBtn.className = "close-btn share-btn";
+  shareBtn.innerHTML =
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M15.5 6.5L8.5 10.5M8.5 13.5L15.5 17.5" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
+  shareBtn.setAttribute("data-tooltip", t.share);
   shareBtn.onclick = (e) => {
     e.stopPropagation();
-    const menu = document.createElement('div');
-    menu.className = 'share-menu';
 
-    const xBtn = document.createElement('button');
-    xBtn.className = 'share-option';
+    // Close menu if already open
+    const existingMenu = shareBtn.querySelector(".share-menu");
+    if (existingMenu) {
+      existingMenu.remove();
+      return;
+    }
+
+    const menu = document.createElement("div");
+    menu.className = "share-menu";
+
+    const closeMenuBtn = document.createElement("button");
+    closeMenuBtn.className = "share-close";
+    closeMenuBtn.innerHTML = "×";
+    closeMenuBtn.onclick = (ev) => {
+      ev.stopPropagation();
+      menu.remove();
+    };
+    menu.appendChild(closeMenuBtn);
+
+    const xBtn = document.createElement("button");
+    xBtn.className = "share-option";
     xBtn.innerHTML = `𝕏 ${t.shareX}`;
     xBtn.onclick = () => {
-      const text = `${markdown.split('\n')[0].replace(/^#\s*/, '')}\n\nSearch: ${extractSearchQuery()}`;
-      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+      const text = `${markdown.split("\n")[0].replace(/^#\s*/, "")}\n\nSearch: ${extractSearchQuery()}`;
+      window.open(
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,
+        "_blank",
+      );
       menu.remove();
     };
 
-    const linkedinBtn = document.createElement('button');
-    linkedinBtn.className = 'share-option';
+    const linkedinBtn = document.createElement("button");
+    linkedinBtn.className = "share-option";
     linkedinBtn.innerHTML = `in ${t.shareLinkedIn}`;
     linkedinBtn.onclick = () => {
-      const text = `${markdown.split('\n')[0].replace(/^#\s*/, '')}\n\nSearch: ${extractSearchQuery()}`;
-      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodeURIComponent(text)}`, '_blank');
+      const text = `${markdown.split("\n")[0].replace(/^#\s*/, "")}\n\nSearch: ${extractSearchQuery()}`;
+      window.open(
+        `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodeURIComponent(text)}`,
+        "_blank",
+      );
       menu.remove();
     };
 
-    const emailBtn = document.createElement('button');
-    emailBtn.className = 'share-option';
+    const emailBtn = document.createElement("button");
+    emailBtn.className = "share-option";
     emailBtn.innerHTML = `✉️ ${t.shareEmail}`;
     emailBtn.onclick = () => {
-      const subject = markdown.split('\n')[0].replace(/^#\s*/, '');
+      const subject = markdown.split("\n")[0].replace(/^#\s*/, "");
       const body = `${markdown}\n\nSearch: ${extractSearchQuery()}`;
-      window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+      window.open(
+        `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+        "_blank",
+      );
       menu.remove();
     };
 
@@ -735,16 +790,16 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     const closeMenu = (ev) => {
       if (!shareBtn.contains(ev.target)) {
         menu.remove();
-        document.removeEventListener('click', closeMenu);
+        document.removeEventListener("click", closeMenu);
       }
     };
-    setTimeout(() => document.addEventListener('click', closeMenu), 0);
+    setTimeout(() => document.addEventListener("click", closeMenu), 0);
   };
 
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'close-btn';
-  closeBtn.innerHTML = '×';
-  closeBtn.setAttribute('data-tooltip', t.close);
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "close-btn";
+  closeBtn.innerHTML = "×";
+  closeBtn.setAttribute("data-tooltip", t.close);
   closeBtn.onclick = () => overlay.remove();
 
   actions.appendChild(historyBtn);
@@ -760,30 +815,30 @@ async function displaySummary(markdown, urls, format, language, model = null) {
   content.appendChild(header);
   content.appendChild(tagSection);
 
-  const body = document.createElement('div');
-  body.className = 'summary-body';
+  const body = document.createElement("div");
+  body.className = "summary-body";
 
-  const historyPanel = document.createElement('div');
-  historyPanel.className = 'history-panel-inline';
-  historyPanel.style.display = 'none';
+  const historyPanel = document.createElement("div");
+  historyPanel.className = "history-panel-inline";
+  historyPanel.style.display = "none";
 
   historyBtn.onclick = async () => {
     historyVisible = !historyVisible;
-    title.textContent = historyVisible ? t.history : (t[format] || t.brief);
+    title.textContent = historyVisible ? t.history : t[format] || t.brief;
     if (historyVisible) {
       const items = await chrome.storage.local.get(null);
       const summaries = Object.entries(items)
-        .filter(([k]) => k.startsWith('summary_'))
+        .filter(([k]) => k.startsWith("summary_"))
         .map(([k, v]) => ({ key: k, ...v }))
         .sort((a, b) => {
           if (a.isFavorite && !b.isFavorite) return -1;
           if (!a.isFavorite && b.isFavorite) return 1;
           return b.timestamp - a.timestamp;
         });
-      historyPanel.innerHTML = '';
-      tagSection.style.display = 'none';
+      historyPanel.innerHTML = "";
+      tagSection.style.display = "none";
 
-      const style = document.createElement('style');
+      const style = document.createElement("style");
       style.textContent = `
         .history-item-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; margin-bottom: 8px; }
         .history-meta-badge { background: #e8eaed; color: #5f6368; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600; }
@@ -795,27 +850,36 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       `;
       historyPanel.appendChild(style);
 
-      const searchInput = document.createElement('input');
-      searchInput.type = 'text';
-      searchInput.className = 'history-search';
-      searchInput.placeholder = language === 'Spanish' ? '🔍 Buscar en historial...' : language === 'French' ? '🔍 Rechercher dans l\'historique...' : language === 'German' ? '🔍 Im Verlauf suchen...' : '🔍 Search history...';
+      const searchInput = document.createElement("input");
+      searchInput.type = "text";
+      searchInput.className = "history-search";
+      searchInput.placeholder =
+        language === "Spanish"
+          ? "🔍 Buscar en historial..."
+          : language === "French"
+            ? "🔍 Rechercher dans l'historique..."
+            : language === "German"
+              ? "🔍 Im Verlauf suchen..."
+              : "🔍 Search history...";
       historyPanel.appendChild(searchInput);
 
       // Tag filter badges
       const allHistoryTags = new Set();
-      summaries.forEach(s => {
-        if (s.tags) s.tags.forEach(t => allHistoryTags.add(t));
+      summaries.forEach((s) => {
+        if (s.tags) s.tags.forEach((t) => allHistoryTags.add(t));
       });
 
       const selectedTags = new Set();
-      const tagFilterContainer = document.createElement('div');
-      tagFilterContainer.className = 'tag-filter-badges';
+      const tagFilterContainer = document.createElement("div");
+      tagFilterContainer.className = "tag-filter-badges";
 
       const renderTagBadges = () => {
-        tagFilterContainer.innerHTML = '';
-        Array.from(allHistoryTags).forEach(tag => {
-          const badge = document.createElement('span');
-          badge.className = selectedTags.has(tag) ? 'filter-tag-badge active' : 'filter-tag-badge';
+        tagFilterContainer.innerHTML = "";
+        Array.from(allHistoryTags).forEach((tag) => {
+          const badge = document.createElement("span");
+          badge.className = selectedTags.has(tag)
+            ? "filter-tag-badge active"
+            : "filter-tag-badge";
           badge.textContent = tag;
           badge.onclick = () => {
             if (selectedTags.has(tag)) {
@@ -835,57 +899,69 @@ async function displaySummary(markdown, urls, format, language, model = null) {
         historyPanel.appendChild(tagFilterContainer);
       }
 
-      const filterBtn = document.createElement('button');
-      filterBtn.className = 'history-filter-btn';
-      filterBtn.innerHTML = '⭐';
+      const filterBtn = document.createElement("button");
+      filterBtn.className = "history-filter-btn";
+      filterBtn.innerHTML = "⭐";
       let showOnlyFavorites = false;
       historyPanel.appendChild(filterBtn);
 
-      const itemsContainer = document.createElement('div');
-      itemsContainer.className = 'history-items-container';
+      const itemsContainer = document.createElement("div");
+      itemsContainer.className = "history-items-container";
       historyPanel.appendChild(itemsContainer);
 
-      const scrollBtns = document.createElement('div');
-      scrollBtns.className = 'history-scroll-btns';
-      const topBtn = document.createElement('button');
-      topBtn.className = 'history-scroll-btn';
-      topBtn.innerHTML = '⇈';
-      topBtn.onclick = () => itemsContainer.scrollTo({ top: 0, behavior: 'smooth' });
-      const upBtn = document.createElement('button');
-      upBtn.className = 'history-scroll-btn';
-      upBtn.innerHTML = '▲';
-      upBtn.onclick = () => itemsContainer.scrollBy({ top: -100, behavior: 'smooth' });
-      const downBtn = document.createElement('button');
-      downBtn.className = 'history-scroll-btn';
-      downBtn.innerHTML = '▼';
-      downBtn.onclick = () => itemsContainer.scrollBy({ top: 100, behavior: 'smooth' });
-      const bottomBtn = document.createElement('button');
-      bottomBtn.className = 'history-scroll-btn';
-      bottomBtn.innerHTML = '⇊';
-      bottomBtn.onclick = () => itemsContainer.scrollTo({ top: itemsContainer.scrollHeight, behavior: 'smooth' });
-      const clearBtn = document.createElement('button');
-      clearBtn.className = 'history-clear-btn';
-      clearBtn.innerHTML = '🗑️';
+      const scrollBtns = document.createElement("div");
+      scrollBtns.className = "history-scroll-btns";
+      const topBtn = document.createElement("button");
+      topBtn.className = "history-scroll-btn";
+      topBtn.innerHTML = "⇈";
+      topBtn.onclick = () =>
+        itemsContainer.scrollTo({ top: 0, behavior: "smooth" });
+      const upBtn = document.createElement("button");
+      upBtn.className = "history-scroll-btn";
+      upBtn.innerHTML = "▲";
+      upBtn.onclick = () =>
+        itemsContainer.scrollBy({ top: -100, behavior: "smooth" });
+      const downBtn = document.createElement("button");
+      downBtn.className = "history-scroll-btn";
+      downBtn.innerHTML = "▼";
+      downBtn.onclick = () =>
+        itemsContainer.scrollBy({ top: 100, behavior: "smooth" });
+      const bottomBtn = document.createElement("button");
+      bottomBtn.className = "history-scroll-btn";
+      bottomBtn.innerHTML = "⇊";
+      bottomBtn.onclick = () =>
+        itemsContainer.scrollTo({
+          top: itemsContainer.scrollHeight,
+          behavior: "smooth",
+        });
+      const clearBtn = document.createElement("button");
+      clearBtn.className = "history-clear-btn";
+      clearBtn.innerHTML = "🗑️";
       const clearTooltips = {
-        English: 'Clear History',
-        Spanish: 'Borrar Historial',
-        French: 'Effacer l\'historique',
-        German: 'Verlauf löschen'
+        English: "Clear History",
+        Spanish: "Borrar Historial",
+        French: "Effacer l'historique",
+        German: "Verlauf löschen",
       };
-      clearBtn.setAttribute('data-tooltip', clearTooltips[language] || clearTooltips.English);
+      clearBtn.setAttribute(
+        "data-tooltip",
+        clearTooltips[language] || clearTooltips.English,
+      );
       clearBtn.onclick = async () => {
         const confirmMsg = {
-          English: 'Are you sure you want to clear all history?',
-          Spanish: '¿Estás seguro de que quieres borrar todo el historial?',
-          French: 'Êtes-vous sûr de vouloir effacer tout l\'historique?',
-          German: 'Möchten Sie wirklich den gesamten Verlauf löschen?'
+          English: "Are you sure you want to clear all history?",
+          Spanish: "¿Estás seguro de que quieres borrar todo el historial?",
+          French: "Êtes-vous sûr de vouloir effacer tout l'historique?",
+          German: "Möchten Sie wirklich den gesamten Verlauf löschen?",
         };
         if (confirm(confirmMsg[language] || confirmMsg.English)) {
           const items = await chrome.storage.local.get(null);
-          const keysToRemove = Object.keys(items).filter(k => k.startsWith('summary_'));
+          const keysToRemove = Object.keys(items).filter((k) =>
+            k.startsWith("summary_"),
+          );
           if (keysToRemove.length > 0) {
             await chrome.storage.local.remove(keysToRemove);
-            renderItems('', showOnlyFavorites);
+            renderItems("", showOnlyFavorites);
           }
         }
       };
@@ -896,101 +972,158 @@ async function displaySummary(markdown, urls, format, language, model = null) {
       scrollBtns.appendChild(clearBtn);
       historyPanel.appendChild(scrollBtns);
 
-      const renderItems = (filter = '', onlyFavorites = false) => {
-        const filtered = summaries.filter(({ markdown: md, query, isFavorite, tags }) => {
-          const title = md.split('\n')[0].replace(/^#\s*/, '').toLowerCase();
-          const q = (query || '').toLowerCase();
-          const f = filter.toLowerCase();
-          const matchesSearch = title.includes(f) || q.includes(f);
-          const matchesTags = selectedTags.size === 0 || (tags && Array.from(selectedTags).every(st => tags.includes(st)));
-          return onlyFavorites ? (isFavorite && matchesSearch && matchesTags) : (matchesSearch && matchesTags);
-        });
+      const renderItems = (filter = "", onlyFavorites = false) => {
+        const filtered = summaries.filter(
+          ({ markdown: md, query, isFavorite, tags }) => {
+            const title = md.split("\n")[0].replace(/^#\s*/, "").toLowerCase();
+            const q = (query || "").toLowerCase();
+            const f = filter.toLowerCase();
+            const matchesSearch = title.includes(f) || q.includes(f);
+            const matchesTags =
+              selectedTags.size === 0 ||
+              (tags &&
+                Array.from(selectedTags).every((st) => tags.includes(st)));
+            return onlyFavorites
+              ? isFavorite && matchesSearch && matchesTags
+              : matchesSearch && matchesTags;
+          },
+        );
 
         batchDOMUpdates(() => {
           const fragment = document.createDocumentFragment();
-          filtered.forEach(({ markdown: md, urls: u, timestamp, query, isFavorite, tags, format, language, model, engine }) => {
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            const titleText = md.split('\n')[0].replace(/^#\s*/, '').slice(0, 60);
-            const date = new Date(timestamp).toLocaleDateString();
-            const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const favIcon = isFavorite ? '⭐ ' : '';
-            const queryText = query ? `<div class="history-item-query">🔍 ${sanitizeText(query)}</div>` : '';
-            const tagsHtml = tags && tags.length > 0 ? `<div class="history-item-tags">${tags.map(t => `<span class="history-tag-badge">${sanitizeText(t)}</span>`).join('')}</div>` : '';
-            const formatBadge = format ? `<span class="history-meta-badge ${format}">${format === 'detailed' ? '📄 Detailed' : '📝 Brief'}</span>` : '';
-            const langBadge = language ? `<span class="history-meta-badge">🌐 ${sanitizeText(language)}</span>` : '';
-            const engineEmoji = engine === 'google' ? '🔍' : engine === 'bing' ? '🅱️' : engine === 'duckduckgo' ? '🦆' : '🔍';
-            const engineBadge = engine ? `<span class="history-meta-badge">${engineEmoji} ${sanitizeText(engine.charAt(0).toUpperCase() + engine.slice(1))}</span>` : '';
-            const modelBadge = model ? `<span class="history-meta-badge">🤖 ${sanitizeText(model.split('/').pop())}</span>` : '';
-            const metaHtml = (formatBadge || langBadge || engineBadge || modelBadge) ? `<div class="history-item-meta">${formatBadge}${langBadge}${engineBadge}${modelBadge}</div>` : '';
-            item.innerHTML = `<div class="history-item-date">${date} ${time}</div><div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}${tagsHtml}${metaHtml}`;
-            item.onclick = () => {
-              body.innerHTML = convertMarkdownToHtml(md);
-              body.querySelectorAll('a').forEach(link => {
-                if (isValidUrl(link.href)) {
-                  link.target = '_blank';
-                  link.rel = 'noopener noreferrer';
-                  link.className = 'summary-link';
-                }
+          filtered.forEach(
+            ({
+              markdown: md,
+              urls: u,
+              timestamp,
+              query,
+              isFavorite,
+              tags,
+              format,
+              language,
+              model,
+              engine,
+            }) => {
+              const item = document.createElement("div");
+              item.className = "history-item";
+              const titleText = md
+                .split("\n")[0]
+                .replace(/^#\s*/, "")
+                .slice(0, 60);
+              const date = new Date(timestamp).toLocaleDateString();
+              const time = new Date(timestamp).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
               });
-              historyPanel.style.display = 'none';
-              body.style.display = 'block';
-              followUpSection.style.display = 'block';
-              tagSection.style.display = 'block';
-              historyVisible = false;
-              title.textContent = t[format] || t.brief;
-            };
-            fragment.appendChild(item);
-          });
-          itemsContainer.innerHTML = '';
+              const favIcon = isFavorite ? "⭐ " : "";
+              const queryText = query
+                ? `<div class="history-item-query">🔍 ${sanitizeText(query)}</div>`
+                : "";
+              const tagsHtml =
+                tags && tags.length > 0
+                  ? `<div class="history-item-tags">${tags.map((t) => `<span class="history-tag-badge">${sanitizeText(t)}</span>`).join("")}</div>`
+                  : "";
+              const formatBadge = format
+                ? `<span class="history-meta-badge ${format}">${format === "detailed" ? "📄 Detailed" : "📝 Brief"}</span>`
+                : "";
+              const langBadge = language
+                ? `<span class="history-meta-badge">🌐 ${sanitizeText(language)}</span>`
+                : "";
+              const engineEmoji =
+                engine === "google"
+                  ? "🔍"
+                  : engine === "duckduckgo"
+                    ? "🦆"
+                    : "🔍";
+              const engineBadge = engine
+                ? `<span class="history-meta-badge">${engineEmoji} ${sanitizeText(engine.charAt(0).toUpperCase() + engine.slice(1))}</span>`
+                : "";
+              const modelBadge = model
+                ? `<span class="history-meta-badge">🤖 ${sanitizeText(model.split("/").pop())}</span>`
+                : "";
+              const metaHtml =
+                formatBadge || langBadge || engineBadge || modelBadge
+                  ? `<div class="history-item-meta">${formatBadge}${langBadge}${engineBadge}${modelBadge}</div>`
+                  : "";
+              item.innerHTML = `<div class="history-item-date">${date} ${time}</div><div class="history-item-title">${favIcon}${sanitizeText(titleText)}</div>${queryText}${tagsHtml}${metaHtml}`;
+              item.onclick = () => {
+                body.innerHTML = convertMarkdownToHtml(md);
+                body.querySelectorAll("a").forEach((link) => {
+                  if (isValidUrl(link.href)) {
+                    link.target = "_blank";
+                    link.rel = "noopener noreferrer";
+                    link.className = "summary-link";
+                  }
+                });
+                historyPanel.style.display = "none";
+                body.style.display = "block";
+                followUpSection.style.display = "block";
+                tagSection.style.display = "block";
+                historyVisible = false;
+                title.textContent = t[format] || t.brief;
+              };
+              fragment.appendChild(item);
+            },
+          );
+          itemsContainer.innerHTML = "";
           itemsContainer.appendChild(fragment);
         });
       };
 
       filterBtn.onclick = () => {
         showOnlyFavorites = !showOnlyFavorites;
-        filterBtn.style.opacity = showOnlyFavorites ? '1' : '0.5';
+        filterBtn.style.opacity = showOnlyFavorites ? "1" : "0.5";
         renderItems(searchInput.value, showOnlyFavorites);
       };
 
       let searchTimeout;
       searchInput.oninput = (e) => {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => renderItems(e.target.value, showOnlyFavorites), 150);
+        searchTimeout = setTimeout(
+          () => renderItems(e.target.value, showOnlyFavorites),
+          150,
+        );
       };
       renderItems();
 
-      body.style.display = 'none';
-      followUpSection.style.display = 'none';
-      historyPanel.style.display = 'block';
+      body.style.display = "none";
+      followUpSection.style.display = "none";
+      historyPanel.style.display = "block";
     } else {
-      body.style.display = 'block';
-      followUpSection.style.display = 'block';
-      historyPanel.style.display = 'none';
-      tagSection.style.display = 'block';
+      body.style.display = "block";
+      followUpSection.style.display = "block";
+      historyPanel.style.display = "none";
+      tagSection.style.display = "block";
     }
   };
 
   // Store markdown for later conversion in iframe
-  console.log('[displaySummary] Storing markdown in body attribute');
-  console.log('[displaySummary] Markdown length:', markdown.length);
-  body.setAttribute('data-markdown', markdown);
-  body.textContent = 'Loading...';
+  console.log("[displaySummary] Storing markdown in body attribute");
+  console.log("[displaySummary] Markdown length:", markdown.length);
+  body.setAttribute("data-markdown", markdown);
+  body.textContent = "Loading...";
 
   content.appendChild(historyPanel);
   content.appendChild(body);
 
   // Follow-up question section
-  const followUpSection = document.createElement('div');
-  followUpSection.className = 'followup-section';
+  const followUpSection = document.createElement("div");
+  followUpSection.className = "followup-section";
 
-  const followUpInput = document.createElement('input');
-  followUpInput.type = 'text';
-  followUpInput.className = 'followup-input';
-  followUpInput.placeholder = language === 'Spanish' ? 'Hacer una pregunta - luego presione Enter' : language === 'French' ? 'Poser une question - puis appuyez sur Entrée' : language === 'German' ? 'Eine Frage stellen - dann Enter drücken' : 'Ask a follow-up question - then push Enter';
+  const followUpInput = document.createElement("input");
+  followUpInput.type = "text";
+  followUpInput.className = "followup-input";
+  followUpInput.placeholder =
+    language === "Spanish"
+      ? "Hacer una pregunta - luego presione Enter"
+      : language === "French"
+        ? "Poser une question - puis appuyez sur Entrée"
+        : language === "German"
+          ? "Eine Frage stellen - dann Enter drücken"
+          : "Ask a follow-up question - then push Enter";
 
-  const conversationDiv = document.createElement('div');
-  conversationDiv.className = 'conversation-history';
+  const conversationDiv = document.createElement("div");
+  conversationDiv.className = "conversation-history";
 
   const handleFollowUp = async () => {
     const question = followUpInput.value.trim();
@@ -998,46 +1131,59 @@ async function displaySummary(markdown, urls, format, language, model = null) {
 
     followUpInput.disabled = true;
 
-    const questionBubble = document.createElement('div');
-    questionBubble.className = 'chat-bubble user';
+    const questionBubble = document.createElement("div");
+    questionBubble.className = "chat-bubble user";
     questionBubble.textContent = question;
     conversationDiv.appendChild(questionBubble);
     conversationDiv.scrollTop = conversationDiv.scrollHeight;
 
     try {
-      const { openrouterApiKey, openrouterPrimaryModel } = await chrome.storage.local.get(['openrouterApiKey', 'openrouterPrimaryModel']);
+      const { openrouterApiKey, openrouterPrimaryModel } =
+        await chrome.storage.local.get([
+          "openrouterApiKey",
+          "openrouterPrimaryModel",
+        ]);
       const prompt = `Based on this summary:\n\n${markdown}\n\nUser question: ${question}\n\nProvide a concise answer in ${language}.`;
 
       const response = await new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage({
-          action: 'callOpenRouter',
-          url: 'https://openrouter.ai/api/v1/chat/completions',
-          apiKey: openrouterApiKey,
-          body: {
-            model: openrouterPrimaryModel,
-            messages: [{ role: 'user', content: prompt }],
-            max_tokens: 2000,
-            temperature: 0.3
-          }
-        }, res => chrome.runtime.lastError ? reject(new Error(chrome.runtime.lastError.message)) : res?.success ? resolve(res.data) : reject(new Error(res?.error || 'API failed')));
+        chrome.runtime.sendMessage(
+          {
+            action: "callOpenRouter",
+            url: "https://openrouter.ai/api/v1/chat/completions",
+            apiKey: openrouterApiKey,
+            body: {
+              model: openrouterPrimaryModel,
+              messages: [{ role: "user", content: prompt }],
+              max_tokens: 2000,
+              temperature: 0.3,
+            },
+          },
+          (res) =>
+            chrome.runtime.lastError
+              ? reject(new Error(chrome.runtime.lastError.message))
+              : res?.success
+                ? resolve(res.data)
+                : reject(new Error(res?.error || "API failed")),
+        );
       });
 
-      const answer = response.choices?.[0]?.message?.content || 'No answer generated.';
+      const answer =
+        response.choices?.[0]?.message?.content || "No answer generated.";
 
-      const answerBubble = document.createElement('div');
-      answerBubble.className = 'chat-bubble ai';
+      const answerBubble = document.createElement("div");
+      answerBubble.className = "chat-bubble ai";
       answerBubble.innerHTML = convertMarkdownToHtml(answer);
       conversationDiv.appendChild(answerBubble);
       conversationDiv.scrollTop = conversationDiv.scrollHeight;
 
       conversationHistory.push({ question, answer });
     } catch (error) {
-      const errorBubble = document.createElement('div');
-      errorBubble.className = 'chat-bubble error';
+      const errorBubble = document.createElement("div");
+      errorBubble.className = "chat-bubble error";
       errorBubble.textContent = `Error: ${error.message}`;
       conversationDiv.appendChild(errorBubble);
     } finally {
-      followUpInput.value = '';
+      followUpInput.value = "";
       followUpInput.disabled = false;
       followUpInput.focus();
     }
@@ -1045,7 +1191,7 @@ async function displaySummary(markdown, urls, format, language, model = null) {
 
   let followUpTimeout;
   followUpInput.onkeypress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       clearTimeout(followUpTimeout);
       followUpTimeout = setTimeout(handleFollowUp, 100);
     }
@@ -1061,15 +1207,16 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     if (e.target === overlay) overlay.remove();
   };
 
-  // Create iframe to isolate from Bing's DOM manipulation
-  const iframe = document.createElement('iframe');
-  iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:2147483647';
+  // Create iframe to isolate from page's DOM manipulation
+  const iframe = document.createElement("iframe");
+  iframe.style.cssText =
+    "position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:2147483647";
   document.documentElement.appendChild(iframe);
 
   const iframeDoc = iframe.contentDocument;
   iframeDoc.open();
-  chrome.storage.local.get(['darkMode'], (data) => {
-    if (data.darkMode) iframeDoc.body.classList.add('dark');
+  chrome.storage.local.get(["darkMode"], (data) => {
+    if (data.darkMode) iframeDoc.body.classList.add("dark");
   });
 
   const iframeHTML = `
@@ -1186,59 +1333,63 @@ async function displaySummary(markdown, urls, format, language, model = null) {
     </html>
   `;
 
-  console.log('[displaySummary] Writing HTML to iframe');
+  console.log("[displaySummary] Writing HTML to iframe");
   iframeDoc.write(iframeHTML);
   iframeDoc.close();
-  console.log('[displaySummary] iframe document closed');
+  console.log("[displaySummary] iframe document closed");
 
   // Wait for iframe to be ready
-  const iframeLoadPromise = new Promise(resolve => {
+  const iframeLoadPromise = new Promise((resolve) => {
     iframe.onload = () => {
-    console.log('[iframe.onload] Iframe loaded');
+      console.log("[iframe.onload] Iframe loaded");
 
-    console.log('[iframe.onload] Creating overlay background');
-    const overlayBg = iframeDoc.createElement('div');
-    overlayBg.className = 'overlay-bg';
-    overlayBg.onclick = (e) => { if (e.target === overlayBg) iframe.remove(); };
-    console.log('[iframe.onload] Appending overlay to overlayBg');
-    overlayBg.appendChild(overlay);
-    console.log('[iframe.onload] Appending overlayBg to iframe body');
-    iframeDoc.body.appendChild(overlayBg);
-    console.log('[iframe.onload] Overlay appended successfully');
+      console.log("[iframe.onload] Creating overlay background");
+      const overlayBg = iframeDoc.createElement("div");
+      overlayBg.className = "overlay-bg";
+      overlayBg.onclick = (e) => {
+        if (e.target === overlayBg) iframe.remove();
+      };
+      console.log("[iframe.onload] Appending overlay to overlayBg");
+      overlayBg.appendChild(overlay);
+      console.log("[iframe.onload] Appending overlayBg to iframe body");
+      iframeDoc.body.appendChild(overlayBg);
+      console.log("[iframe.onload] Overlay appended successfully");
 
-    // Web Worker markdown converter with fallback
-    const convertMarkdown = () => {
-      const iframeBody = iframeDoc.querySelector('.summary-body');
-      const md = iframeBody?.getAttribute('data-markdown');
+      // Web Worker markdown converter with fallback
+      const convertMarkdown = () => {
+        const iframeBody = iframeDoc.querySelector(".summary-body");
+        const md = iframeBody?.getAttribute("data-markdown");
 
-      if (!md) {
-        resolve();
-        return;
-      }
-
-      // Reuse worker if available
-      if (!markdownWorker) {
-        try {
-          markdownWorker = new Worker(chrome.runtime.getURL('workers/markdown-worker.js'));
-        } catch (err) {
-          iframeBody.innerHTML = convertMarkdownToHtml(md);
+        if (!md) {
           resolve();
           return;
         }
-      }
 
-      markdownWorker.postMessage({ markdown: md });
-      markdownWorker.onmessage = (e) => {
-        iframeBody.innerHTML = e.data.html;
-        resolve();
-      };
-      markdownWorker.onerror = () => {
-        iframeBody.innerHTML = convertMarkdownToHtml(md);
-        resolve();
-      };
-    };
+        // Reuse worker if available
+        if (!markdownWorker) {
+          try {
+            markdownWorker = new Worker(
+              chrome.runtime.getURL("workers/markdown-worker.js"),
+            );
+          } catch (err) {
+            iframeBody.innerHTML = convertMarkdownToHtml(md);
+            resolve();
+            return;
+          }
+        }
 
-    setTimeout(convertMarkdown, 10);
+        markdownWorker.postMessage({ markdown: md });
+        markdownWorker.onmessage = (e) => {
+          iframeBody.innerHTML = e.data.html;
+          resolve();
+        };
+        markdownWorker.onerror = () => {
+          iframeBody.innerHTML = convertMarkdownToHtml(md);
+          resolve();
+        };
+      };
+
+      setTimeout(convertMarkdown, 10);
     };
   });
 
@@ -1253,20 +1404,26 @@ function extractSearchQuery() {
   const engine = detectSearchEngine();
   const urlParams = new URLSearchParams(window.location.search);
 
-  if (engine === 'google' || engine === 'bing') {
-    return urlParams.get('q') || document.querySelector('input[name="q"]')?.value || '';
-  }
-  if (engine === 'duckduckgo') {
-    return urlParams.get('q') || document.querySelector('input[name="q"]')?.value || '';
+  if (engine === "google" || engine === "duckduckgo") {
+    return (
+      urlParams.get("q") ||
+      document.querySelector('input[name="q"]')?.value ||
+      ""
+    );
   }
 
-  return urlParams.get('q') || '';
+  return urlParams.get("q") || "";
 }
 
 async function updateStats(type) {
   const today = new Date().toDateString();
-  const data = await chrome.storage.local.get(['usageStats']);
-  const stats = data.usageStats || { apiCalls: 0, cacheHits: 0, totalSummaries: 0, lastReset: today };
+  const data = await chrome.storage.local.get(["usageStats"]);
+  const stats = data.usageStats || {
+    apiCalls: 0,
+    cacheHits: 0,
+    totalSummaries: 0,
+    lastReset: today,
+  };
 
   if (stats.lastReset !== today) {
     stats.apiCalls = 0;
@@ -1274,10 +1431,10 @@ async function updateStats(type) {
     stats.lastReset = today;
   }
 
-  if (type === 'api') {
+  if (type === "api") {
     stats.apiCalls++;
     stats.totalSummaries++;
-  } else if (type === 'cache') {
+  } else if (type === "cache") {
     stats.cacheHits++;
     stats.totalSummaries++;
   }
@@ -1288,102 +1445,160 @@ async function updateStats(type) {
 async function fetchAndProcessPages(urls) {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(
-      { action: 'fetchAndProcessPages', urls },
-      response => {
+      { action: "fetchAndProcessPages", urls },
+      (response) => {
         if (chrome.runtime.lastError || !response?.success) {
           resolve({ results: [], usedUrls: [] });
         } else {
           resolve({ results: response.results, usedUrls: response.usedUrls });
         }
-      }
+      },
     );
   });
 }
 
 async function summarizeResults() {
+  console.log("[summarizeResults] Called, isProcessing:", isProcessing);
   if (isProcessing) return;
+
+  if (!chrome?.storage?.local) {
+    console.error("[ERROR] Chrome storage API not available");
+    alert("Extension not properly loaded. Please refresh the page.");
+    return;
+  }
+
   isProcessing = true;
 
   const totalStart = Date.now();
-  console.log('[PERF] ========== SUMMARIZE START ==========');
+  console.log("[PERF] ========== SUMMARIZE START ==========");
 
-  if (!summarizeBtn) summarizeBtn = document.querySelector('.summarize-btn');
+  if (!summarizeBtn) summarizeBtn = document.querySelector(".summarize-btn");
 
   // Wait for button if not found (for auto-triggered tabs)
   if (!summarizeBtn) {
-    console.log('[DEBUG] Button not found, waiting...');
+    console.log("[DEBUG] Button not found, waiting...");
     let attempts = 0;
     while (!summarizeBtn && attempts < 20) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      summarizeBtn = document.querySelector('.summarize-btn');
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      summarizeBtn = document.querySelector(".summarize-btn");
       attempts++;
     }
   }
 
   const btn = summarizeBtn;
   if (!btn) {
-    console.error('[DEBUG] Button not found after waiting - stopping');
+    console.error("[DEBUG] Button not found after waiting - stopping");
     return;
   }
   const originalText = btn.textContent;
 
   try {
-    btn.setAttribute('aria-busy', 'true');
-    const { openrouterApiKey, selectedModel, selectedLanguage, summaryFormat, multiSearchEnabled } = await chrome.storage.local.get(['openrouterApiKey', 'selectedModel', 'selectedLanguage', 'summaryFormat', 'multiSearchEnabled']).catch(error => {
-      console.error('Storage error:', error);
-      return {};
-    });
+    btn.setAttribute("aria-busy", "true");
+    const {
+      openrouterApiKey,
+      selectedModel,
+      selectedLanguage,
+      summaryFormat,
+      multiSearchEnabled,
+    } = await chrome.storage.local
+      .get([
+        "openrouterApiKey",
+        "selectedModel",
+        "selectedLanguage",
+        "summaryFormat",
+        "multiSearchEnabled",
+      ])
+      .catch((error) => {
+        console.error("Storage error:", error);
+        return {};
+      });
 
     if (!openrouterApiKey) {
-      chrome.runtime.sendMessage({ action: 'openPopup' });
+      chrome.runtime.sendMessage({ action: "openPopup" });
       return;
     }
 
-    const tabIdResponse = await new Promise(resolve => chrome.runtime.sendMessage({ action: 'getTabId' }, resolve));
-    const wasAutoKey = tabIdResponse?.tabId ? storageKeys.wasAuto(tabIdResponse.tabId) : null;
-    const wasAuto = wasAutoKey ? (await chrome.storage.local.get([wasAutoKey]))[wasAutoKey] : false;
+    const tabIdResponse = await new Promise((resolve) =>
+      chrome.runtime.sendMessage({ action: "getTabId" }, resolve),
+    );
+    const wasAutoKey = tabIdResponse?.tabId
+      ? storageKeys.wasAuto(tabIdResponse.tabId)
+      : null;
+    const wasAuto = wasAutoKey
+      ? (await chrome.storage.local.get([wasAutoKey]))[wasAutoKey]
+      : false;
 
     if (wasAuto && wasAutoKey) {
       await chrome.storage.local.remove([wasAutoKey]);
     } else if (multiSearchEnabled && !wasAuto) {
       const query = extractSearchQuery();
       if (!query) {
-        alert('No search query found.');
+        alert("No search query found.");
         return;
       }
-      chrome.runtime.sendMessage({ action: 'multiSearch', query });
+      chrome.runtime.sendMessage({ action: "multiSearch", query });
       return;
     }
 
-    console.log('Selected model:', selectedModel);
+    console.log("Selected model:", selectedModel);
     const model = selectedModel;
-    const language = selectedLanguage || 'English';
-    const format = summaryFormat || 'brief';
+    const language = selectedLanguage || "English";
+    const format = summaryFormat || "brief";
 
     const loadingTranslations = {
-      English: { finding: 'Finding', fetching: 'Fetching', analyzing: 'Analyzing', generating: 'Summarizing' },
-      Spanish: { finding: 'Buscando', fetching: 'Obteniendo', analyzing: 'Analizando', generating: 'Resumiendo' },
-      French: { finding: 'Recherche', fetching: 'Récupération', analyzing: 'Analyse', generating: 'Résumant' },
-      German: { finding: 'Suchen', fetching: 'Abrufen', analyzing: 'Analysieren', generating: 'Zusammenfassen' }
+      English: {
+        finding: "Finding",
+        fetching: "Fetching",
+        analyzing: "Analyzing",
+        generating: "Summarizing",
+      },
+      Spanish: {
+        finding: "Buscando",
+        fetching: "Obteniendo",
+        analyzing: "Analizando",
+        generating: "Resumiendo",
+      },
+      French: {
+        finding: "Recherche",
+        fetching: "Récupération",
+        analyzing: "Analyse",
+        generating: "Résumant",
+      },
+      German: {
+        finding: "Suchen",
+        fetching: "Abrufen",
+        analyzing: "Analysieren",
+        generating: "Zusammenfassen",
+      },
     };
-    const loading = loadingTranslations[language] || loadingTranslations.English;
+    const loading =
+      loadingTranslations[language] || loadingTranslations.English;
 
     const searchQuery = extractSearchQuery();
     const urls = scrapeUrls();
     const engine = detectSearchEngine();
     console.log(`[DEBUG] Scraped ${urls.length} URLs from ${engine}:`, urls);
-    const cacheKey = `${engine}-${searchQuery}-${urls.join(',')}-${language}-${format}`;
+    const cacheKey = `${engine}-${searchQuery}-${urls.join(",")}-${language}-${format}`;
 
     const cached = summaryCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-      await updateStats('cache');
-      await displaySummary(cached.markdown, cached.urls, cached.format || format, cached.language || language, cached.model);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      await updateStats("cache");
+      await displaySummary(
+        cached.markdown,
+        cached.urls,
+        cached.format || format,
+        cached.language || language,
+        cached.model,
+      );
       return;
     }
 
     const storageKey = storageKeys.summary(cacheKey);
     const stored = await chrome.storage.local.get(storageKey);
-    if (stored[storageKey] && (Date.now() - stored[storageKey].timestamp) < CACHE_DURATION) {
+    if (
+      stored[storageKey] &&
+      Date.now() - stored[storageKey].timestamp < CACHE_DURATION
+    ) {
       const storedData = stored[storageKey];
       // Ensure metadata is present
       if (!storedData.format) storedData.format = format;
@@ -1393,23 +1608,29 @@ async function summarizeResults() {
       if (!storedData.model) storedData.model = model;
       summaryCache.set(cacheKey, storedData);
       await chrome.storage.local.set({ [storageKey]: storedData });
-      await updateStats('cache');
-      await displaySummary(storedData.markdown, storedData.urls, storedData.format, storedData.language, storedData.model);
+      await updateStats("cache");
+      await displaySummary(
+        storedData.markdown,
+        storedData.urls,
+        storedData.format,
+        storedData.language,
+        storedData.model,
+      );
       return;
     }
 
     const formatInstructions = {
-      detailed: 'Write 4-6 detailed points.',
-      brief: 'Write 3-5 concise points.'
+      detailed: "Write 4-6 detailed points.",
+      brief: "Write 3-5 concise points.",
     };
 
     let maxTokens, wordLimit;
     switch (format) {
-      case 'detailed':
+      case "detailed":
         maxTokens = 6000;
         wordLimit = 2000;
         break;
-      case 'brief':
+      case "brief":
       default:
         maxTokens = 2000;
         wordLimit = 500;
@@ -1417,15 +1638,20 @@ async function summarizeResults() {
 
     btn.disabled = true;
     btn.innerHTML = `${loading.finding}<span class="loading-spinner"></span>`;
-    const decodedUrls = urls.map(url => url.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&'));
-    console.log('References:', decodedUrls);
+    const decodedUrls = urls.map((url) =>
+      url
+        .replace(/&#39;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, "&"),
+    );
+    console.log("References:", decodedUrls);
 
     if (urls.length === 0) {
-      console.error('[DEBUG] No URLs scraped - stopping');
-      alert('No search results found to summarize.');
+      console.error("[DEBUG] No URLs scraped - stopping");
+      alert("No search results found to summarize.");
       return;
     }
-    console.log('[DEBUG] Proceeding with', urls.length, 'URLs');
+    console.log("[DEBUG] Proceeding with", urls.length, "URLs");
 
     btn.innerHTML = `${loading.fetching}<span class="loading-spinner"></span>`;
 
@@ -1433,7 +1659,9 @@ async function summarizeResults() {
     const fetchStart = Date.now();
     const { results, usedUrls } = await fetchAndProcessPages(urls);
     const fetchTime = Date.now() - fetchStart;
-    console.log(`[PERF] Total fetch time: ${fetchTime}ms for ${results.length} sources`);
+    console.log(
+      `[PERF] Total fetch time: ${fetchTime}ms for ${results.length} sources`,
+    );
 
     btn.innerHTML = `${loading.analyzing}<span class="loading-spinner"></span>`;
     const extractedContent = results;
@@ -1441,72 +1669,90 @@ async function summarizeResults() {
     urls.push(...usedUrls);
 
     if (extractedContent.length === 0) {
-      console.error('[DEBUG] No content extracted - stopping');
-      alert('Could not extract content from search results.');
+      console.error("[DEBUG] No content extracted - stopping");
+      alert("Could not extract content from search results.");
       return;
     }
-    console.log('[DEBUG] Extracted content from', extractedContent.length, 'pages');
+    console.log(
+      "[DEBUG] Extracted content from",
+      extractedContent.length,
+      "pages",
+    );
 
     btn.innerHTML = `${loading.generating}<span class="loading-spinner"></span>`;
 
     const sources = extractedContent.map((text, i) => `[${i + 1}] ${text}`);
-    const prompt = `${searchQuery}\n\n${sources.join('\n\n')}\n\n${formatInstructions[format]} Use [1][2] citations. ${language}. Max ${wordLimit} words.`;
+    const prompt = `${searchQuery}\n\n${sources.join("\n\n")}\n\n${formatInstructions[format]} Use [1][2] citations. ${language}. Max ${wordLimit} words.`;
 
     let models = [];
 
-    const { openrouterPrimaryModel, openrouterFallbackModels } = await chrome.storage.local.get(['openrouterPrimaryModel', 'openrouterFallbackModels']);
+    const { openrouterPrimaryModel, openrouterFallbackModels } =
+      await chrome.storage.local.get([
+        "openrouterPrimaryModel",
+        "openrouterFallbackModels",
+      ]);
 
     if (!openrouterPrimaryModel) {
-      const response = await fetch('https://openrouter.ai/api/v1/models', {
-        headers: { 'Authorization': `Bearer ${openrouterApiKey}` }
+      const response = await fetch("https://openrouter.ai/api/v1/models", {
+        headers: { Authorization: `Bearer ${openrouterApiKey}` },
       });
       const data = await response.json();
       const selectBestModels = window.selectBestModels;
-      const selected = selectBestModels(data.data, 'llama');
+      const selected = selectBestModels(data.data, "llama");
 
-      if (!selected.primary) throw new Error('No free Llama models found');
+      if (!selected.primary) throw new Error("No free Llama models found");
 
       await chrome.storage.local.set({
         openrouterPrimaryModel: selected.primary,
-        openrouterFallbackModels: selected.fallbacks
+        openrouterFallbackModels: selected.fallbacks,
       });
       models = [selected.primary, ...selected.fallbacks];
     } else {
-      models = [openrouterPrimaryModel, ...(openrouterFallbackModels || [])].filter(Boolean);
+      models = [
+        openrouterPrimaryModel,
+        ...(openrouterFallbackModels || []),
+      ].filter(Boolean);
     }
 
-    console.log('[PERF] Models ready:', models);
+    console.log("[PERF] Models ready:", models);
     const apiStart = Date.now();
 
-    const callModel = (modelName) => new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({
-        action: 'callOpenRouter',
-        url: 'https://openrouter.ai/api/v1/chat/completions',
-        apiKey: openrouterApiKey,
-        body: {
-          model: modelName,
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: maxTokens,
-          temperature: 0.2
-        }
-      }, response => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-        } else if (response?.success) {
-          resolve(response.data);
-        } else {
-          reject(new Error(response?.error || 'API failed'));
-        }
+    const callModel = (modelName) =>
+      new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(
+          {
+            action: "callOpenRouter",
+            url: "https://openrouter.ai/api/v1/chat/completions",
+            apiKey: openrouterApiKey,
+            body: {
+              model: modelName,
+              messages: [{ role: "user", content: prompt }],
+              max_tokens: maxTokens,
+              temperature: 0.2,
+            },
+          },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else if (response?.success) {
+              resolve(response.data);
+            } else {
+              reject(new Error(response?.error || "API failed"));
+            }
+          },
+        );
       });
-    });
 
     let apiResponse;
     let successfulModel;
     for (let i = 0; i < models.length; i++) {
       try {
-        console.log(`[PERF] Trying model ${i + 1}/${models.length}: ${models[i]}`);
+        console.log(
+          `[PERF] Trying model ${i + 1}/${models.length}: ${models[i]}`,
+        );
         apiResponse = await callModel(models[i]);
-        if (apiResponse.error) throw new Error(apiResponse.error.message || 'API error');
+        if (apiResponse.error)
+          throw new Error(apiResponse.error.message || "API error");
         successfulModel = models[i];
         console.log(`[PERF] Success with model: ${models[i]}`);
         break;
@@ -1518,43 +1764,70 @@ async function summarizeResults() {
 
     const apiTime = Date.now() - apiStart;
     console.log(`[PERF] API call completed in ${apiTime}ms`);
-    await updateStats('api');
+    await updateStats("api");
 
     const data = apiResponse;
-    console.log('API response data:', data);
+    console.log("API response data:", data);
 
     const markdown = data.choices?.[0]?.message?.content;
 
-    console.log('Extracted markdown:', markdown);
+    console.log("Extracted markdown:", markdown);
 
     if (!markdown) {
-      console.error('No markdown extracted from response');
-      console.error('Full response structure:', JSON.stringify(data, null, 2));
-      throw new Error('No summary generated');
+      console.error("No markdown extracted from response");
+      console.error("Full response structure:", JSON.stringify(data, null, 2));
+      throw new Error("No summary generated");
     }
 
     const refTranslations = {
-      English: 'References',
-      Spanish: 'Referencias',
-      French: 'Références',
-      German: 'Referenzen'
+      English: "References",
+      Spanish: "Referencias",
+      French: "Références",
+      German: "Referenzen",
     };
-    const refTitle = refTranslations[language] || 'References';
+    const refTitle = refTranslations[language] || "References";
 
     let finalMarkdown = markdown;
-    if (!markdown.toLowerCase().includes('## references') && !markdown.toLowerCase().includes('## referencias') && !markdown.toLowerCase().includes('## références') && !markdown.toLowerCase().includes('## referenzen')) {
-      const references = urls.map((url, i) => `**${i + 1}.** [${url}](${url})`).join('\n\n');
+    if (
+      !markdown.toLowerCase().includes("## references") &&
+      !markdown.toLowerCase().includes("## referencias") &&
+      !markdown.toLowerCase().includes("## références") &&
+      !markdown.toLowerCase().includes("## referenzen")
+    ) {
+      const references = urls
+        .map((url, i) => `**${i + 1}.** [${url}](${url})`)
+        .join("\n\n");
       finalMarkdown += `\n\n## ${refTitle}\n\n${references}`;
     }
 
-    const decodedMarkdown = finalMarkdown.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-    const cacheData = { markdown: decodedMarkdown, urls, timestamp: Date.now(), format, language, model: successfulModel, engine, query: searchQuery };
+    const decodedMarkdown = finalMarkdown
+      .replace(/&#39;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">");
+    const cacheData = {
+      markdown: decodedMarkdown,
+      urls,
+      timestamp: Date.now(),
+      format,
+      language,
+      model: successfulModel,
+      engine,
+      query: searchQuery,
+    };
     summaryCache.set(cacheKey, cacheData);
 
     cachedSummary = finalMarkdown;
-    console.log('[PERF] Starting display summary...');
+    console.log("[PERF] Starting display summary...");
     const displayStart = Date.now();
-    await displaySummary(finalMarkdown, urls, format, language, successfulModel);
+    await displaySummary(
+      finalMarkdown,
+      urls,
+      format,
+      language,
+      successfulModel,
+    );
     const displayTime = Date.now() - displayStart;
     console.log(`[PERF] Display completed in ${displayTime}ms`);
 
@@ -1566,24 +1839,30 @@ async function summarizeResults() {
           if (size > MAX_STORAGE) await clearOldCaches();
           await chrome.storage.local.set({ [storageKey]: cacheData });
         } catch (error) {
-          if (error.message?.includes('quota')) {
+          if (error.message?.includes("quota")) {
             await clearOldCaches();
-            try { await chrome.storage.local.set({ [storageKey]: cacheData }); } catch (e) {}
+            try {
+              await chrome.storage.local.set({ [storageKey]: cacheData });
+            } catch (e) {}
           }
         }
       })(),
-      updateStats('api')
+      updateStats("api"),
     ]);
-
   } catch (error) {
-    console.error('Summarization error:', error);
-    console.error('Error details:', { name: error.name, message: error.message, stack: error.stack });
-    const errorMsg = error.name === 'AbortError' ? 'Request timeout' : error.message;
+    console.error("Summarization error:", error);
+    console.error("Error details:", {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    });
+    const errorMsg =
+      error.name === "AbortError" ? "Request timeout" : error.message;
     alert(`❌ Error: ${errorMsg}`);
   } finally {
     btn.disabled = false;
     btn.textContent = originalText;
-    btn.setAttribute('aria-busy', 'false');
+    btn.setAttribute("aria-busy", "false");
     isProcessing = false;
     const totalTime = Date.now() - totalStart;
     console.log(`[PERF] ========== TOTAL TIME: ${totalTime}ms ==========`);
@@ -1596,15 +1875,18 @@ function loadNonCriticalCSS() {
   if (nonCriticalCSSLoaded) return;
   nonCriticalCSSLoaded = true;
 
-  requestIdleCallback(() => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = chrome.runtime.getURL('content/content.min.css');
-    document.head.appendChild(link);
-  }, { timeout: 2000 });
+  requestIdleCallback(
+    () => {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = chrome.runtime.getURL("content/content.min.css");
+      document.head.appendChild(link);
+    },
+    { timeout: 2000 },
+  );
 }
 
-if (typeof document !== 'undefined') {
+if (typeof document !== "undefined") {
   let lastKeydownTime = 0;
   const DEBOUNCE_DELAY = 300;
 
@@ -1616,10 +1898,10 @@ if (typeof document !== 'undefined') {
     });
   }
 
-  chrome.runtime.sendMessage({ action: 'getTabId' }, (response) => {
+  chrome.runtime.sendMessage({ action: "getTabId" }, (response) => {
     if (chrome.runtime.lastError || !response?.tabId) return;
     const tabKey = storageKeys.autoSummarize(response.tabId);
-    chrome.storage.local.get([tabKey, 'multiSearchEnabled'], (result) => {
+    chrome.storage.local.get([tabKey, "multiSearchEnabled"], (result) => {
       const shouldAutoSummarize = result[tabKey];
       if (shouldAutoSummarize) {
         if (result[tabKey]) chrome.storage.local.remove([tabKey]);
@@ -1628,24 +1910,29 @@ if (typeof document !== 'undefined') {
           if (isProcessing) return;
           if (result.multiSearchEnabled && !result[tabKey]) {
             const query = extractSearchQuery();
-            if (query) chrome.runtime.sendMessage({ action: 'multiSearch', query });
+            if (query)
+              chrome.runtime.sendMessage({ action: "multiSearch", query });
           } else {
-            chrome.storage.local.set({ [storageKeys.wasAuto(response.tabId)]: true });
+            chrome.storage.local.set({
+              [storageKeys.wasAuto(response.tabId)]: true,
+            });
             summarizeResults();
           }
         };
 
-        if (document.readyState === 'complete') {
+        if (document.readyState === "complete") {
           setTimeout(autoTrigger, 2500);
         } else {
-          window.addEventListener('load', () => setTimeout(autoTrigger, 2500), { once: true });
+          window.addEventListener("load", () => setTimeout(autoTrigger, 2500), {
+            once: true,
+          });
         }
       }
     });
   });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key === "S") {
       e.preventDefault();
       const now = Date.now();
       if (now - lastKeydownTime > DEBOUNCE_DELAY) {
@@ -1655,30 +1942,49 @@ if (typeof document !== 'undefined') {
     }
   });
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      requestIdleCallback(addSummarizeButton, { timeout: 1000 });
-    }, { once: true });
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      () => {
+        requestIdleCallback(addSummarizeButton, { timeout: 1000 });
+      },
+      { once: true },
+    );
   } else {
     requestIdleCallback(addSummarizeButton, { timeout: 1000 });
   }
 
-  requestIdleCallback(() => {
-    setInterval(cleanupCaches, 5 * 60 * 1000);
-  }, { timeout: 5000 });
+  requestIdleCallback(
+    () => {
+      setInterval(cleanupCaches, 5 * 60 * 1000);
+    },
+    { timeout: 5000 },
+  );
 
-  window.addEventListener('beforeunload', () => {
+  window.addEventListener("beforeunload", () => {
     summaryCache.clear();
     pageCache.clear();
   });
 
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      requestIdleCallback(cleanupCaches, { timeout: 2000 });
-    }, { passive: true });
+  if ("serviceWorker" in navigator) {
+    window.addEventListener(
+      "load",
+      () => {
+        requestIdleCallback(cleanupCaches, { timeout: 2000 });
+      },
+      { passive: true },
+    );
   }
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { scrapeGoogleUrls, scrapeUrls, detectSearchEngine, cleanHtmlToText, addSummarizeButton, displaySummary, summarizeResults };
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    scrapeGoogleUrls,
+    scrapeUrls,
+    detectSearchEngine,
+    cleanHtmlToText,
+    addSummarizeButton,
+    displaySummary,
+    summarizeResults,
+  };
 }

@@ -136,6 +136,15 @@ body.dark .share-menu {
   border: 1px solid #3a3a4e;
 }
 
+body.dark .share-close {
+  color: #e0e0e0;
+  background: #2a2a3e;
+}
+
+body.dark .share-close:hover {
+  background: #3a3a4e;
+}
+
 body.dark .share-option {
   color: #e0e0e0;
 }
@@ -303,12 +312,38 @@ body.dark .share-option:hover {
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  padding: 8px;
+  padding: 32px 8px 8px 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 180px;
   z-index: 10002;
+}
+
+.share-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: white;
+  border: none;
+  font-size: 18px;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  line-height: 1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-weight: 300;
+}
+
+.share-close:hover {
+  background: #f1f3f4;
+  transform: scale(1.1);
 }
 
 .share-option {

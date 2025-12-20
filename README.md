@@ -17,14 +17,14 @@ Think of it as your personal reading assistant that lives in your browser. Every
 - 🔑 **Free to Use** - Get 1,500 free summaries every day using Google's AI or OpenRouter free tiers
 - 🔒 **Your Privacy is Safe** - Everything stays on your computer, no tracking
 - ⚡ **Super Fast** - Get brief answers in 3-5 seconds or detailed summaries, expand any brief summary into detailed
-- 🔍 **Works Everywhere** - Google, Bing, and DuckDuckGo
+- 🔍 **Works Everywhere** - Google and DuckDuckGo
 - 🌍 **Speaks Your Language** - Available in English, Spanish, French, and German
 - 📝 **Choose Your Style** - Quick summary or detailed explanation
 - 🔗 **Shows Sources** - Every summary includes clickable links to the websites used
 - 💾 **Save for Later** - Download summaries as files, saved search history and summaries locally with tags and favorites, history can be reset anytime
 - 📋 **Easy Sharing** - Share on social media or email
 - 💬 **Ask Follow-up Questions** - Chat with the AI about the summary
-- 🔄 **Multi-Search** - Search Google, Bing, and DuckDuckGo simultaneously with automatic summaries for each
+- 🔄 **Multi-Search** - Search Google and DuckDuckGo simultaneously with automatic summaries for each
 - ⌨️ **Keyboard Shortcut** - Press `Ctrl+Shift+S` for instant summaries
 
 ### Why Use Gist Instead of Google's AI Overviews?
@@ -35,7 +35,7 @@ Google now shows AI summaries at the top of some searches. So why use Gist?
 - **Choose When:** Gist only summarizes when YOU want it to (not forced on every search)
 - **Choose Your Style:** Pick Brief or Detailed summaries (Google decides for you)
 - **Choose Your Language:** Get summaries in Spanish, French, or German (Google only does English for most searches)
-- **Works Everywhere:** Gist works on Bing and DuckDuckGo too (not just Google)
+- **Works Everywhere:** Gist works on DuckDuckGo too (not just Google)
 
 **💾 You Can Save Everything**
 - **Download Summaries:** Save as files to use in reports or presentations (Google doesn't let you download)
@@ -137,7 +137,7 @@ Google now shows AI summaries at the top of some searches. So why use Gist?
 - Choose OpenRouter if you want access to different AI models or maximum privacy
 
 **Step 3: Start Using Gist**
-1. Go to Google, Bing, or DuckDuckGo
+1. Go to Google or DuckDuckGo
 2. Search for anything (example: "how to learn guitar")
 3. Click the colorful button on the right side of the page
 4. Wait 3-5 seconds
@@ -244,7 +244,7 @@ Google now shows AI summaries at the top of some searches. So why use Gist?
 1. Click the Gist icon
 2. Check "Multi-Search"
 3. Click "Save Settings"
-4. Now when you search, Gist opens Google, Bing, and DuckDuckGo tabs
+4. Now when you search, Gist opens Google and DuckDuckGo tabs
 5. Each tab gets its own summary automatically
 
 **When to use Multi-Search:**
@@ -253,7 +253,7 @@ Google now shows AI summaries at the top of some searches. So why use Gist?
 - Different search engines sometimes show different information
 - You want to see multiple perspectives on a topic
 
-**Example:** Search "best investment strategies 2024" and get summaries from all 3 engines to compare advice
+**Example:** Search "best investment strategies 2024" and get summaries from both engines to compare advice
 
 ### Real-Life Examples
 
@@ -302,8 +302,8 @@ Google now shows AI summaries at the top of some searches. So why use Gist?
 - Deciding which car to buy
 - Enable Multi-Search
 - Search "Toyota Camry 2024 review"
-- Get summaries from Google, Bing, AND DuckDuckGo
-- Compare all three to make the best decision
+- Get summaries from Google AND DuckDuckGo
+- Compare both to make the best decision
 - Each search engine might show different reviews!
 
 **Example 8: Dark Mode for Night Reading**
@@ -356,7 +356,7 @@ A: They're saved in your browser. You can view them anytime in the History secti
 A: Yes! Click the history button (📚), then click the trash icon (🗑️).
 
 **Q: Does Gist work on all websites?**
-A: Gist works on Google, Bing, and DuckDuckGo search results. It reads the top 3 websites from your search.
+A: Gist works on Google and DuckDuckGo search results. It reads the top 3 websites from your search.
 
 **Q: Why do I need my own API key?**
 A: This keeps Gist free and private. You connect directly to Google AI, not through our servers.
@@ -406,7 +406,7 @@ A: This keeps Gist free and private. You connect directly to Google AI, not thro
 - Solution: Some websites block automated reading. Try a different search.
 
 **Problem: Button doesn't appear**
-- Solution: Refresh the page. Make sure you're on Google, Bing, or DuckDuckGo.
+- Solution: Refresh the page. Make sure you're on Google or DuckDuckGo.
 
 **Problem: "API error"**
 - Solution: Check your API key is correct. You might have hit the daily limit (1,500 requests).

@@ -99,7 +99,6 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     const { query } = msg;
     const engines = [
       `https://www.google.com/search?q=${encodeURIComponent(query)}`,
-      `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
       `https://duckduckgo.com/?q=${encodeURIComponent(query)}`
     ];
     engines.forEach((url, i) => {
