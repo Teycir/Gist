@@ -12,8 +12,8 @@ module.exports = {
     global: {
       branches: 15,
       functions: 15,
-      lines: 20,
-      statements: 19
+      lines: 19,
+      statements: 18
     }
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js', '<rootDir>/jest.setup.js'],

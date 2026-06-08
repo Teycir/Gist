@@ -14,6 +14,12 @@ global.chrome = {
 
 global.fetch = jest.fn();
 
+// Load model-selector functions so window.selectBestModels is available in content.js tests
+const { selectBestModels, selectBestGeminiModels } = require('../lib/model-selector.js');
+global.window = global.window || {};
+global.window.selectBestModels = selectBestModels;
+global.window.selectBestGeminiModels = selectBestGeminiModels;
+
 // Mock window.location to avoid jsdom navigation warnings
 if (global.window && !global.window.location) {
   global.window.location = {
