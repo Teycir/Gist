@@ -27,7 +27,7 @@ describe('Real-world Performance Integration Tests', () => {
     const start = performance.now();
     
     chrome.storage.local.get.mockImplementation((keys, callback) => {
-      const data = { flashApiKey: 'AIzaSyDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', selectedModel: 'models/gemini-2.0-pro', selectedLanguage: 'English', summaryFormat: 'detailed' };
+      const data = { openrouterApiKey: 'test-key', selectedModel: 'meta-llama/llama-3.2-3b-instruct:free', selectedLanguage: 'English', summaryFormat: 'detailed' };
       if (typeof keys === 'function') {
         keys(data);
       } else if (callback) {
@@ -54,11 +54,11 @@ describe('Real-world Performance Integration Tests', () => {
     });
     
     global.fetch.mockImplementation((url) => {
-      if (typeof url === 'string' && url.includes('generativelanguage.googleapis.com')) {
+      if (typeof url === 'string' && url.includes('openrouter.ai')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            candidates: [{ content: { parts: [{ text: '# Performance Test Summary\n\n- Fast execution [1]\n- Optimized caching [2]\n- Efficient processing [3]' }] } }]
+            choices: [{ message: { content: '# Performance Test Summary\n\n- Fast execution [1]\n- Optimized caching [2]\n- Efficient processing [3]' } }]
           })
         });
       }
@@ -86,7 +86,7 @@ describe('Real-world Performance Integration Tests', () => {
     
     chrome.storage.local.get.mockResolvedValue({
       flashApiKey: 'test-key',
-      selectedModel: 'models/gemini-2.0-pro',
+      selectedModel: 'meta-llama/llama-3.2-3b-instruct:free',
       selectedLanguage: 'English',
       summaryFormat: 'detailed',
       [cacheKey]: {
@@ -111,7 +111,7 @@ describe('Real-world Performance Integration Tests', () => {
     chrome.storage.local.get.mockImplementation((keys, callback) => {
       const data = {
         flashApiKey: 'test-key',
-        selectedModel: 'models/gemini-2.0-pro',
+        selectedModel: 'meta-llama/llama-3.2-3b-instruct:free',
         selectedLanguage: 'English',
         summaryFormat: 'detailed',
         page_test123: {
@@ -148,11 +148,11 @@ describe('Real-world Performance Integration Tests', () => {
     });
     
     fetch.mockImplementation((url) => {
-      if (typeof url === 'string' && url.includes('generativelanguage.googleapis.com')) {
+      if (typeof url === 'string' && url.includes('openrouter.ai')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            candidates: [{ content: { parts: [{ text: '# Summary' }] } }]
+            choices: [{ message: { content: '# Summary' } }]
           })
         });
       }
@@ -220,7 +220,7 @@ describe('Real-world Performance Integration Tests', () => {
     
     chrome.storage.local.get.mockResolvedValue({ 
       flashApiKey: 'test-key',
-      selectedModel: 'models/gemini-2.0-pro',
+      selectedModel: 'meta-llama/llama-3.2-3b-instruct:free',
       selectedLanguage: 'English',
       summaryFormat: 'detailed'
     });
@@ -240,11 +240,11 @@ describe('Real-world Performance Integration Tests', () => {
     });
     
     fetch.mockImplementation((url) => {
-      if (typeof url === 'string' && url.includes('generativelanguage.googleapis.com')) {
+      if (typeof url === 'string' && url.includes('openrouter.ai')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            candidates: [{ content: { parts: [{ text: '# Summary' }] } }]
+            choices: [{ message: { content: '# Summary' } }]
           })
         });
       }
@@ -274,7 +274,7 @@ describe('Real-world Performance Integration Tests', () => {
     
     chrome.storage.local.get.mockResolvedValue({ 
       flashApiKey: 'test-key',
-      selectedModel: 'models/gemini-2.0-pro',
+      selectedModel: 'meta-llama/llama-3.2-3b-instruct:free',
       selectedLanguage: 'English',
       summaryFormat: 'detailed'
     });
@@ -294,11 +294,11 @@ describe('Real-world Performance Integration Tests', () => {
     });
     
     fetch.mockImplementation((url) => {
-      if (typeof url === 'string' && url.includes('generativelanguage.googleapis.com')) {
+      if (typeof url === 'string' && url.includes('openrouter.ai')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            candidates: [{ content: { parts: [{ text: '# E2E Test Summary\n\n- Optimized flow [1]\n- Fast execution [2]\n- Efficient caching [3]' }] } }]
+            choices: [{ message: { content: '# E2E Test Summary\n\n- Optimized flow [1]\n- Fast execution [2]\n- Efficient caching [3]' } }]
           })
         });
       }

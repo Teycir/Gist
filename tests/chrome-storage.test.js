@@ -14,11 +14,11 @@ describe('Chrome Storage Integration', () => {
   });
 
   test('should retrieve settings from chrome storage', async () => {
-    chrome.storage.local.get.mockResolvedValue({ flashApiKey: 'test-key', selectedModel: 'gemini-2.0-pro' });
+    chrome.storage.local.get.mockResolvedValue({ openrouterApiKey: 'test-key', selectedModel: 'meta-llama/llama-3.2-3b-instruct:free' });
 
-    const result = await chrome.storage.local.get(['flashApiKey', 'selectedModel']);
-    expect(result.flashApiKey).toBe('test-key');
-    expect(result.selectedModel).toBe('gemini-2.0-pro');
+    const result = await chrome.storage.local.get(['openrouterApiKey', 'selectedModel']);
+    expect(result.openrouterApiKey).toBe('test-key');
+    expect(result.selectedModel).toBe('meta-llama/llama-3.2-3b-instruct:free');
   });
 
   test('should handle missing storage values', async () => {

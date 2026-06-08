@@ -53,34 +53,31 @@ describe('Popup UI', () => {
 
 
 
-  test('should filter Flash models correctly', () => {
+  test('should filter free Llama models correctly', () => {
     const models = [
-      { name: 'gemini-2.0-pro', displayName: 'Gemini 2.5 Flash', supportedGenerationMethods: ['generateContent'], description: 'Text' },
-      { name: 'gemini-image', displayName: 'Gemini Image', supportedGenerationMethods: ['generateContent'], description: 'Image generation' }
+      { id: 'meta-llama/llama-3.2-3b-instruct:free', pricing: { prompt: '0' } },
+      { id: 'openai/gpt-4', pricing: { prompt: '30' } }
     ];
 
-    const filtered = models.filter(m => {
-      if (!m.supportedGenerationMethods?.includes('generateContent')) return false;
-      const name = m.displayName.toLowerCase();
-      const desc = (m.description || '').toLowerCase();
-      return name.includes('flash') && !desc.includes('image generation');
-    });
+    const filtered = models.filter(m => 
+      m.id.includes('llama') && m.pricing?.prompt === '0'
+    );
 
     expect(filtered.length).toBe(1);
-    expect(filtered[0].name).toBe('gemini-2.0-pro');
+    expect(filtered[0].id).toContain('llama');
   });
 
   test('should sort models by version', () => {
     const models = [
-      { name: 'gemini-2.0-pro', version: '1.5' },
-      { name: 'gemini-2.0-pro', version: '2.5' },
-      { name: 'gemini-2.0-pro', version: '2.0' }
+      { id: 'meta-llama/llama-3.1-8b-instruct:free', version: '3.1' },
+      { id: 'meta-llama/llama-3.2-3b-instruct:free', version: '3.2' },
+      { id: 'meta-llama/llama-3.2-1b-instruct:free', version: '3.2' }
     ];
 
     const sorted = models.sort((a, b) => parseFloat(b.version) - parseFloat(a.version));
 
-    expect(sorted[0].version).toBe('2.5');
-    expect(sorted[2].version).toBe('1.5');
+    expect(sorted[0].version).toBe('3.2');
+    expect(sorted[2].version).toBe('3.1');
   });
 
 

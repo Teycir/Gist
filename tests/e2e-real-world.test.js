@@ -39,7 +39,7 @@ describe('Real-World E2E Performance Tests', () => {
           local: {
             get: (keys) => Promise.resolve({
               flashApiKey: 'test-key',
-              selectedModel: 'models/gemini-2.0-pro',
+              selectedModel: 'meta-llama/llama-3.2-3b-instruct:free',
               selectedLanguage: 'English',
               summaryFormat: 'detailed'
             }),
@@ -61,7 +61,7 @@ describe('Real-World E2E Performance Tests', () => {
     page.on('request', (request) => {
       const url = request.url();
       
-      if (url.includes('generativelanguage.googleapis.com')) {
+      if (url.includes('openrouter.ai')) {
         const aiStart = Date.now();
         setTimeout(() => {
           metrics.aiGeneration = Date.now() - aiStart;
@@ -69,10 +69,9 @@ describe('Real-World E2E Performance Tests', () => {
             status: 200,
             contentType: 'application/json',
             body: JSON.stringify({
-              candidates: [{
-                content: {
-                  parts: [{
-                    text: `# React Performance Optimization
+              choices: [{
+                message: {
+                  content: `# React Performance Optimization
 
 - **Component Memoization**: React.memo() prevents unnecessary re-renders by performing shallow prop comparisons. For expensive computations, useMemo() caches results between renders, while useCallback() memoizes function references. These techniques are crucial in large component trees where re-renders cascade through multiple levels, potentially causing performance bottlenecks [1]
 
@@ -90,7 +89,6 @@ describe('Real-World E2E Performance Tests', () => {
 [1] https://react.dev/reference/react/memo
 [2] https://web.dev/code-splitting-suspense/
 [3] https://kentcdodds.com/blog/optimize-react-re-renders`
-                  }]
                 }
               }]
             })
@@ -163,17 +161,15 @@ describe('Real-World E2E Performance Tests', () => {
 
     await page.setRequestInterception(true);
     page.on('request', (request) => {
-      if (request.url().includes('generativelanguage.googleapis.com')) {
+      if (request.url().includes('openrouter.ai')) {
         setTimeout(() => {
           request.respond({
             status: 200,
             contentType: 'application/json',
             body: JSON.stringify({
-              candidates: [{
-                content: {
-                  parts: [{
-                    text: '# Brief Summary\n\n- Point 1 [1]\n- Point 2 [2]\n- Point 3 [3]'
-                  }]
+              choices: [{
+                message: {
+                  content: '# Brief Summary\n\n- Point 1 [1]\n- Point 2 [2]\n- Point 3 [3]'
                 }
               }]
             })
@@ -214,12 +210,12 @@ describe('Real-World E2E Performance Tests', () => {
 
     await page.setRequestInterception(true);
     page.on('request', (request) => {
-      if (request.url().includes('generativelanguage.googleapis.com')) {
+      if (request.url().includes('openrouter.ai')) {
         request.respond({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
-            candidates: [{ content: { parts: [{ text: '# Test\n\n- Memory test [1]' }] } }]
+            choices: [{ message: { content: '# Test\n\n- Memory test [1]' } }]
           })
         });
       } else {
@@ -261,13 +257,13 @@ describe('Real-World E2E Performance Tests', () => {
 
       await p.setRequestInterception(true);
       p.on('request', (request) => {
-        if (request.url().includes('generativelanguage.googleapis.com')) {
+        if (request.url().includes('openrouter.ai')) {
           setTimeout(() => {
             request.respond({
               status: 200,
               contentType: 'application/json',
               body: JSON.stringify({
-                candidates: [{ content: { parts: [{ text: '# Concurrent Test\n\n- Point [1]' }] } }]
+                choices: [{ message: { content: '# Concurrent Test\n\n- Point [1]' } }]
               })
             });
           }, 2000);
@@ -310,13 +306,13 @@ describe('Real-World E2E Performance Tests', () => {
     let apiCallCount = 0;
     
     page.on('request', (request) => {
-      if (request.url().includes('generativelanguage.googleapis.com')) {
+      if (request.url().includes('openrouter.ai')) {
         apiCallCount++;
         request.respond({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
-            candidates: [{ content: { parts: [{ text: '# Cache Test\n\n- Cached result [1]' }] } }]
+            choices: [{ message: { content: '# Cache Test\n\n- Cached result [1]' } }]
           })
         });
       } else {

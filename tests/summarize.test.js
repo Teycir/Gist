@@ -42,7 +42,7 @@ describe('Summarize Results', () => {
   });
 
   test('should handle no search results', async () => {
-    chrome.storage.local.get.mockResolvedValue({ flashApiKey: 'test-key', selectedModel: 'models/gemini-2.0-pro' });
+    chrome.storage.local.get.mockResolvedValue({ openrouterApiKey: 'test-key', selectedModel: 'meta-llama/llama-3.2-3b-instruct:free' });
     chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
       if (msg.action === 'getTabId') callback({ tabId: 123 });
     });
@@ -56,7 +56,7 @@ describe('Summarize Results', () => {
 
   test('should use default settings', async () => {
     chrome.storage.local.get.mockImplementation((keys, callback) => {
-      const data = { flashApiKey: 'AIzaSyDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', selectedModel: 'models/gemini-2.0-pro' };
+      const data = { openrouterApiKey: 'test-key', selectedModel: 'meta-llama/llama-3.2-3b-instruct:free' };
       if (callback) callback(data);
       return Promise.resolve(data);
     });
@@ -79,8 +79,8 @@ describe('Summarize Results', () => {
     document.body.innerHTML = '<button class="summarize-btn">Summarize</button><div id="search"><a href="https://test.com">Test</a></div>';
     
     global.fetch = jest.fn((url) => {
-      if (typeof url === 'string' && url.includes('generativelanguage.googleapis.com')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ candidates: [{ content: { parts: [{ text: 'Summary' }] } }] }) });
+      if (typeof url === 'string' && url.includes('openrouter.ai')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ choices: [{ message: { content: 'Summary' } }] }) });
       }
       return Promise.resolve({ ok: true, text: () => Promise.resolve('<html><body><main>Content here with enough text</main></body></html>') });
     });
