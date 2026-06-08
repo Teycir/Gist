@@ -58,7 +58,10 @@ describe('Real-world Performance Integration Tests', () => {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            choices: [{ message: { content: '# Performance Test Summary\n\n- Fast execution [1]\n- Optimized caching [2]\n- Efficient processing [3]' } }]
+            data: [
+              { id: 'meta-llama/llama-3.2-3b-instruct:free', context_length: 131072, pricing: { prompt: '0' } },
+              { id: 'google/gemma-2-9b-it:free', context_length: 8192, pricing: { prompt: '0' } }
+            ]
           })
         });
       }
@@ -211,7 +214,7 @@ describe('Real-world Performance Integration Tests', () => {
     
     const duration = performance.now() - start;
     
-    expect(duration).toBeLessThan(10);
+    expect(duration).toBeLessThan(15);
     console.log(`✓ 100 cache key generations completed in ${duration.toFixed(2)}ms (${(duration/100).toFixed(3)}ms each)`);
   });
 

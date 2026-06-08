@@ -80,7 +80,15 @@ describe('Summarize Results', () => {
     
     global.fetch = jest.fn((url) => {
       if (typeof url === 'string' && url.includes('openrouter.ai')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ choices: [{ message: { content: 'Summary' } }] }) });
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            data: [
+              { id: 'meta-llama/llama-3.2-3b-instruct:free', context_length: 131072, pricing: { prompt: '0' } },
+              { id: 'google/gemma-2-9b-it:free', context_length: 8192, pricing: { prompt: '0' } }
+            ]
+          })
+        });
       }
       return Promise.resolve({ ok: true, text: () => Promise.resolve('<html><body><main>Content here with enough text</main></body></html>') });
     });
