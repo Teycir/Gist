@@ -6,7 +6,7 @@
 
 **Gist** saves you time when searching online. Instead of opening 10 different websites and reading long articles, Gist reads them for you and gives you a short summary in seconds.
 
-Think of it as your personal reading assistant that lives in your browser. Everything stays on your computer—no tracking, no data collection, no ads. Fully open-source. Save and organize all your summaries for later use.
+Think of it as your personal reading assistant that lives in your browser. Everything stays on your computer — no tracking, no data collection, no ads. Fully open-source. Save and organise all your summaries for later use.
 
 <p align="center">
   <img src="AdminPanel.png" alt="Gist Settings Panel">
@@ -14,422 +14,396 @@ Think of it as your personal reading assistant that lives in your browser. Every
 
 ### ✨ What Can Gist Do?
 
-- 🔑 **Free to Use** - Get 1,500 free summaries every day using Google's AI or OpenRouter free tiers
-- 🔒 **Your Privacy is Safe** - Everything stays on your computer, no tracking
-- ⚡ **Super Fast** - Get brief answers in 3-5 seconds or detailed summaries, expand any brief summary into detailed
-- 🔍 **Works Everywhere** - Google and DuckDuckGo
-- 🌍 **Speaks Your Language** - Available in English, Spanish, French, and German
-- 📝 **Choose Your Style** - Quick summary or detailed explanation
-- 🔗 **Shows Sources** - Every summary includes clickable links to the websites used
-- 💾 **Save for Later** - Download summaries as files, saved search history and summaries locally with tags and favorites, history can be reset anytime
-- 📋 **Easy Sharing** - Share on social media or email
-- 💬 **Ask Follow-up Questions** - Chat with the AI about the summary
-- 🔄 **Multi-Search** - Search Google and DuckDuckGo simultaneously with automatic summaries for each
-- ⌨️ **Keyboard Shortcut** - Press `Ctrl+Shift+S` for instant summaries
-
-### Why Use Gist Instead of Google's AI Overviews?
-
-Google now shows AI summaries at the top of some searches. So why use Gist?
-
-**🎯 You Get More Control**
-- **Choose When:** Gist only summarizes when YOU want it to (not forced on every search)
-- **Choose Your Style:** Pick Brief or Detailed summaries (Google decides for you)
-- **Choose Your Language:** Get summaries in Spanish, French, or German (Google only does English for most searches)
-- **Works Everywhere:** Gist works on DuckDuckGo too (not just Google)
-
-**💾 You Can Save Everything**
-- **Download Summaries:** Save as files to use in reports or presentations (Google doesn't let you download)
-- **Copy & Paste:** One click to copy the entire summary (Google makes you select and copy manually)
-- **Keep a History:** See all your past summaries in one place (Google doesn't save them for you)
-- **Organize with Tags:** Group summaries by project or topic (Google has no organization)
-
-**🔗 You Can See Where Information Comes From**
-- **Clickable Sources:** Every summary shows links to the 3 websites it read (Google hides most sources)
-- **Verify Facts:** Click any source link to read the full article yourself (important for research)
-- **Cite Your Work:** Perfect for students who need to cite sources in papers (Google's AI doesn't give you proper citations)
-
-**⭐ You Can Find Things Later**
-- **Search Your History:** Type "Paris hotels" to find that summary from last month (Google's AI summaries disappear)
-- **Mark Favorites:** Star important summaries to find them instantly (Google has no favorites)
-- **Filter by Tags:** Click "school-project" to see all related summaries (Google can't do this)
-
-**💬 You Can Ask Questions**
-- **Follow-up Chat:** Ask the AI to explain something in simpler terms (Google's AI doesn't chat with you)
-- **Based on Summary:** Questions are answered using the summary you just read (more accurate)
-
-**🔒 Your Privacy is Protected**
-- **No Tracking:** Gist doesn't track what you search or summarize (Google tracks everything)
-- **Your Computer Only:** All summaries stay on your device (Google stores them on their servers)
-- **Open Source:** Anyone can check the code to verify privacy (Google's code is secret)
-
-**Simple Answer:** Google's AI is automatic but limited. Gist gives you control, organization, and privacy.
-
-### Who Should Use Gist?
-
-**🔒 Privacy-Conscious People**
-- All your searches and summaries stay on your computer
-- No tracking or data collection
-- Use OpenRouter with free models for maximum privacy
-- Open source code you can verify yourself
-- You control your own API key
-
-**👨‍🎓 Students**
-- Research topics quickly without reading dozens of articles
-- Get summaries in your preferred language
-- Save and organize research with tags
-- Ask follow-up questions to understand better
-
-**💼 Professionals**
-- Stay updated on industry news in minutes
-- Compare information from multiple sources
-- Share findings with colleagues with a button
-- Keep a searchable history of your research
-
-**🌍 Language Learners**
-- Search in one language, read summary in another
-- Learn new topics in your native language
-- Practice reading in different languages
-
-**📰 News Readers**
-- Get the main points from multiple news sources
-- Save time on daily news reading
-- Compare different perspectives on the same story
-
-**🔍 Curious People**
-- Learn about anything quickly
-- Get straight answers without ads and clutter
-- Build a personal knowledge library
-
-**🎓 Anyone Who Wants More Than Google's AI Overviews**
-- You want to save and organize your summaries
-- You need summaries in different languages
-- You want privacy and control over your data
-- You research topics that Google's AI doesn't cover
-
-### How to Get Started (3 Easy Steps)
-
-**Step 1: Install Gist (2 minutes)**
-1. Open Chrome and go to `chrome://extensions/`
-2. Turn on "Developer mode" (top right corner)
-3. Click "Load unpacked" and select the `dist` folder
-4. You'll see the Gist icon appear in your browser
-
-**Step 2: Get Your Free AI Key (1 minute)**
-
-**Option A: Google AI (Recommended - Easiest)**
-1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Sign in with your Google account
-3. Click "Create API Key"
-4. Copy the key (it looks like: AIza...)
-5. Click the Gist icon in Chrome
-6. Paste your key and click "Save Settings"
-
-**Option B: OpenRouter (Alternative - More Models)**
-1. Visit [OpenRouter](https://openrouter.ai/keys)
-2. Sign up for a free account
-3. Create an API key
-4. Click the Gist icon in Chrome
-5. Select "OpenRouter" from the dropdown
-6. Paste your key and click "Save Settings"
-
-**Which one should I choose?**
-- Choose Google AI if you want the simplest setup
-- Choose OpenRouter if you want access to different AI models or maximum privacy
-
-**Step 3: Start Using Gist**
-1. Go to Google or DuckDuckGo
-2. Search for anything (example: "how to learn guitar")
-3. Click the colorful button on the right side of the page
-4. Wait 3-5 seconds
-5. Read your summary!
-
-**Quick Tip**: Press `Ctrl+Shift+S` (or `Cmd+Shift+S` on Mac) to summarize instantly without clicking the button.
-
-### How to Use Gist Features
-
-**📝 Choose Your Summary Style**
-- **Brief Summary** (Recommended): Quick 3-5 points, perfect for most searches
-- **Detailed Summary**: Longer explanation with more context
-- **All summaries include:** Clickable source links at the bottom so you can verify information
-
-**🌍 Change Language**
-1. Click the Gist icon
-2. Select your language (English, Spanish, French, or German)
-3. Click "Save Settings"
-4. Now all summaries will be in your language!
-
-**🌙 Dark Mode**
-1. Click the Gist icon
-2. Check the "Dark Mode" box
-3. Click "Save Settings"
-4. All popups now use dark colors (easier on your eyes at night!)
-
-**📋 Copy a Summary**
-- Click the copy button (📋) in the summary popup
-- The entire summary is copied to your clipboard
-- Paste it anywhere: emails, documents, notes, messages
-- Perfect for quick sharing or saving to your own files
-
-**💾 Download a Summary**
-- Click the download button (⬇️) in the summary popup
-- The file saves to your Downloads folder as a .md file
-- Open it with any text editor (Notepad, TextEdit, etc.)
-
-**How to convert .md files to PDF or Word:**
-- **Option 1 (Online - Easiest):** Visit [Markdown to PDF](https://www.markdowntopdf.com/) or [Dillinger](https://dillinger.io/), upload your .md file, and download as PDF or Word
-- **Option 2 (Microsoft Word):** Open Word → File → Open → Select your .md file → Save As → Choose PDF or .docx
-- **Option 3 (Google Docs):** Upload .md file to Google Drive → Open with Google Docs → File → Download → Choose PDF or Word
-
-**Why download summaries?**
-- Create a personal research library
-- Include summaries in reports or presentations
-- Share with people who don't use Gist
-- Keep backups of important research
-
-**⭐ Mark as Favorite**
-- Click the star button (☆) to save important summaries
-- Find them later by clicking the history button (📚)
-- Filter to show only favorites
-
-**When to use favorites:**
-- Save summaries you'll need again (recipes, tutorials, guides)
-- Bookmark important research for your project
-- Keep quick access to frequently needed information
-- Create a personal "best of" collection
-
-**Example:** Favorite a summary about "how to fix a leaky faucet" so you can find it quickly next time you need it
-
-**🏷️ Add Tags to Organize**
-- Type a tag name in the tag box (example: "work", "school", "recipes")
-- Press Enter to add the tag
-- Use tags to find related summaries later
-
-**Why use tags?**
-- Group summaries by project ("thesis", "presentation", "report")
-- Organize by topic ("health", "finance", "travel")
-- Sort by urgency ("urgent", "later", "ideas")
-- Find all summaries about the same subject instantly
-
-**Example:** Tag all your job search summaries with "job-hunt" so you can review them all before an interview
-
-**💬 Ask Follow-up Questions**
-- Type your question in the box at the bottom of the summary
-- Press Enter
-- The AI will answer based on the summary
-- Example: "Can you explain this in simpler terms?"
-
-**📚 View Your History**
-- Click the history button (📚) in any summary
-- See all your past summaries
-- Search by keyword or filter by tag
-- Click any summary to view it again
-- Filter by multiple tags at once to narrow down results
-- Sort by favorites to see your starred summaries first
-
-**Smart ways to use History:**
-- **Search by keyword:** Type "python" to find all programming summaries
-- **Filter by tag:** Click "work" tag to see only work-related summaries
-- **Combine filters:** Select both "recipes" and "healthy" tags to find healthy recipes
-- **Find favorites:** Click the star button to show only your starred summaries
-- **Review research:** Go back to summaries from last week's project
-
-**Example:** You researched "best hotels in Paris" last month. Just search "Paris" in history to find it again!
-
-**📋 Share a Summary**
-- Click the share button in the summary
-- Choose: X (Twitter), LinkedIn, or Email
-- The summary text is automatically added
-
-**🔄 Search Multiple Engines at Once**
-1. Click the Gist icon
-2. Check "Multi-Search"
-3. Click "Save Settings"
-4. Now when you search, Gist opens Google and DuckDuckGo tabs
-5. Each tab gets its own summary automatically
-
-**When to use Multi-Search:**
-- You want to compare results from different search engines
-- You're researching something important and want complete coverage
-- Different search engines sometimes show different information
-- You want to see multiple perspectives on a topic
-
-**Example:** Search "best investment strategies 2024" and get summaries from both engines to compare advice
-
-### Real-Life Examples
-
-**Example 1: Student Research**
-- Search: "causes of climate change"
-- Gist reads 3 scientific articles
-- You get: Main causes in 5 bullet points
-- **Plus:** Links to all 3 sources at the bottom (click to verify or cite in your paper)
-- Time saved: 15 minutes of reading
-
-**Example 2: Recipe Search**
-- Search: "best chocolate chip cookie recipe"
-- Gist compares 3 popular recipes
-- You get: Key ingredients and tips from all three
-- Time saved: Reading 3 long blog posts
-
-**Example 3: News Update**
-- Search: "latest tech news"
-- Gist summarizes top 3 news articles
-- You get: Main headlines and key points
-- Time saved: 10 minutes of browsing
-
-**Example 4: Learning Something New**
-- Search: "how does bitcoin work"
-- Gist explains from multiple sources
-- You get: Simple explanation with key concepts
-- Ask follow-up: "What is blockchain?"
-- Get instant answer
-
-**Example 5: Shopping Research**
-- Search: "best laptop for students 2024"
-- Gist compares reviews from 3 sites
-- You get: Top recommendations and why
-- Save with tag: "shopping"
-- Come back later to decide
-
-**Example 6: Using Tags for a Project**
-- Working on a school project about renewable energy
-- Search "solar panel efficiency" → Tag: "school-project"
-- Search "wind turbine costs" → Tag: "school-project"
-- Search "renewable energy statistics" → Tag: "school-project"
-- Later: Click history, filter by "school-project" tag
-- See all your research in one place!
-
-**Example 7: Multi-Search for Important Decisions**
-- Deciding which car to buy
-- Enable Multi-Search
-- Search "Toyota Camry 2024 review"
-- Get summaries from Google AND DuckDuckGo
-- Compare both to make the best decision
-- Each search engine might show different reviews!
-
-**Example 8: Dark Mode for Night Reading**
-- It's 11 PM and you're researching for tomorrow's meeting
-- Enable Dark Mode
-- Your eyes don't hurt from bright white screens
-- Read summaries comfortably in bed
-
-**Example 9: Favorites for Recipes**
-- Find a great summary for "easy chicken recipes"
-- Click the star to favorite it
-- Next week, can't remember the recipe
-- Open history, click star filter
-- Find your recipe instantly!
-
-### Language Support
-
-Gist works in 4 languages:
-- 🇺🇸 **English**
-- 🇪🇸 **Spanish** (Español)
-- 🇫🇷 **French** (Français)
-- 🇩🇪 **German** (Deutsch)
-
-**Cool Feature**: Search in one language, get summary in another!
-- Search Google in English → Get summary in Spanish
-- Search in French → Get summary in English
-- Perfect for language learners and international research
-
-### Common Questions
-
-**Q: Is Gist really free?**
-A: Yes! Google gives you 1,500 free AI requests per day. That's enough for most people.
-
-**Q: Is my data safe?**
-A: Yes! Everything stays on your computer. Gist doesn't send your data to any servers. It connects directly to Google AI.
-
-**Q: Do I need to know anything technical?**
-A: No! If you can use Google, you can use Gist. Just follow the 3 setup steps above.
-
-**Q: What if I run out of free requests?**
-A: You get 1,500 per day. That resets every 24 hours. Most people use 10-20 per day.
-
-**Q: Can I use Gist on my phone?**
-A: Not yet. Gist only works on Chrome browser on computers right now.
-
-**Q: What happens to my summaries?**
-A: They're saved in your browser. You can view them anytime in the History section.
-
-**Q: Can I delete my history?**
-A: Yes! Click the history button (📚), then click the trash icon (🗑️).
-
-**Q: Does Gist work on all websites?**
-A: Gist works on Google and DuckDuckGo search results. It reads the top 3 websites from your search.
-
-**Q: Why do I need my own API key?**
-A: This keeps Gist free and private. You connect directly to Google AI, not through our servers.
-
-### Tips for Best Results
-
-**✅ Do:**
-- Use specific search terms ("best budget laptops 2024" vs "laptops")
-- Try the Brief summary first (it's faster)
-- Add tags to summaries you want to find later
-- Use the follow-up questions feature to learn more
-
-**❌ Don't:**
-- Search for very recent news (less than 1 hour old)
-- Expect summaries from paywalled websites
-- Use all 1,500 requests in one day (pace yourself!)
-
-### Your Privacy Matters
-
-**What Gist Does NOT Do:**
-- ❌ Collect your search history
-- ❌ Track what you summarize
-- ❌ Send your data to our servers (we don't have any!)
-- ❌ Sell your information
-- ❌ Show you ads
-
-**What Gist DOES Do:**
-- ✅ Stores your API key only in your browser
-- ✅ Saves summaries only on your computer
-- ✅ Connects directly to Google AI or OpenRouter for total privacy
-- ✅ Works completely privately
-
-**Open Source**: All our code is public on GitHub. Anyone can check what Gist does.
-
-### Troubleshooting
-
-**Problem: "No API key found"**
-- Solution: Click the Gist icon and add your API key from Google AI Studio
-
-**Problem: "No search results found"**
-- Solution: Make sure you're on a search results page (not the homepage)
-
-**Problem: Summary takes too long**
-- Solution: Try "Brief Summary" instead of "Detailed Summary"
-
-**Problem: "Could not extract content"**
-- Solution: Some websites block automated reading. Try a different search.
-
-**Problem: Button doesn't appear**
-- Solution: Refresh the page. Make sure you're on Google or DuckDuckGo.
-
-**Problem: "API error"**
-- Solution: Check your API key is correct. You might have hit the daily limit (1,500 requests).
-
-### Get Help
-
-**Need Help?**
-- Check the [Common Questions](#common-questions) section above
-- Look at [Troubleshooting](#troubleshooting) for solutions
-- Visit our [GitHub page](https://github.com/Teycir/Gist) for more info
-
-**Want to Help Improve Gist?**
-- Report bugs on GitHub
-- Suggest new features
-- Share Gist with friends
-- Leave a review
+- 🔑 **Free to Use** — Get free summaries every day using OpenRouter's free model tier
+- 🔒 **Your Privacy is Safe** — Everything stays on your computer, no tracking
+- ⚡ **Super Fast** — Brief answers in seconds; expand any brief summary into a detailed one
+- 🔍 **Works Everywhere** — Google and DuckDuckGo
+- 🌍 **Speaks Your Language** — English, Spanish, French, and German
+- 📝 **Choose Your Style** — Quick summary (~500 words) or detailed explanation (~2000 words)
+- 🔗 **Shows Sources** — Every summary includes clickable links to the websites used
+- 💾 **Save for Later** — Download as `.md`, save to history with tags and favourites
+- 📋 **Easy Sharing** — Share on X (Twitter), LinkedIn, or email
+- 💬 **Ask Follow-up Questions** — Chat with the AI about any summary
+- 🔄 **Multi-Search** — Search Google and DuckDuckGo simultaneously, auto-summaries for each
+- ⌨️ **Keyboard Shortcut** — `Ctrl+Shift+S` / `Cmd+Shift+S` for instant summaries
+- 📊 **Usage Stats** — Privacy-preserving local stats: total summaries, cache hits, tokens used
 
 ---
 
-**Ready to save time on your searches?** Install Gist today and never read 10 articles again when you only need the main points!
+## How it Works
+
+```
+User searches on Google / DuckDuckGo
+        ↓
+Gist injects a "Summarize" button into the results page
+        ↓
+User clicks the button (or presses Ctrl+Shift+S)
+        ↓
+Extension scrapes the top result URLs
+        ↓
+Pages are fetched in parallel, HTML is stripped to clean text
+        ↓
+Cache check — instant result if previously summarised
+        ↓
+OpenRouter API called with cleaned content + user prompt
+        ↓
+Markdown response rendered in a floating overlay with source links
+```
+
+**Performance targets (verified by test suite):**
+
+| Operation | Target | Typical |
+|-----------|--------|---------|
+| Cold start (no cache) | < 8 s | ~5–7 s |
+| Warm cache | < 100 ms | ~50 ms |
+| URL scraping | < 5 ms | ~2 ms |
+| HTML cleaning | < 10 ms / page | ~5 ms |
+| Cache key generation | < 1 ms | ~0.1 ms |
+
+---
+
+## Why Gist Instead of Google's AI Overviews?
+
+**🎯 Control**
+- Summarises only when YOU ask — not forced on every search
+- Choose Brief or Detailed format
+- Choose your output language
+- Works on DuckDuckGo too
+
+**💾 Save & Organise**
+- Download summaries as `.md` files
+- One-click copy to clipboard
+- Full searchable history with tags and favourites
+
+**🔗 Source Transparency**
+- Every summary links to the 3 pages it read
+- Click any source to verify or cite it
+
+**💬 Follow-up Chat**
+- Ask the AI to explain anything in the summary
+- Answers stay grounded in what was actually read
+
+**🔒 Privacy**
+- Nothing leaves your device except the OpenRouter API call
+- No backend servers, no analytics, no ads
+- Open-source — read the code yourself
+
+---
+
+## Who Should Use Gist?
+
+| Audience | Use case |
+|----------|----------|
+| 🔒 Privacy-conscious users | No tracking, no servers, BYOK |
+| 👨‍🎓 Students | Fast research, multi-language summaries, citable sources |
+| 💼 Professionals | Industry news in minutes, shareable findings |
+| 🌍 Language learners | Search in one language, read summary in another |
+| 📰 News readers | Compare perspectives across sources |
+| 🔍 Curious people | Fast answers without ads or paywalls |
+
+---
+
+## Getting Started
+
+### Step 1 — Install (2 minutes)
+
+1. Open Chrome and go to `chrome://extensions/`
+2. Enable **Developer mode** (top-right toggle)
+3. Click **Load unpacked** and select the `dist` folder
+4. The Gist icon appears in your toolbar
+
+### Step 2 — Get a Free API Key (1 minute)
+
+1. Go to [openrouter.ai/keys](https://openrouter.ai/keys)
+2. Sign up (free) and create an API key
+3. Click the Gist icon → paste your key → **Save Settings**
+
+Gist automatically selects the best available free model (e.g. `meta-llama/llama-3.2-3b-instruct:free`) and keeps fallbacks ready.
+
+### Step 3 — Summarise
+
+1. Search anything on Google or DuckDuckGo
+2. Click the coloured button on the right of the results (or press `Ctrl+Shift+S`)
+3. Read your summary in seconds
+
+---
+
+## Features
+
+### Summary Formats
+- **Brief** — 3–5 bullet points, ~500 words. Best for quick lookups.
+- **Detailed** — Full breakdown with context, ~2000 words.
+- **Key Points** — Structured list of the most important facts.
+
+Every format includes clickable source links at the bottom.
+
+### Languages
+Gist supports 4 output languages regardless of the search language:
+
+| Language | Code |
+|----------|------|
+| 🇺🇸 English | `English` |
+| 🇪🇸 Spanish | `Spanish` |
+| 🇫🇷 French | `French` |
+| 🇩🇪 German | `German` |
+
+**Tip:** Search in English, get the summary in French. Works across any combination.
+
+### Multi-Search
+Enable in settings to open Google and DuckDuckGo side-by-side, each with its own automatic summary. Useful when you want broader coverage or a second opinion.
+
+### History & Organisation
+- All summaries saved locally in your browser
+- Search by keyword across your entire history
+- Tag summaries (e.g. `work`, `thesis`, `recipes`)
+- Filter by one or multiple tags simultaneously
+- Star favourites for instant retrieval
+- Delete individual entries or reset all history
+
+### Usage Stats
+Gist tracks a small set of privacy-preserving local counters visible in the popup:
+- Total summaries generated
+- Cache hit count (times a repeated search was served instantly)
+- Approximate tokens used
+- Last reset date
+
+No data ever leaves your device.
+
+### Dark Mode
+Toggle in settings. All overlays and popups switch to a dark colour scheme.
+
+### Keyboard Shortcut
+`Ctrl+Shift+S` on Windows/Linux — `Cmd+Shift+S` on Mac — triggers a summary from anywhere on a supported results page.
+
+---
+
+## Architecture
+
+Gist is a **fully client-side Chrome extension** — no backend, no servers, no database.
+
+```
+manifest.json
+├── content/
+│   ├── content.js          — Core logic: scraping, fetching, caching, API calls, UI
+│   ├── content-critical.css — Critical CSS loaded inline
+│   └── content.min.css     — Full stylesheet (lazy-loaded)
+├── popup/
+│   ├── popup.html          — Settings UI
+│   └── popup.js            — Config management, model loading, usage stats
+├── lib/
+│   ├── model-selector.js   — Scores and ranks free OpenRouter models; exposes
+│   │                         window.selectBestModels / window.selectBestGeminiModels
+│   └── html-cleaner.js     — HTML → plain text pipeline
+├── workers/
+│   └── markdown-worker.js  — Off-main-thread Markdown → HTML rendering
+└── background.js           — Service worker: multi-search tab management
+```
+
+### Storage layout (`chrome.storage.local`)
+
+```javascript
+{
+  openrouterApiKey: string,        // User's OpenRouter key
+  openrouterPrimaryModel: string,  // Auto-selected best free model
+  openrouterFallbackModels: string[], // Ordered fallback list
+  selectedLanguage: string,        // 'English' | 'Spanish' | 'French' | 'German'
+  summaryFormat: string,           // 'brief' | 'detailed' | 'keyPoints'
+  selectedModel: string,           // Current active model ID
+  multiSearchEnabled: boolean,
+  darkMode: boolean,
+  usageStats: {
+    totalSummaries: number,
+    cacheHits: number,
+    totalTokens: number,
+    lastReset: number,
+  },
+  "summary_<hash>": {              // Cached summary entry
+    markdown: string,
+    urls: string[],
+    timestamp: number,
+  },
+  "page_<hash>": {                 // Cached page content
+    content: string,
+    timestamp: number,
+  }
+}
+```
+
+### Model selection (`lib/model-selector.js`)
+
+On first use (or when no model is stored), Gist fetches the live model list from OpenRouter and scores every free model by context window size, provider reliability, and a provider bonus for known-good routes. The top result becomes the primary model; the next three are kept as fallbacks. Both functions are exposed on `window` so `content.js` can call them without an import graph.
+
+---
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Build for production (minified)
+npm run build
+
+# Optimised production build
+npm run build:optimized
+
+# Watch mode (auto-rebuild on save)
+npm run watch
+```
+
+### Test suite
+
+18 test files, 131 tests covering:
+- URL scraping and engine detection
+- HTML cleaning pipeline
+- Caching (key generation, hits, invalidation)
+- Summarisation flow (brief, detailed, key-points formats)
+- Multi-search
+- Model selection and fallback logic
+- Edge cases (empty results, paywalled pages, missing API key)
+- Performance benchmarks (cold start, warm cache, parallel fetch)
+- Usage stats tracking
+- Popup settings persistence
+
+---
+
+## Common Questions
+
+**Q: Is it really free?**
+OpenRouter offers free model tiers — Gist uses those automatically. No payment required.
+
+**Q: Is my data safe?**
+Your API key and all summaries are stored only in your browser's local storage. The only external call is to `openrouter.ai` with the page content to summarise.
+
+**Q: What model does it use?**
+Gist auto-selects the highest-scoring free model available on OpenRouter at setup time (typically `meta-llama/llama-3.2-3b-instruct:free`) and refreshes this choice when you save settings.
+
+**Q: Can I use it on mobile?**
+Not yet — Chrome extensions only run on desktop Chrome.
+
+**Q: How do I clear my history?**
+Click the history button (📚) → trash icon (🗑️) to delete all or individual entries.
+
+**Q: Why does Gist need its own API key instead of a shared one?**
+A shared key would mean all users share a single rate limit, which doesn't scale. With your own key, your usage is independent and the connection goes directly from your browser to OpenRouter — no Gist servers involved.
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| "No API key found" | Open the Gist popup and save your OpenRouter key |
+| Button doesn't appear | Refresh the page; confirm you're on a Google or DuckDuckGo results page |
+| Summary takes very long | Switch to Brief format; check your internet connection |
+| "Could not extract content" | The target site blocks scraping — try rephrasing the search |
+| "API error" | Verify your key at [openrouter.ai](https://openrouter.ai); you may have hit a free-tier rate limit |
+| Summary is empty | Make sure the search returned actual results, not a "did you mean" page |
+
+---
+
+## Privacy
+
+| What Gist does NOT do | What Gist DOES do |
+|----------------------|-------------------|
+| ❌ Collect search history | ✅ Store your key locally in your own browser |
+| ❌ Track what you summarise | ✅ Save summaries only on your device |
+| ❌ Send data to any Gist servers | ✅ Call OpenRouter directly from your browser |
+| ❌ Sell your information | ✅ Keep usage stats locally, never transmitted |
+| ❌ Show ads | ✅ Open-source — read every line at [github.com/Teycir/Gist](https://github.com/Teycir/Gist) |
+
+---
+
+## Contributing
+
+1. Fork the repo
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Make your changes and add tests where applicable
+4. Run `npm run test:coverage` — all 131 tests must pass and coverage thresholds must be met
+5. Submit a pull request
+
+Bug reports and feature requests welcome via [GitHub Issues](https://github.com/Teycir/Gist/issues).
+
+---
+
+<!-- related-projects:start -->
+## 🌐 Related Projects
+
+More privacy-first and security tools by the same author:
+
+### Privacy & Communication
+- **[GhostChat](https://github.com/Teycir/GhostChat)** — True P2P encrypted chat via WebRTC. No servers, no storage, self-destructing messages.
+- **[Sanctum](https://github.com/Teycir/Sanctum)** — Zero-trust encrypted vault with cryptographic plausible deniability (XChaCha20-Poly1305, Argon2id).
+- **[Timeseal](https://github.com/Teycir/Timeseal)** — Time-locked encryption vault with Dead Man's Switch. AES-256 split-key crypto.
+- **[GhostReceipt](https://github.com/Teycir/GhostReceipt)** — Anonymous receipt generation with zero-knowledge proofs.
+- **[xmrproof](https://github.com/Teycir/xmrproof)** — Monero payment verification, 100% client-side.
+
+### Research & Productivity
+- **[ArxivExplorer](https://github.com/Teycir/ArxivExplorer)** — Fast semantic CS arXiv search with AI summaries. Understand any paper in 60 seconds.
+- **[SeekYou](https://github.com/Teycir/SeekYou)** — Host intelligence aggregator — unified OSINT across 15 sources for IPs, domains, and ASNs.
+- **[CheckAPI](https://github.com/Teycir/CheckAPI)** — LLM API key validator for multiple providers. Privacy-first, client-side validation.
+
+### Security Tools
+- **[BurpAPISecuritySuite](https://github.com/Teycir/BurpAPISecuritySuite)** — Burp Suite extension for API security testing. 15 attack types, 108+ payloads, BOLA/IDOR detection.
+- **[Mcpwn](https://github.com/Teycir/Mcpwn)** — Automated security scanner for Model Context Protocol servers. Detects RCE, path traversal, prompt injection.
+- **[DiffCatcher](https://github.com/Teycir/DiffCatcher)** — Git repo discovery, diff capture, and code element extraction.
+- **[HoneypotScan](https://github.com/Teycir/HoneypotScan)** — Honeypot detection service for security research.
+<!-- related-projects:end -->
+
+---
+
+<!-- services:start -->
+## 💼 Services
+
+- 🔒 **Privacy-First Development** — P2P apps, encrypted communication, zero-knowledge systems
+- 🚀 **Web Application Development** — Full-stack with Next.js, React, TypeScript
+- 🔧 **Extension Development** — Chrome/Firefox extensions, content scripts, service workers
+- 🛡️ **Security Tool Development** — Burp extensions, penetration testing tools, automation
+- 🤖 **AI Integration** — LLM-powered applications, prompt engineering, model routing
+- 🔍 **OSINT & Threat Intelligence** — Custom recon tools, threat feed aggregation
+
+**Contact:** [teycirbensoltane.tn](https://teycirbensoltane.tn) — available for freelance and consulting
+<!-- services:end -->
+
+---
+
+<!-- attribution:start -->
+<div align="center">
 
 **Made with ❤️ for people who value their time**
 
+Built by [Teycir Ben Soltane](https://teycirbensoltane.tn)
+
+</div>
+<!-- attribution:end -->
+
 ---
 
-*For developers: Technical documentation is available in [docs/architecture.md](docs/architecture.md)*
+<!-- donation:eth:start -->
+<div align="center">
+
+## Support Development
+
+If Gist saves you time, consider supporting ongoing development.
+
+**ETH Donation Wallet**
+`0x11282eE5726B3370c8B480e321b3B2aA13686582`
+
+<a href="https://etherscan.io/address/0x11282eE5726B3370c8B480e321b3B2aA13686582">
+  <img src="publiceth.svg" alt="Ethereum donation QR code" width="200" />
+</a>
+
+_Scan the QR or copy the address — every contribution helps keep Gist free._
+
+</div>
+<!-- donation:eth:end -->
+
+---
+
+*Developer docs: [docs/architecture.md](docs/architecture.md)*
