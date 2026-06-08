@@ -78,10 +78,13 @@ function selectBestGeminiModels(models) {
   };
 }
 
-// Browser-compatible export
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { selectBestModels, selectBestGeminiModels };
-} else if (typeof window !== 'undefined') {
+// Expose to window for content script
+if (typeof window !== 'undefined') {
   window.selectBestModels = selectBestModels;
   window.selectBestGeminiModels = selectBestGeminiModels;
+}
+
+// ES6 export for tests
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { selectBestModels, selectBestGeminiModels };
 }

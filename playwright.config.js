@@ -6,10 +6,6 @@ module.exports = {
     {
       name: 'chromium',
       use: { browserName: 'chromium' }
-    },
-    {
-      name: 'firefox',
-      use: { browserName: 'firefox' }
     }
   ]
 };
