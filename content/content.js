@@ -1714,6 +1714,16 @@ async function summarizeResults() {
       ].filter(Boolean);
     }
 
+    // If the user explicitly picked a model in the popup, try it first
+    if (model && !models.includes(model)) {
+      models = [model, ...models];
+    } else if (model && models[0] !== model) {
+      models = [model, ...models.filter(m => m !== model)];
+    }
+
+    // Deduplicate while preserving order
+    models = [...new Set(models)];
+
     console.log("[PERF] Models ready:", models);
     const apiStart = Date.now();
 
