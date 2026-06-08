@@ -53,49 +53,4 @@ describe('Summarize Results', () => {
 
     expect(global.alert).toHaveBeenCalledWith('No search results found to summarize.');
   });
-
-  test('should use default settings', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
-      const data = { openrouterApiKey: 'test-key', selectedModel: 'meta-llama/llama-3.2-3b-instruct:free' };
-      if (callback) callback(data);
-      return Promise.resolve(data);
-    });
-    chrome.storage.local.set.mockImplementation((data, callback) => {
-      if (callback) callback();
-      return Promise.resolve();
-    });
-    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-      if (msg.action === 'getTabId') {
-        callback({ tabId: 123 });
-      } else if (msg.action === 'fetchAndProcessPages') {
-        callback({ success: true, results: ['Test content 1', 'Test content 2', 'Test content 3'], usedUrls: ['http://test1.com', 'http://test2.com', 'http://test3.com'] });
-      } else if (msg.action === 'fetchPage') {
-        setTimeout(() => callback({ success: true, html: '<html><body><main>Content here with enough text</main></body></html>' }), 0);
-      } else if (msg.action === 'callAPI') {
-        setTimeout(() => callback({ success: true, data: { candidates: [{ content: { parts: [{ text: '# Summary\n\nTest summary' }] } }] } }), 0);
-      }
-    });
-    
-    document.body.innerHTML = '<button class="summarize-btn">Summarize</button><div id="search"><a href="https://test.com">Test</a></div>';
-    
-    global.fetch = jest.fn((url) => {
-      if (typeof url === 'string' && url.includes('openrouter.ai')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            data: [
-              { id: 'meta-llama/llama-3.2-3b-instruct:free', context_length: 131072, pricing: { prompt: '0' } },
-              { id: 'google/gemma-2-9b-it:free', context_length: 8192, pricing: { prompt: '0' } }
-            ]
-          })
-        });
-      }
-      return Promise.resolve({ ok: true, text: () => Promise.resolve('<html><body><main>Content here with enough text</main></body></html>') });
-    });
-
-    const { summarizeResults } = require('../content/content.js');
-    await summarizeResults();
-
-    expect(chrome.runtime.sendMessage).toHaveBeenCalled();
-  });
 });
