@@ -1721,6 +1721,18 @@ async function summarizeResults() {
       models = [model, ...models.filter(m => m !== model)];
     }
 
+    // Static fallback safety net — appended last, tried only if dynamic models all fail
+    const STATIC_FALLBACKS = [
+      "meta-llama/llama-3.3-70b-instruct:free",
+      "meta-llama/llama-3.2-3b-instruct:free",
+      "meta-llama/llama-3.1-8b-instruct:free",
+      "mistralai/mistral-7b-instruct:free",
+      "google/gemma-3-4b-it:free",
+    ];
+    for (const fb of STATIC_FALLBACKS) {
+      if (!models.includes(fb)) models.push(fb);
+    }
+
     // Deduplicate while preserving order
     models = [...new Set(models)];
 
