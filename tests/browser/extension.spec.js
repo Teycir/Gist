@@ -14,7 +14,7 @@ test.describe('Chromium Extension', () => {
 
   test('should load extension with background worker', async () => {
     const context = await chromium.launchPersistentContext('', {
-      headless: false,
+      headless: true,
       args: [
         `--disable-extensions-except=${extensionPath}`,
         `--load-extension=${extensionPath}`
@@ -43,7 +43,7 @@ test.describe('Firefox Extension', () => {
 test.describe('Background Worker Integration', () => {
   test('should handle message passing', async () => {
     const context = await chromium.launchPersistentContext('', {
-      headless: false,
+      headless: true,
       args: [
         `--disable-extensions-except=${extensionPath}`,
         `--load-extension=${extensionPath}`
