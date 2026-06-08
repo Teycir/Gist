@@ -1698,9 +1698,9 @@ async function summarizeResults() {
       });
       const data = await response.json();
       const selectBestModels = window.selectBestModels;
-      const selected = selectBestModels(data.data, "llama");
+      const selected = selectBestModels(data.data);
 
-      if (!selected.primary) throw new Error("No free Llama models found");
+      if (!selected.primary) throw new Error("No free models found on OpenRouter");
 
       await chrome.storage.local.set({
         openrouterPrimaryModel: selected.primary,
@@ -1723,11 +1723,14 @@ async function summarizeResults() {
 
     // Static fallback safety net — appended last, tried only if dynamic models all fail
     const STATIC_FALLBACKS = [
-      "meta-llama/llama-3.3-70b-instruct:free",
-      "meta-llama/llama-3.2-3b-instruct:free",
-      "meta-llama/llama-3.1-8b-instruct:free",
-      "mistralai/mistral-7b-instruct:free",
-      "google/gemma-3-4b-it:free",
+      "openrouter/owl-alpha",                       // OpenRouter's own flagship, always free
+      "nvidia/nemotron-3-super-120b-a12b:free",
+      "openai/gpt-oss-20b:free",
+      "openai/gpt-oss-120b:free",
+      "google/gemma-4-31b-it:free",
+      "z-ai/glm-4.5-air:free",
+      "nvidia/nemotron-nano-9b-v2:free",
+      "openrouter/free",                            // meta-router: picks any available free model
     ];
     for (const fb of STATIC_FALLBACKS) {
       if (!models.includes(fb)) models.push(fb);
