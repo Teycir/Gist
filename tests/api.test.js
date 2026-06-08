@@ -45,6 +45,10 @@ describe('OpenRouter API Integration', () => {
   }, 10000);
 
   test('should handle API errors gracefully', async () => {
+    if (!OPENROUTER_API_KEY) {
+      console.log('⏭️  Skipping: No OpenRouter API key');
+      return;
+    }
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {

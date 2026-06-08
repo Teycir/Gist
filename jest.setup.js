@@ -1,5 +1,3 @@
-global.fetch = require('node-fetch');
-
 // Suppress JSDOM navigation errors
 const originalError = console.error;
 console.error = (...args) => {
