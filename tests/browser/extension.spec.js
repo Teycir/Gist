@@ -2,6 +2,7 @@ const { test, expect, chromium, firefox } = require('@playwright/test');
 const path = require('path');
 
 const extensionPath = path.resolve(__dirname, '../../dist');
+const skipExtensionTests = process.env.PLAYWRIGHT_SKIP_EXTENSION_TESTS === '1';
 
 test.describe('Chromium Extension', () => {
   test('should load Chromium browser', async () => {
@@ -13,6 +14,7 @@ test.describe('Chromium Extension', () => {
   });
 
   test('should load extension with background worker', async () => {
+    test.skip(skipExtensionTests, 'Skipped in CI: requires API key in extension storage');
     const context = await chromium.launchPersistentContext('', {
       headless: true,
       args: [
@@ -42,6 +44,7 @@ test.describe('Firefox Extension', () => {
 
 test.describe('Background Worker Integration', () => {
   test('should handle message passing', async () => {
+    test.skip(skipExtensionTests, 'Skipped in CI: chrome.runtime unavailable from page context without credentials');
     const context = await chromium.launchPersistentContext('', {
       headless: true,
       args: [

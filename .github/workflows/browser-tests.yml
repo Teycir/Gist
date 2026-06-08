@@ -12,6 +12,8 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium firefox
       - run: npm run test:browser
+        env:
+          PLAYWRIGHT_SKIP_EXTENSION_TESTS: '1'
       - name: Upload test report
         uses: actions/upload-artifact@v4
         if: always()
